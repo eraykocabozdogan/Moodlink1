@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { PostCard } from "@/components/post-card"
-import { Check, X } from "lucide-react"
+import { Check, X, ImagePlus } from "lucide-react"
 
 interface ProfilePageProps {
   user: any
@@ -16,7 +16,6 @@ interface ProfilePageProps {
 export function ProfilePage({ user: initialUser }: ProfilePageProps) {
   const [isEditing, setIsEditing] = useState(false)
 
-  // Varsayılan kullanıcı verilerini güvenli şekilde ayarlayalım
   const defaultUser = {
     username: "Kullanıcı Adı",
     handle: "kullanici_adi",
@@ -28,21 +27,25 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
       { name: "Sad", percentage: "56%" },
     ],
     badges: ["🏅", "🏆"],
+    profilePicture: "/placeholder-user.jpg", // Added default profile picture
   }
 
   const [user, setUser] = useState({
     ...defaultUser,
     ...initialUser,
-    // Moods array'inin var olduğundan emin olalım
     moods: initialUser?.moods || defaultUser.moods,
     badges: initialUser?.badges || defaultUser.badges,
+    profilePicture: initialUser?.profilePicture || defaultUser.profilePicture, // Initialize profile picture
   })
 
   const [editForm, setEditForm] = useState({
     username: user.username,
     handle: user.handle,
     bio: user.bio || "Merhaba! Ben MoodLink kullanıyorum.",
+    profilePicture: user.profilePicture, // Add profilePicture to editForm
   })
+
+  const [selectedProfilePicture, setSelectedProfilePicture] = useState<string | null>(null) // State for temporary new profile picture
 
   const userPosts = [
     {
@@ -63,7 +66,18 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
         username: editForm.username,
         handle: editForm.handle,
         bio: editForm.bio,
+        profilePicture: selectedProfilePicture || user.profilePicture, // Save new or keep old
       })
+      setSelectedProfilePicture(null); // Reset temporary image
+    } else {
+      // When entering edit mode, set the form with current user data
+      setEditForm({
+        username: user.username,
+        handle: user.handle,
+        bio: user.bio || "Merhaba! Ben MoodLink kullanıyorum.",
+        profilePicture: user.profilePicture,
+      });
+      setSelectedProfilePicture(null); // Clear any previous selection
     }
     setIsEditing(!isEditing)
   }
@@ -81,8 +95,22 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
       username: user.username,
       handle: user.handle,
       bio: user.bio || "",
+      profilePicture: user.profilePicture, // Reset profile picture in form
     })
+    setSelectedProfilePicture(null); // Clear temporary image
     setIsEditing(false)
+  }
+
+  const handleProfilePictureChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0]
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setSelectedProfilePicture(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+      event.target.value = ""; // Allow re-selecting the same file
+    }
   }
 
   return (
@@ -95,10 +123,37 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
       {/* Profile Info */}
       <div className="bg-white border-b border-gray-200 p-6">
         <div className="text-center space-y-4">
-          <div className="w-24 h-24 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full mx-auto"></div>
+          {/* Profile Picture Display - Conditional based on isEditing */}
+          {!isEditing && (
+            <div className="w-24 h-24 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full mx-auto overflow-hidden">
+              <img src={user.profilePicture} alt={user.username} className="w-full h-full object-cover" />
+            </div>
+          )}
 
           {isEditing ? (
             <div className="space-y-4">
+              {/* Profile Picture Editing Section */}
+              <div className="relative w-32 h-32 mx-auto rounded-full overflow-hidden border-2 border-purple-500">
+                <img 
+                  src={selectedProfilePicture || editForm.profilePicture} 
+                  alt="Profil Resmi" 
+                  className="w-full h-full object-cover"
+                />
+                <label 
+                  htmlFor="profile-picture-upload" 
+                  className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 cursor-pointer opacity-0 hover:opacity-100 transition-opacity"
+                >
+                  <ImagePlus className="w-8 h-8 text-white" />
+                </label>
+                <input 
+                  id="profile-picture-upload" 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={handleProfilePictureChange} 
+                />
+              </div>
+
               <div>
                 <Input
                   name="username"
