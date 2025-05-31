@@ -1,48 +1,98 @@
 "use client"
 
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Users, Plus } from "lucide-react"
+import { CreateGroupChat, User } from "@/components/create-group-chat"
+
+interface ChatInfo {
+  id: number
+  type: "user" | "group"
+  title: string
+  handle?: string
+  members?: User[]
+  lastMessage: string
+  time: string
+}
+
 interface MessagesPageProps {
-  onChatSelect: (username: string) => void
+  onChatSelect: (chatInfo: ChatInfo) => void
 }
 
 export function MessagesPage({ onChatSelect }: MessagesPageProps) {
-  const conversations = [
+  const [showCreateGroupChat, setShowCreateGroupChat] = useState(false)
+  
+  // Sample user list for group creation
+  const availableUsers: User[] = [
+    { id: 1, username: "Doğan", handle: "@dgns" },
+    { id: 2, username: "Eray", handle: "@erayy" },
+    { id: 3, username: "Ahmet", handle: "@ahmt" },
+    { id: 4, username: "Mehmet", handle: "@mhmt" },
+    { id: 5, username: "Zeynep", handle: "@zynp" },
+    { id: 6, username: "Ayşe", handle: "@ayse" },
+  ]
+
+  const [conversations, setConversations] = useState<ChatInfo[]>([
     {
       id: 1,
-      username: "Doğan",
+      type: "user",
+      title: "Doğan",
       handle: "@dgns",
       lastMessage: "Heyy!",
       time: "23:46",
     },
     {
       id: 2,
-      username: "Eray2",
+      type: "user",
+      title: "Eray2",
       handle: "@erayy",
       lastMessage: "Hey dude! Wanna see...",
       time: "Dün",
     },
-  ]
+  ])
 
   return (
     <div className="max-w-2xl mx-auto">
       {/* Header */}
       <div className="sticky top-0 bg-card/80 backdrop-blur-sm border-b border-border p-4">
-        <h1 className="text-xl font-bold text-foreground">Direkt Mesajlar</h1>
+        <div className="flex justify-between items-center">
+          <h1 className="text-xl font-bold text-foreground">Direkt Mesajlar</h1>
+          <Button 
+            onClick={() => setShowCreateGroupChat(true)}
+            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+            size="sm"
+          >
+            <Users className="w-4 h-4 mr-2" />
+            Grup Oluştur
+          </Button>
+        </div>
       </div>
 
       <div className="bg-card">
         {conversations.map((conversation) => (
           <div
             key={conversation.id}
-            onClick={() => onChatSelect(conversation.username)}
+            onClick={() => onChatSelect(conversation)}
             className="border-b border-border p-4 hover:bg-muted/50 cursor-pointer"
           >
             <div className="flex space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-r from-green-400 to-blue-400 rounded-full flex-shrink-0"></div>
+              {conversation.type === "user" ? (
+                <div className="w-12 h-12 bg-gradient-to-r from-green-400 to-blue-400 rounded-full flex-shrink-0"></div>
+              ) : (
+                <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex-shrink-0 flex items-center justify-center">
+                  <Users className="w-6 h-6 text-white" />
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="font-medium text-foreground">{conversation.username}</p>
-                    <p className="text-muted-foreground text-sm">{conversation.handle}</p>
+                    <p className="font-medium text-foreground">{conversation.title}</p>
+                    {conversation.type === "user" && conversation.handle && (
+                      <p className="text-muted-foreground text-sm">{conversation.handle}</p>
+                    )}
+                    {conversation.type === "group" && conversation.members && (
+                      <p className="text-muted-foreground text-sm">{conversation.members.length} üye</p>
+                    )}
                   </div>
                   <span className="text-muted-foreground text-xs">{conversation.time}</span>
                 </div>
@@ -52,6 +102,29 @@ export function MessagesPage({ onChatSelect }: MessagesPageProps) {
           </div>
         ))}
       </div>
+
+      {/* Group Chat Creation Modal */}
+      {showCreateGroupChat && (
+        <CreateGroupChat 
+          onClose={() => setShowCreateGroupChat(false)}
+          availableUsers={availableUsers}
+          onCreateGroup={(groupName, members) => {
+            const newGroup: ChatInfo = {
+              id: Date.now(),
+              type: "group",
+              title: groupName,
+              members: members,
+              lastMessage: "Grup oluşturuldu",
+              time: new Date().toLocaleTimeString("tr-TR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+            };
+            setConversations([newGroup, ...conversations]);
+            setShowCreateGroupChat(false);
+          }}
+        />
+      )}
     </div>
   )
 }
