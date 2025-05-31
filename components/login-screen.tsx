@@ -9,9 +9,10 @@ import { Heart } from "lucide-react"
 interface LoginScreenProps {
   onLogin: (userData: any) => void
   onSwitchToSignup: () => void
+  onForgotPassword: () => void
 }
 
-export function LoginScreen({ onLogin, onSwitchToSignup }: LoginScreenProps) {
+export function LoginScreen({ onLogin, onSwitchToSignup, onForgotPassword }: LoginScreenProps) {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
 
@@ -71,7 +72,12 @@ export function LoginScreen({ onLogin, onSwitchToSignup }: LoginScreenProps) {
             Google ile Giriş Yap
           </Button>
           <div className="text-center text-sm text-gray-600 space-x-2">
-            <button className="text-purple-600 hover:underline">Şifreni mi unuttun?</button>
+            <button 
+              onClick={onForgotPassword}
+              className="text-purple-600 hover:underline"
+            >
+              Şifreni mi unuttun?
+            </button>
             <span>|</span>
             <button onClick={onSwitchToSignup} className="text-purple-600 hover:underline">
               Yeni Hesap Oluştur
