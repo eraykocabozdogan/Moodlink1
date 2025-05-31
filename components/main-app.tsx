@@ -11,6 +11,8 @@ import { ProfilePage } from "@/components/pages/profile-page"
 import { OptionsPage } from "@/components/pages/options-page"
 import { ChatPage } from "@/components/pages/chat-page"
 import { ThemeSettingsPage } from "@/components/pages/theme-settings-page"
+import { MoodReportPage } from "@/components/pages/mood-report-page"
+import { ActivitiesPage } from "@/components/pages/activities-page"
 import { RightSidebar } from "@/components/right-sidebar"
 import { Menu } from "lucide-react"
 
@@ -47,6 +49,10 @@ export function MainApp({ user, onLogout }: MainAppProps) {
         return <CommunityPage />
       case "profile":
         return <ProfilePage user={user} />
+      case "activities":
+        return <ActivitiesPage />
+      case "moodreport":
+        return <MoodReportPage />
       case "options":
         return <OptionsPage onLogout={onLogout} onThemeSettings={() => setCurrentPage("themeSettings")} />
       case "themeSettings":
@@ -59,13 +65,13 @@ export function MainApp({ user, onLogout }: MainAppProps) {
   const showRightSidebar = ["home", "search"].includes(currentPage)
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-background">
       {/* Hamburger menu button - always visible */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed top-4 left-4 z-50 p-3 bg-white rounded-full shadow-lg hover:shadow-xl transition-shadow border border-gray-200"
+        className="fixed top-4 left-4 z-50 p-3 bg-card rounded-full shadow-lg hover:shadow-xl transition-shadow border border-border"
       >
-        <Menu className="w-6 h-6 text-gray-700" />
+        <Menu className="w-6 h-6 text-foreground" />
       </button>
 
       {/* Sidebar */}

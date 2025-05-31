@@ -45,13 +45,13 @@ export function Sidebar({ currentPage, onPageChange, onLogout, isOpen, onClose }
       {/* Sidebar */}
       <div
         className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out shadow-xl
+        fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transform transition-transform duration-300 ease-in-out shadow-xl
         ${isOpen ? "translate-x-0" : "-translate-x-full"}
       `}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between p-6 border-b border-border">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
                 <Heart className="w-4 h-4 text-white" />
@@ -60,8 +60,8 @@ export function Sidebar({ currentPage, onPageChange, onLogout, isOpen, onClose }
                 MoodLink
               </h1>
             </div>
-            <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
-              <X className="w-5 h-5 text-gray-600" />
+            <button onClick={onClose} className="p-1 hover:bg-muted rounded-full transition-colors">
+              <X className="w-5 h-5 text-muted-foreground" />
             </button>
           </div>
 
@@ -83,7 +83,7 @@ export function Sidebar({ currentPage, onPageChange, onLogout, isOpen, onClose }
                     ${
                       isActive
                         ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
-                        : "text-gray-700 hover:bg-gray-100"
+                        : "text-foreground hover:bg-muted"
                     }
                   `}
                 >
@@ -95,7 +95,7 @@ export function Sidebar({ currentPage, onPageChange, onLogout, isOpen, onClose }
           </nav>
 
           {/* Logout */}
-          <div className="p-4 border-t border-gray-200">
+          <div className="p-4 border-t border-border">
             <Button
               onClick={onLogout}
               variant="ghost"
