@@ -25,6 +25,12 @@ export function MainApp({ user, onLogout }: MainAppProps) {
   const [currentPage, setCurrentPage] = useState("home")
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [chatUser, setChatUser] = useState<string | null>(null)
+  const [selectedPostId, setSelectedPostId] = useState<number | null>(null)
+
+    const handlePostClick = (postId: number) => {
+    setSelectedPostId(postId)
+    setCurrentPage("home") 
+  }
 
   const renderPage = () => {
     switch (currentPage) {

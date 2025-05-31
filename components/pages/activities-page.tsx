@@ -3,13 +3,27 @@
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Clock, MapPin, Users, Plus } from "lucide-react"
+import { Calendar, Clock, MapPin, Users, Plus, X } from "lucide-react"
 
 export function ActivitiesPage() {
   const [filter, setFilter] = useState("all")
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [joinedActivities, setJoinedActivities] = useState<number[]>([])
 
-  const activities = [
+  const [newActivity, setNewActivity] = useState({
+    title: "",
+    date: "",
+    time: "",
+    location: "",
+    description: "",
+    category: "spor",
+    mood: "Heyecanlı",
+  })
+
+  const [activities, setActivities] = useState([
     {
       id: 1,
       title: "Fenerbahçe - Galatasaray Maçı İzleme",
@@ -54,7 +68,54 @@ export function ActivitiesPage() {
       category: "eglence",
       status: "completed",
     },
-  ]
+  ])
+
+  const handleJoinActivity = (activityId: number) => {
+    if (joinedActivities.includes(activityId)) {
+      setJoinedActivities(joinedActivities.filter((id) => id !== activityId))
+      setActivities(
+        activities.map((activity) =>
+          activity.id === activityId ? { ...activity, participants: activity.participants - 1 } : activity,
+        ),
+      )
+    } else {
+      setJoinedActivities([...joinedActivities, activityId])
+      setActivities(
+        activities.map((activity) =>
+          activity.id === activityId ? { ...activity, participants: activity.participants + 1 } : activity,
+        ),
+      )
+    }
+  }
+
+  const handleCreateActivity = () => {
+    if (newActivity.title && newActivity.date && newActivity.time && newActivity.location) {
+      const activity = {
+        id: Date.now(),
+        title: newActivity.title,
+        date: newActivity.date,
+        time: newActivity.time,
+        location: newActivity.location,
+        participants: 1,
+        mood: newActivity.mood,
+        category: newActivity.category,
+        status: "upcoming" as const,
+      }
+
+      setActivities([activity, ...activities])
+      setJoinedActivities([...joinedActivities, activity.id])
+      setNewActivity({
+        title: "",
+        date: "",
+        time: "",
+        location: "",
+        description: "",
+        category: "spor",
+        mood: "Heyecanlı",
+      })
+      setShowCreateForm(false)
+    }
+  }
 
   const filteredActivities = activities.filter((activity) => {
     if (filter === "all") return true
@@ -84,7 +145,10 @@ export function ActivitiesPage() {
       <div className="sticky top-0 bg-background/80 backdrop-blur-sm border-b border-border p-4">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-bold text-foreground">Etkinlikler</h1>
-          <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white">
+          <Button
+            onClick={() => setShowCreateForm(true)}
+            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+          >
             <Plus className="w-4 h-4 mr-2" />
             Etkinlik Oluştur
           </Button>
@@ -118,6 +182,76 @@ export function ActivitiesPage() {
       </div>
 
       <div className="p-4 space-y-4">
+        {/* Create Activity Form */}
+        {showCreateForm && (
+          <Card className="border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50">
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>Yeni Etkinlik Oluştur</CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => setShowCreateForm(false)}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Input
+                placeholder="Etkinlik başlığı"
+                value={newActivity.title}
+                onChange={(e) => setNewActivity({ ...newActivity, title: e.target.value })}
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  type="date"
+                  value={newActivity.date}
+                  onChange={(e) => setNewActivity({ ...newActivity, date: e.target.value })}
+                />
+                <Input
+                  type="time"
+                  value={newActivity.time}
+                  onChange={(e) => setNewActivity({ ...newActivity, time: e.target.value })}
+                />
+              </div>
+              <Input
+                placeholder="Konum"
+                value={newActivity.location}
+                onChange={(e) => setNewActivity({ ...newActivity, location: e.target.value })}
+              />
+              <Textarea
+                placeholder="Açıklama (opsiyonel)"
+                value={newActivity.description}
+                onChange={(e) => setNewActivity({ ...newActivity, description: e.target.value })}
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <select
+                  className="p-2 border rounded-md"
+                  value={newActivity.category}
+                  onChange={(e) => setNewActivity({ ...newActivity, category: e.target.value })}
+                >
+                  <option value="spor">Spor</option>
+                  <option value="kultur">Kültür</option>
+                  <option value="eglence">Eğlence</option>
+                </select>
+                <select
+                  className="p-2 border rounded-md"
+                  value={newActivity.mood}
+                  onChange={(e) => setNewActivity({ ...newActivity, mood: e.target.value })}
+                >
+                  <option value="Heyecanlı">Heyecanlı</option>
+                  <option value="Huzurlu">Huzurlu</option>
+                  <option value="Enerjik">Enerjik</option>
+                  <option value="Rahat">Rahat</option>
+                </select>
+              </div>
+              <Button
+                onClick={handleCreateActivity}
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+              >
+                Etkinlik Oluştur
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {filteredActivities.map((activity) => (
           <Card key={activity.id} className="hover:shadow-lg transition-shadow">
             <CardHeader>
@@ -155,15 +289,16 @@ export function ActivitiesPage() {
                   </div>
 
                   <Button
-                    variant={activity.status === "upcoming" ? "default" : "outline"}
+                    onClick={() => handleJoinActivity(activity.id)}
+                    variant={joinedActivities.includes(activity.id) ? "outline" : "default"}
                     size="sm"
                     className={
-                      activity.status === "upcoming"
+                      !joinedActivities.includes(activity.id)
                         ? "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-                        : ""
+                        : "border-purple-300 text-purple-600 hover:bg-purple-50"
                     }
                   >
-                    {activity.status === "upcoming" ? "Katıl" : "Detaylar"}
+                    {joinedActivities.includes(activity.id) ? "Ayrıl" : "Katıl"}
                   </Button>
                 </div>
               </div>
