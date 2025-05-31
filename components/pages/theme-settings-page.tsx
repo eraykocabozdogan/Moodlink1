@@ -12,13 +12,6 @@ export function ThemeSettingsPage({ onBack }: ThemeSettingsPageProps) {
 
   const themes = [
     {
-      id: "default" as const,
-      name: "Varsayılan",
-      percentage: "85%",
-      colors: "from-purple-500 to-pink-500",
-      description: "Klasik mor-pembe gradient",
-    },
-    {
       id: "rock" as const,
       name: "Rock",
       percentage: "48%",
