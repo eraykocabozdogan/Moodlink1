@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Heart } from "lucide-react"
+import { VerificationScreen } from "./verification-screen"
 
 interface SignupScreenProps {
   onSignup: (userData: any) => void
@@ -16,15 +17,40 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
   const [email, setEmail] = useState("")
   const [birthDate, setBirthDate] = useState("")
   const [password, setPassword] = useState("")
+  const [showVerification, setShowVerification] = useState(false)
 
   const handleSignup = () => {
     if (fullName && email && password) {
-      onSignup({ username: fullName, email, id: 1 })
+      // Simulate sending verification email
+      setShowVerification(true)
     }
+  }
+
+  const handleVerification = (code: string) => {
+    // Simulate verification process
+    console.log("Verification code:", code)
+    onSignup({ username: fullName, email, id: 1 })
+  }
+
+  const handleResendCode = () => {
+    // Simulate resending verification code
+    console.log("Resending verification code to:", email)
   }
 
   const handleGoogleSignup = () => {
     onSignup({ username: "Google User", email: "user@gmail.com", id: 1 })
+  }
+
+  if (showVerification) {
+    return (
+      <VerificationScreen
+        email={email}
+        type="signup"
+        onVerify={handleVerification}
+        onResendCode={handleResendCode}
+        onGoBack={() => setShowVerification(false)}
+      />
+    )
   }
 
   return (
