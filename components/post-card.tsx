@@ -64,7 +64,7 @@ export function PostCard({ post }: PostCardProps) {
   }
 
   return (
-    <div className="border-b border-border p-4 hover:bg-muted/50 transition-colors">
+    <div className="bg-card text-card-foreground border-b border-border p-4 hover:bg-muted/50 transition-colors">
       <div className="flex space-x-3">
         {/* Avatar */}
         <div className="w-12 h-12 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full flex-shrink-0"></div>
@@ -140,8 +140,8 @@ export function PostCard({ post }: PostCardProps) {
               </button>
             </div>
 
-            <div className="bg-gradient-to-r from-purple-100 to-pink-100 px-3 py-1 rounded-full">
-              <span className="text-purple-700 font-medium">{post.moodCompatibility} Mood Uyumu</span>
+            <div className="bg-accent px-3 py-1 rounded-full">
+              <span className="text-accent-foreground font-medium">{post.moodCompatibility} Mood Uyumu</span>
             </div>
           </div>
 

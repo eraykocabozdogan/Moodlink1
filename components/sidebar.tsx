@@ -54,7 +54,7 @@ export function Sidebar({ currentPage, onPageChange, onLogout, isOpen, onClose }
           <div className="flex items-center justify-between p-6 border-b border-border">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                <Heart className="w-4 h-4 text-white" />
+                <Heart className="w-4 h-4 text-primary-foreground" />
               </div>
               <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                 MoodLink
@@ -82,7 +82,7 @@ export function Sidebar({ currentPage, onPageChange, onLogout, isOpen, onClose }
                     w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200
                     ${
                       isActive
-                        ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
+                        ? "bg-gradient-to-r from-purple-500 to-pink-500 text-primary-foreground shadow-lg"
                         : "text-foreground hover:bg-muted"
                     }
                   `}
@@ -99,7 +99,7 @@ export function Sidebar({ currentPage, onPageChange, onLogout, isOpen, onClose }
             <Button
               onClick={onLogout}
               variant="ghost"
-              className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+              className="w-full justify-start text-destructive hover:text-destructive/90 hover:bg-destructive/10"
             >
               <LogOut className="w-5 h-5 mr-3" />
               Çıkış Yap

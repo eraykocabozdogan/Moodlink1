@@ -117,12 +117,12 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
   return (
     <div className="max-w-2xl mx-auto">
       {/* Header */}
-      <div className="sticky top-0 bg-white/80 backdrop-blur-sm border-b border-gray-200 p-4">
-        <h1 className="text-xl font-bold text-gray-800">Profil</h1>
+      <div className="sticky top-0 bg-card/80 backdrop-blur-sm border-b border-border p-4">
+        <h1 className="text-xl font-bold text-foreground">Profil</h1>
       </div>
 
       {/* Profile Info */}
-      <div className="bg-white border-b border-gray-200 p-6">
+      <div className="bg-card border-b border-border p-6">
         <div className="text-center space-y-4">
           {/* Profile Picture Area */}
           <div className="w-24 h-24 mx-auto"> {/* Container for sizing */}
@@ -145,7 +145,7 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center text-white">
+                    <div className="w-full h-full bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center text-primary-foreground">
                       <span className="text-xs">Resim Seç</span>
                     </div>
                   )}
@@ -169,7 +169,7 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
                 className="w-24 h-24 rounded-full object-cover mx-auto"
               />
             ) : (
-              <div className="w-24 h-24 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full mx-auto flex items-center justify-center text-white">
+              <div className="w-24 h-24 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full mx-auto flex items-center justify-center text-primary-foreground">
                 {/* Optional: Add an icon or initials if no image */}
               </div>
             )}
@@ -183,14 +183,14 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
                   value={editForm.username}
                   onChange={handleInputChange}
                   placeholder="Kullanıcı adı"
-                  className="text-center font-bold"
+                  className="text-center font-bold bg-background border-border text-foreground"
                 />
                 <Input
                   name="handle"
                   value={editForm.handle}
                   onChange={handleInputChange}
                   placeholder="Kullanıcı kodu"
-                  className="text-center text-gray-600 mt-2"
+                  className="text-center text-muted-foreground mt-2 bg-background border-border"
                 />
               </div>
               <Textarea
@@ -198,17 +198,17 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
                 value={editForm.bio}
                 onChange={handleInputChange}
                 placeholder="Biyografi"
-                className="min-h-[100px]"
+                className="min-h-[100px] bg-background border-border text-foreground"
               />
               <div className="flex justify-center space-x-3">
                 <Button
                   onClick={handleEditToggle}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-primary-foreground"
                 >
                   <Check className="w-4 h-4 mr-2" />
                   Kaydet
                 </Button>
-                <Button onClick={handleCancelEdit} variant="outline">
+                <Button onClick={handleCancelEdit} variant="outline" className="border-border text-foreground hover:bg-muted">
                   <X className="w-4 h-4 mr-2" />
                   İptal
                 </Button>
@@ -217,21 +217,21 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
           ) : (
             <>
               <div>
-                <h3 className="text-xl font-bold text-gray-800">{user.username}</h3>
-                <p className="text-gray-600">@{user.handle}</p>
+                <h3 className="text-xl font-bold text-foreground">{user.username}</h3>
+                <p className="text-muted-foreground">@{user.handle}</p>
               </div>
-              {user.bio && <p className="text-gray-700 max-w-md mx-auto">{user.bio}</p>}
-              <div className="flex justify-center space-x-6 text-sm">
+              {user.bio && <p className="text-muted-foreground max-w-md mx-auto">{user.bio}</p>}
+              <div className="flex justify-center space-x-6 text-sm text-muted-foreground">
                 <span>
-                  <strong>{user.followers}</strong> Takipçi
+                  <strong className="text-foreground">{user.followers}</strong> Takipçi
                 </span>
                 <span>
-                  <strong>{user.following}</strong> Takip Edilen
+                  <strong className="text-foreground">{user.following}</strong> Takip Edilen
                 </span>
               </div>
-              <div className="bg-gradient-to-r from-purple-100 to-pink-100 p-4 rounded-xl">
-                <p className="text-sm text-gray-700">
-                  <strong>Mood:</strong>{" "}
+              <div className="bg-muted/50 p-4 rounded-xl">
+                <p className="text-sm text-muted-foreground">
+                  <strong className="text-foreground">Mood:</strong>{" "}
                   {user.moods && user.moods.length > 0 ? (
                     user.moods.map((mood: any, index: number) => (
                       <span key={index}>
@@ -243,14 +243,14 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
                     <span>Henüz mood verisi yok</span>
                   )}
                 </p>
-                <p className="text-sm text-gray-700 mt-1">
-                  <strong>Rozetler:</strong>{" "}
+                <p className="text-sm text-muted-foreground mt-1">
+                  <strong className="text-foreground">Rozetler:</strong>{" "}
                   {user.badges && user.badges.length > 0 ? user.badges.join(" ") : "Henüz rozet yok"}
                 </p>
               </div>
               <Button
                 onClick={handleEditToggle}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-primary-foreground"
               >
                 Profili Düzenle
               </Button>
@@ -260,9 +260,9 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
       </div>
 
       {/* Posts */}
-      <div className="bg-white">
-        <div className="p-4 border-b border-gray-200">
-          <h4 className="font-bold text-gray-800">Gönderilerim</h4>
+      <div className="bg-card">
+        <div className="p-4 border-b border-border">
+          <h4 className="font-bold text-foreground">Gönderilerim</h4>
         </div>
         {userPosts.map((post) => (
           <PostCard key={post.id} post={post} />

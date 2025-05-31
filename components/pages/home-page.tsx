@@ -133,12 +133,12 @@ export function HomePage() {
   return (
     <div className="max-w-2xl mx-auto">
       {/* Header */}
-      <div className="sticky top-0 bg-white/80 backdrop-blur-sm border-b border-gray-200 p-4">
-        <h1 className="text-xl font-bold text-gray-800">Ana Sayfa</h1>
+      <div className="sticky top-0 bg-card/80 backdrop-blur-sm border-b border-border p-4">
+        <h1 className="text-xl font-bold text-foreground">Ana Sayfa</h1>
       </div>
 
       {/* Create Post */}
-      <div className="border-b border-gray-200 p-4 bg-white">
+      <div className="border-b border-border p-4 bg-card">
         <div className="flex space-x-3">
           <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex-shrink-0"></div>
           <div className="flex-1">
@@ -147,7 +147,7 @@ export function HomePage() {
               value={postContent}
               onChange={(e) => setPostContent(e.target.value)}
               onKeyDown={handleKeyPress}
-              className="border-none resize-none text-xl placeholder-gray-500 focus:ring-0 min-h-[80px]"
+              className="border-none resize-none text-xl placeholder-muted-foreground focus:ring-0 min-h-[80px] bg-transparent text-foreground"
               rows={3}
               maxLength={280} // Added maxLength for character limit
             />
@@ -155,7 +155,7 @@ export function HomePage() {
             {selectedImage && (
               <div className="mt-2">
                 <img src={selectedImage} alt="Preview" className="rounded-lg max-h-40 object-contain" />
-                <Button variant="ghost" size="sm" onClick={() => setSelectedImage(null)} className="mt-1 text-red-500">
+                <Button variant="ghost" size="sm" onClick={() => setSelectedImage(null)} className="mt-1 text-destructive hover:text-destructive/90">
                   Kaldır
                 </Button>
               </div>
@@ -164,19 +164,19 @@ export function HomePage() {
               <div className="flex items-center space-x-2">
                 {/* Image upload button */}
                 <label htmlFor="image-upload" className="cursor-pointer">
-                  <ImagePlus className="text-purple-500 hover:text-purple-600" size={24} />
+                  <ImagePlus className="text-primary hover:text-primary/90" size={24} />
                 </label>
                 <input id="image-upload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                 {/* Character count */}
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-muted-foreground">
                   {postContent.length}/280
                 </span>
               </div>
               <div className="flex space-x-2 items-center"> {/* Changed to items-center for vertical alignment */}
-                <span className="text-xs text-gray-400">Ctrl+Enter ile gönder</span>
+                <span className="text-xs text-muted-foreground">Ctrl+Enter ile gönder</span>
                 <Button
                   onClick={handlePostSubmit}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6"
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-primary-foreground px-6"
                   disabled={(!postContent.trim() && !selectedImage) || postContent.length > 280} // Updated disabled condition
                 >
                   Gönder
@@ -188,13 +188,13 @@ export function HomePage() {
       </div>
 
       {/* Feed Tabs */}
-      <div className="flex border-b border-gray-200 bg-white">
+      <div className="flex border-b border-border bg-card">
         <button
           onClick={() => setActiveTab("forYou")}
           className={`flex-1 py-4 text-center font-medium transition-colors ${
             activeTab === "forYou"
-              ? "text-purple-600 border-b-2 border-purple-600"
-              : "text-gray-600 hover:text-gray-800"
+              ? "text-primary border-b-2 border-primary"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           Sizin İçin
@@ -203,29 +203,28 @@ export function HomePage() {
           onClick={() => setActiveTab("following")}
           className={`flex-1 py-4 text-center font-medium transition-colors ${
             activeTab === "following"
-              ? "text-purple-600 border-b-2 border-purple-600"
-              : "text-gray-600 hover:text-gray-800"
+              ? "text-primary border-b-2 border-primary"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           Takip Edilenler
         </button>
       </div>
 
-      {/* Posts */}
-      {/* Embla Carousel container */}
+      {/* Carousel for posts */}
       <div className="overflow-hidden" ref={emblaRef}>
         <div className="flex">
-          {/* For You Feed Slide */}
-          <div className="flex-[0_0_100%] min-w-0">
-            <div className="bg-white">
-              {posts.map((post) => <PostCard key={post.id} post={post} />)}
-            </div>
+          {/* "For You" Tab Content */}
+          <div className="min-w-0 flex-shrink-0 flex-grow-0 basis-full bg-background">
+            {posts.map((post) => (
+              <PostCard key={post.id} post={post} />
+            ))}
           </div>
-          {/* Following Feed Slide */}
-          <div className="flex-[0_0_100%] min-w-0">
-            <div className="bg-white">
-              {followingPosts.map((post) => <PostCard key={post.id} post={post} />)}
-            </div>
+          {/* "Following" Tab Content */}
+          <div className="min-w-0 flex-shrink-0 flex-grow-0 basis-full bg-background">
+            {followingPosts.map((post) => (
+              <PostCard key={post.id} post={post} />
+            ))}
           </div>
         </div>
       </div>
