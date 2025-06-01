@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Users, TrendingUp, Search } from "lucide-react"
+import { Plus, Users, TrendingUp, Search, Compass } from "lucide-react"
 import { PostCard } from "@/components/post-card"
 
 export function CommunityPage() {
@@ -115,12 +115,12 @@ export function CommunityPage() {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Header */}
-      <div className="sticky top-0 bg-white/80 backdrop-blur-sm border-b border-gray-200 p-4">
+      <div className="sticky top-0 bg-card/80 backdrop-blur-sm border-b border-border p-4">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-bold text-gray-800">Topluluk</h1>
+          <h1 className="text-xl font-bold text-foreground">Topluluk</h1>
           <Button
             onClick={() => setShowCreateForm(!showCreateForm)}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-primary-foreground"
           >
             <Plus className="w-4 h-4 mr-2" />
             Topluluk Oluştur
@@ -129,13 +129,13 @@ export function CommunityPage() {
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
           <Input
             type="text"
             placeholder="Topluluk ara..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-12 bg-gray-100 border-0 focus:bg-white focus:ring-2 focus:ring-purple-400"
+            className="pl-10 h-12 bg-muted border-border focus:bg-card focus:ring-2 focus:ring-primary"
           />
         </div>
       </div>
@@ -143,20 +143,20 @@ export function CommunityPage() {
       <div className="p-4 space-y-6">
         {/* Create Community Form */}
         {showCreateForm && (
-          <Card className="border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50">
+          <Card className="border-primary/20 bg-card">
             <CardContent className="p-4">
-              <h3 className="font-bold text-lg mb-3 text-gray-800">Yeni Topluluk Oluştur</h3>
+              <h3 className="font-bold text-lg mb-3 text-foreground">Yeni Topluluk Oluştur</h3>
               <div className="flex space-x-3">
                 <Input
                   type="text"
                   placeholder="Topluluk adı..."
                   value={newCommunityName}
                   onChange={(e) => setNewCommunityName(e.target.value)}
-                  className="flex-1"
+                  className="flex-1 bg-background border-border text-foreground"
                 />
                 <Button
                   onClick={handleCreateCommunity}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-primary-foreground"
                 >
                   Oluştur
                 </Button>
@@ -168,31 +168,31 @@ export function CommunityPage() {
         {/* Joined Communities */}
         {joinedCommunities.length > 0 && (
           <div>
-            <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-              <Users className="w-5 h-5 mr-2 text-purple-600" />
+            <h2 className="text-lg font-bold text-foreground mb-4 flex items-center">
+              <Users className="w-5 h-5 mr-2 text-primary" />
               Katıldığın Topluluklar
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               {communities
                 .filter((community) => joinedCommunities.includes(community.id))
                 .map((community) => (
-                  <Card key={community.id} className="hover:shadow-lg transition-shadow border-purple-200">
+                  <Card key={community.id} className="hover:shadow-lg transition-shadow border-border bg-card">
                     <CardContent className="p-4">
                       <div className="flex items-start space-x-3">
                         <div className={`w-12 h-12 bg-gradient-to-r ${community.image} rounded-xl flex-shrink-0`}></div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-2">
-                            <h3 className="font-bold text-gray-800 truncate">{community.name}</h3>
+                            <h3 className="font-bold text-foreground truncate">{community.name}</h3>
                             <Badge variant="secondary" className="bg-green-100 text-green-700">
                               Katıldın
                             </Badge>
                           </div>
-                          <p className="text-gray-600 text-sm mb-2 line-clamp-2">{community.description}</p>
+                          <p className="text-muted-foreground text-sm mb-2 line-clamp-2">{community.description}</p>
                           <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-500">{community.members} üye</span>
+                            <span className="text-muted-foreground">{community.members} üye</span>
                             <div className="flex items-center space-x-2">
-                              <TrendingUp className="w-4 h-4 text-purple-600" />
-                              <span className="text-purple-600 font-medium">{community.moodPercentage} Mood</span>
+                              <TrendingUp className="w-4 h-4 text-primary" />
+                              <span className="text-primary font-medium">{community.moodPercentage} Mood</span>
                             </div>
                           </div>
                         </div>
@@ -204,61 +204,57 @@ export function CommunityPage() {
           </div>
         )}
 
-        {/* Community Posts */}
-        {joinedCommunities.length > 0 && (
-          <div>
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Topluluk Gönderileri</h2>
-            <div className="bg-white rounded-xl border border-gray-200">
-              {communityPosts.map((post) => (
-                <PostCard key={post.id} post={post} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* All Communities */}
+        {/* Discover Communities */}
         <div>
-          <h2 className="text-lg font-bold text-gray-800 mb-4">Tüm Topluluklar</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <h2 className="text-lg font-bold text-foreground mb-4 flex items-center">
+            <Compass className="w-5 h-5 mr-2 text-primary" />
+            Keşfet
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredCommunities.map((community) => (
-              <Card key={community.id} className="hover:shadow-lg transition-shadow">
+              <Card key={community.id} className="hover:shadow-lg transition-shadow border-border bg-card">
                 <CardContent className="p-4">
-                  <div className="flex items-start space-x-3">
-                    <div className={`w-12 h-12 bg-gradient-to-r ${community.image} rounded-xl flex-shrink-0`}></div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-bold text-gray-800 truncate">{community.name}</h3>
-                        <Badge variant="outline">{community.category}</Badge>
-                      </div>
-                      <p className="text-gray-600 text-sm mb-3 line-clamp-2">{community.description}</p>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4 text-sm text-gray-500">
-                          <span>{community.members} üye</span>
-                          <div className="flex items-center space-x-1">
-                            <TrendingUp className="w-4 h-4 text-purple-600" />
-                            <span className="text-purple-600 font-medium">{community.moodPercentage}</span>
-                          </div>
-                        </div>
-                        <Button
-                          onClick={() => handleJoinCommunity(community.id)}
-                          variant={joinedCommunities.includes(community.id) ? "outline" : "default"}
-                          size="sm"
-                          className={
-                            joinedCommunities.includes(community.id)
-                              ? "border-purple-300 text-purple-600 hover:bg-purple-50"
-                              : "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-                          }
-                        >
-                          {joinedCommunities.includes(community.id) ? "Ayrıl" : "Katıl"}
-                        </Button>
+                  <div className="flex flex-col items-center text-center">
+                    <div className={`w-20 h-20 bg-gradient-to-r ${community.image} rounded-full mb-3`}></div>
+                    <h3 className="font-bold text-foreground mb-1 truncate w-full">{community.name}</h3>
+                    <Badge variant="outline" className="border-border text-muted-foreground mb-2">{community.category}</Badge>
+                    <p className="text-muted-foreground text-xs mb-3 line-clamp-2 h-8">{community.description}</p>
+                    <div className="flex items-center justify-between text-xs w-full mb-3">
+                      <span className="text-muted-foreground">{community.members} üye</span>
+                      <div className="flex items-center space-x-1">
+                        <TrendingUp className="w-3 h-3 text-primary" />
+                        <span className="text-primary font-medium">{community.moodPercentage}</span>
                       </div>
                     </div>
+                    <Button
+                      onClick={() => handleJoinCommunity(community.id)}
+                      variant={joinedCommunities.includes(community.id) ? "secondary" : "default"}
+                      className={`w-full ${
+                        joinedCommunities.includes(community.id)
+                          ? "bg-muted text-muted-foreground hover:bg-muted/80"
+                          : "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-primary-foreground"
+                      }`}
+                    >
+                      {joinedCommunities.includes(community.id) ? "Ayrıl" : "Katıl"}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
             ))}
           </div>
         </div>
+
+        {/* Community Posts Feed (Optional) */}
+        {joinedCommunities.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-lg font-bold text-foreground mb-4">Topluluk Akışı</h2>
+            <div className="space-y-4">
+              {communityPosts.map((post) => (
+                <PostCard key={post.id} post={post} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

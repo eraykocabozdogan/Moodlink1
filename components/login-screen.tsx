@@ -39,8 +39,8 @@ export function LoginScreen({ onLogin, onSwitchToSignup, onForgotPassword }: Log
             </h1>
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-gray-800">MoodLink'e Giriş Yap</h2>
-            <p className="text-sm text-gray-600 mt-1">For your Mood</p>
+            <h2 className="text-xl font-semibold text-white">MoodLink'e Giriş Yap</h2>
+            <p className="text-sm text-white mt-1">For your Mood</p>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -49,37 +49,37 @@ export function LoginScreen({ onLogin, onSwitchToSignup, onForgotPassword }: Log
             placeholder="Kullanıcı Adı"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
+            className="h-12 border-gray-300 focus:border-white focus:ring-white text-white placeholder:text-gray-300 bg-transparent"
           />
           <Input
             type="password"
             placeholder="Şifre"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
+            className="h-12 border-gray-300 focus:border-white focus:ring-white text-white placeholder:text-gray-300 bg-transparent"
           />
           <Button
             onClick={handleLogin}
-            className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium"
+            className="w-full h-12 bg-blue-500 hover:bg-blue-600 text-white font-medium"
           >
             Giriş Yap
           </Button>
           <Button
             onClick={handleGoogleLogin}
             variant="outline"
-            className="w-full h-12 border-gray-200 hover:bg-gray-50"
+            className="w-full h-12 border-blue-500 text-blue-500 bg-transparent hover:bg-blue-500/10 hover:text-blue-600"
           >
             Google ile Giriş Yap
           </Button>
-          <div className="text-center text-sm text-gray-600 space-x-2">
+          <div className="text-center text-sm text-white space-x-2">
             <button 
               onClick={onForgotPassword}
-              className="text-purple-600 hover:underline"
+              className="hover:underline"
             >
               Şifreni mi unuttun?
             </button>
             <span>|</span>
-            <button onClick={onSwitchToSignup} className="text-purple-600 hover:underline">
+            <button onClick={onSwitchToSignup} className="hover:underline">
               Yeni Hesap Oluştur
             </button>
           </div>

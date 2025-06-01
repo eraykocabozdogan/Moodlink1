@@ -15,6 +15,17 @@ import { MoodReportPage } from "@/components/pages/mood-report-page"
 import { ActivitiesPage } from "@/components/pages/activities-page"
 import { RightSidebar } from "@/components/right-sidebar"
 import { Menu } from "lucide-react"
+import { User } from "@/components/create-group-chat"
+
+interface ChatInfo {
+  id: number
+  type: "user" | "group"
+  title: string
+  handle?: string
+  members?: User[]
+  lastMessage: string
+  time: string
+}
 
 interface MainAppProps {
   user: any
@@ -24,10 +35,10 @@ interface MainAppProps {
 export function MainApp({ user, onLogout }: MainAppProps) {
   const [currentPage, setCurrentPage] = useState("home")
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [chatUser, setChatUser] = useState<string | null>(null)
+  const [chatDetails, setChatDetails] = useState<ChatInfo | null>(null)
   const [selectedPostId, setSelectedPostId] = useState<number | null>(null)
 
-    const handlePostClick = (postId: number) => {
+  const handlePostClick = (postId: number) => {
     setSelectedPostId(postId)
     setCurrentPage("home") 
   }
@@ -43,14 +54,14 @@ export function MainApp({ user, onLogout }: MainAppProps) {
       case "messages":
         return (
           <MessagesPage
-            onChatSelect={(username) => {
-              setChatUser(username)
+            onChatSelect={(chatInfo) => {
+              setChatDetails(chatInfo)
               setCurrentPage("chat")
             }}
           />
         )
       case "chat":
-        return <ChatPage chatUser={chatUser} onBack={() => setCurrentPage("messages")} />
+        return <ChatPage chatDetails={chatDetails} onBack={() => setCurrentPage("messages")} />
       case "community":
         return <CommunityPage />
       case "profile":

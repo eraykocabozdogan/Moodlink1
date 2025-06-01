@@ -11,12 +11,12 @@ export function RightSidebar({ currentPage }: RightSidebarProps) {
             <h3 className="font-bold text-lg mb-4 text-foreground">Trendler</h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-purple-600 font-medium">#invincible</span>
-                <span className="text-sm text-muted-foreground bg-purple-100 px-2 py-1 rounded-full">%71</span>
+                <span className="text-primary font-medium">#invincible</span>
+                <span className="text-sm text-muted-foreground bg-muted px-2 py-1 rounded-full">%71</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-purple-600 font-medium">#GSvsFB</span>
-                <span className="text-sm text-muted-foreground bg-purple-100 px-2 py-1 rounded-full">%92</span>
+                <span className="text-primary font-medium">#GSvsFB</span>
+                <span className="text-sm text-muted-foreground bg-muted px-2 py-1 rounded-full">%92</span>
               </div>
             </div>
           </div>
@@ -25,12 +25,12 @@ export function RightSidebar({ currentPage }: RightSidebarProps) {
             <h3 className="font-bold text-lg mb-4 text-foreground">Senin Moduna Göre</h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-pink-600 font-medium">#huzur</span>
-                <span className="text-sm text-muted-foreground bg-pink-100 px-2 py-1 rounded-full">%80</span>
+                <span className="text-pink-600 font-medium">#huzur</span> {/* Bu renk özel kalabilir */} 
+                <span className="text-sm text-muted-foreground bg-muted px-2 py-1 rounded-full">%80</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-pink-600 font-medium">#enerjik</span>
-                <span className="text-sm text-muted-foreground bg-pink-100 px-2 py-1 rounded-full">%70</span>
+                <span className="text-pink-600 font-medium">#enerjik</span> {/* Bu renk özel kalabilir */} 
+                <span className="text-sm text-muted-foreground bg-muted px-2 py-1 rounded-full">%70</span>
               </div>
             </div>
           </div>
