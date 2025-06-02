@@ -2,14 +2,12 @@
 
 import { ArrowLeft } from "lucide-react"
 import { useTheme } from "@/components/theme-provider"
-import { useLanguage } from "../language-provider"
 
 interface ThemeSettingsPageProps {
   onBack: () => void
 }
 
 export function ThemeSettingsPage({ onBack }: ThemeSettingsPageProps) {
-  const { t } = useLanguage()
   const { theme, setTheme } = useTheme()
 
   const themes = [
@@ -72,13 +70,13 @@ export function ThemeSettingsPage({ onBack }: ThemeSettingsPageProps) {
           <button onClick={onBack} className="p-2 hover:bg-muted rounded-full">
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-xl font-bold text-foreground">{t("title.theme")}</h1>
+          <h1 className="text-xl font-bold text-foreground">Tema Seçimi</h1>
           <div className="w-10"></div> {/* Sağ tarafı dengelemek için boş alan */}
         </div>
       </div>
 
       <div className="p-4">
-        <p className="text-muted-foreground mb-6">{t("options.theme")}:</p>
+        <p className="text-muted-foreground mb-6">Mevcut Temalar:</p>
         <div className="space-y-4">
           {themes.map((themeOption) => (
             <div

@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ArrowLeft, Send, Users, Info } from "lucide-react"
 import { User } from "@/components/create-group-chat"
-import { useLanguage } from "../language-provider"
 
 interface ChatInfo {
   id: number
@@ -33,7 +32,6 @@ interface Message {
 }
 
 export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
-  const { t } = useLanguage()
   const [message, setMessage] = useState("")
   const [showGroupInfo, setShowGroupInfo] = useState(false)
 
@@ -62,7 +60,7 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
       return [
         {
           id: 1,
-          text: `${chatDetails.title} ${t("chat.noMessages")}`,
+          text: `${chatDetails.title} grup sohbeti oluşturuldu.`,
           time: chatDetails.time || new Date().toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" }),
           sent: false,
           sender: "Sistem"
@@ -156,7 +154,7 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
           <div className="text-center flex-1">
             <h1 className="text-xl font-bold text-foreground">{chatDetails?.title}</h1>
             {chatDetails?.type === "group" && (
-              <p className="text-sm text-muted-foreground">{chatDetails.members?.length} {t("community.members")}</p>
+              <p className="text-sm text-muted-foreground">{chatDetails.members?.length} üye</p>
             )}
           </div>
           {/* Sağ: info butonu */}
@@ -178,7 +176,7 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
         <div className="flex-1 p-4 space-y-4 overflow-y-auto">
           {messages.length === 0 ? (
             <div className="text-center text-muted-foreground mt-8">
-              <p>{t("chat.noMessages")}</p>
+              <p>Henüz mesaj yok. İlk mesajı sen gönder! 👋</p>
             </div>
           ) : (
             messages.map((msg) => (
@@ -207,7 +205,7 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
         {/* Group info sidebar */}
         {showGroupInfo && chatDetails?.type === "group" && (
           <div className="w-64 border-l border-border p-4 overflow-y-auto bg-card">
-            <h3 className="font-bold text-lg mb-4 text-foreground">{t("community.members")}</h3>
+            <h3 className="font-bold text-lg mb-4 text-foreground">Grup Üyeleri</h3>
             <div className="space-y-3">
               {chatDetails.members?.map(member => (
                 <div key={member.id} className="flex items-center space-x-2">
@@ -228,7 +226,7 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
         <div className="flex space-x-2">
           <Input
             type="text"
-            placeholder={t("chat.typeMessage")}
+            placeholder="Mesaj yaz..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
@@ -244,7 +242,7 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
           </Button>
         </div>
         <div className="flex justify-between items-center mt-2">
-          <span className="text-xs text-muted-foreground">{t("general.ctrlEnterToSend")}</span>
+          <span className="text-xs text-muted-foreground">Enter ile gönder</span>
           {message.length > 0 && <span className="text-xs text-muted-foreground">{message.length}/500</span>}
         </div>
       </div>

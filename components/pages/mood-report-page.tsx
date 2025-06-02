@@ -5,10 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { TrendingUp, TrendingDown, Calendar, BarChart3, Heart, Brain } from "lucide-react"
-import { useLanguage } from "../language-provider"
 
 export function MoodReportPage() {
-  const { t } = useLanguage()
   const [selectedPeriod, setSelectedPeriod] = useState("week")
 
   // Örnek mood verileri
@@ -77,7 +75,7 @@ export function MoodReportPage() {
       {/* Header */}
       <div className="sticky top-0 bg-card/80 backdrop-blur-sm border-b border-border p-4">
         <div className="flex items-center justify-center">
-          <h1 className="text-xl font-bold text-foreground">{t("title.moodReport")}</h1>
+          <h1 className="text-xl font-bold text-foreground">Ruh Hali Raporu</h1>
         </div>
       </div>
 
@@ -90,7 +88,7 @@ export function MoodReportPage() {
             className={`${selectedPeriod === "week" ? "bg-gradient-to-r from-purple-500 to-pink-500 text-primary-foreground" : "text-foreground border-border hover:bg-muted"}`}
           >
             <Calendar className="w-4 h-4 mr-2" />
-            {t("activities.upcoming")}
+            Son Hafta
           </Button>
           <Button
             onClick={() => setSelectedPeriod("month")}
@@ -98,7 +96,7 @@ export function MoodReportPage() {
             className={`${selectedPeriod === "month" ? "bg-gradient-to-r from-purple-500 to-pink-500 text-primary-foreground" : "text-foreground border-border hover:bg-muted"}`}
           >
             <BarChart3 className="w-4 h-4 mr-2" />
-            {t("activities.all")}
+            Son Ay
           </Button>
         </div>
 
@@ -107,7 +105,7 @@ export function MoodReportPage() {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2 text-foreground">
               <BarChart3 className="w-5 h-5 text-primary" />
-              <span>{t("profile.mood")}</span>
+              <span>Mood Grafiği</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -133,11 +131,11 @@ export function MoodReportPage() {
             <div className="flex justify-center space-x-6 mt-4">
               <div className="flex items-center space-x-2">
                 <div className="w-4 h-4 bg-gradient-to-r from-purple-400 to-pink-500 rounded"></div>
-                <span className="text-sm text-muted-foreground">{t("profile.mood")}</span>
+                <span className="text-sm text-muted-foreground">Mood</span>
               </div>
               <div className="flex items-center space-x-2">
                 <div className="w-4 h-4 bg-gradient-to-r from-blue-400 to-blue-600 rounded"></div>
-                <span className="text-sm text-muted-foreground">{t("profile.mood")}</span>
+                <span className="text-sm text-muted-foreground">Enerji</span>
               </div>
             </div>
           </CardContent>
@@ -151,7 +149,7 @@ export function MoodReportPage() {
               <Card key={index} className="bg-card border-border">
                 <CardContent className="p-4">
                   <div className="flex items-center space-x-3">
-                    <Icon className={`w-8 h-8 ${insight.color}`} />
+                    <Icon className={`w-8 h-8 ${insight.color}`} /> {/* Renkler özel kalabilir */} 
                     <div>
                       <p className="font-bold text-lg text-foreground">{insight.value}</p>
                       <p className="text-sm font-medium text-foreground">{insight.title}</p>
@@ -167,11 +165,11 @@ export function MoodReportPage() {
         {/* Detailed Report */}
         <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="text-foreground">{t("profile.mood")}</CardTitle>
+            <CardTitle className="text-foreground">Detaylı Analiz</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <h4 className="font-semibold text-foreground mb-2">{t("profile.mood")}</h4>
+              <h4 className="font-semibold text-foreground mb-2">Mood Trendleri</h4>
               <p className="text-muted-foreground text-sm">
                 Bu {selectedPeriod === "week" ? "hafta" : "ay"} boyunca mood seviyeniz genel olarak{" "}
                 {avgMood >= 7 ? "yüksek" : avgMood >= 5 ? "orta" : "düşük"} seviyede kalmış. En yüksek mood seviyeniz
@@ -180,7 +178,7 @@ export function MoodReportPage() {
             </div>
 
             <div>
-              <h4 className="font-semibold text-foreground mb-2">{t("profile.mood")}</h4>
+              <h4 className="font-semibold text-foreground mb-2">Enerji Analizi</h4>
               <p className="text-muted-foreground text-sm">
                 Enerji seviyeniz mood seviyenizle paralel bir seyir izlemiş. Özellikle sosyal aktivitelerin yoğun olduğu
                 günlerde enerji seviyenizde artış gözlemlenmiş.
@@ -192,7 +190,7 @@ export function MoodReportPage() {
         {/* Recommendations */}
         <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="text-foreground">{t("profile.mood")}</CardTitle>
+            <CardTitle className="text-foreground">Öneriler</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">

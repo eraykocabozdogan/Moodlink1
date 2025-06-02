@@ -7,7 +7,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { PostCard } from "@/components/post-card"
 import useEmblaCarousel from 'embla-carousel-react' // Added embla-carousel-react
 import { ImagePlus } from 'lucide-react' // Added ImagePlus icon
-import { useLanguage } from "@/components/language-provider"
 
 // Define a type for the Post structure
 interface Post {
@@ -25,7 +24,6 @@ interface HomePageProps {
 }
 
 export function HomePage({ onUserClick }: HomePageProps = {}) {
-  const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState("forYou")
   const [postContent, setPostContent] = useState("")
   const [posts, setPosts] = useState<Post[]>([
@@ -141,7 +139,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
       {/* Header */}
       <div className="sticky top-0 bg-card/80 backdrop-blur-sm border-b border-border p-4">
         <div className="flex items-center justify-center">
-          <h1 className="text-xl font-bold text-foreground">{t("title.home")}</h1>
+          <h1 className="text-xl font-bold text-foreground">Ana Sayfa</h1>
         </div>
       </div>
 
@@ -151,7 +149,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
           <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex-shrink-0"></div>
           <div className="flex-1">
             <Textarea
-              placeholder={t("general.whatsHappening")}
+              placeholder="Neler oluyor?"
               value={postContent}
               onChange={(e) => setPostContent(e.target.value)}
               onKeyDown={handleKeyPress}
@@ -164,7 +162,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
               <div className="mt-2">
                 <img src={selectedImage} alt="Preview" className="rounded-lg max-h-40 object-contain" />
                 <Button variant="ghost" size="sm" onClick={() => setSelectedImage(null)} className="mt-1 text-destructive hover:text-destructive/90">
-                  {t("general.remove")}
+                  Kaldır
                 </Button>
               </div>
             )}
@@ -181,13 +179,13 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
                 </span>
               </div>
               <div className="flex space-x-2 items-center"> {/* Changed to items-center for vertical alignment */}
-                <span className="text-xs text-muted-foreground">{t("general.ctrlEnterToSend")}</span>
+                <span className="text-xs text-muted-foreground">Ctrl+Enter ile gönder</span>
                 <Button
                   onClick={handlePostSubmit}
                   className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-primary-foreground px-6"
                   disabled={(!postContent.trim() && !selectedImage) || postContent.length > 280} // Updated disabled condition
                 >
-                  {t("general.send")}
+                  Gönder
                 </Button>
               </div>
             </div>
@@ -205,7 +203,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          {t("home.forYou")}
+          Sizin İçin
         </button>
         <button
           onClick={() => setActiveTab("following")}
@@ -215,7 +213,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          {t("home.following")}
+          Takip Edilenler
         </button>
       </div>
 
