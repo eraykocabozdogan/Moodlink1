@@ -1,10 +1,14 @@
 "use client"
 
+import { useLanguage } from "../language-provider"
+
 interface NotificationsPageProps {
   onPostClick?: (postId: number) => void
 }
 
 export function NotificationsPage({ onPostClick }: NotificationsPageProps) {
+  const { t } = useLanguage()
+
   const notifications = [
     {
       id: 1,
@@ -43,7 +47,7 @@ export function NotificationsPage({ onPostClick }: NotificationsPageProps) {
       {/* Header */}
       <div className="sticky top-0 bg-background/80 backdrop-blur-sm border-b border-border p-4">
         <div className="flex items-center justify-center">
-          <h1 className="text-xl font-bold text-foreground">Bildirimler</h1>
+          <h1 className="text-xl font-bold text-foreground">{t("title.notifications")}</h1>
         </div>
       </div>
 

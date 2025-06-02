@@ -3,12 +3,14 @@
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Search, Users } from "lucide-react"
+import { useLanguage } from "../language-provider"
 
 interface SearchPageProps {
   onUserClick?: (user: any) => void;
 }
 
 export function SearchPage({ onUserClick }: SearchPageProps = {}) {
+  const { t } = useLanguage()
   const [searchQuery, setSearchQuery] = useState("")
 
   const trends = [
@@ -53,13 +55,13 @@ export function SearchPage({ onUserClick }: SearchPageProps = {}) {
       {/* Header */}
       <div className="sticky top-0 bg-card/80 backdrop-blur-sm border-b border-border p-4">
         <div className="flex items-center justify-center mb-4">
-          <h1 className="text-xl font-bold text-foreground">Arama</h1>
+          <h1 className="text-xl font-bold text-foreground">{t("title.search")}</h1>
         </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
           <Input
             type="text"
-            placeholder="Kullanıcı, gönderi, etiket ara..."
+            placeholder={t("search.placeholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 h-12 bg-muted border-border focus:bg-card focus:ring-2 focus:ring-primary"
@@ -70,7 +72,7 @@ export function SearchPage({ onUserClick }: SearchPageProps = {}) {
       <div className="p-4 space-y-6">
         {/* Trends */}
         <div className="bg-card rounded-xl p-4 shadow-sm border border-border">
-          <h3 className="font-bold text-lg mb-4 text-foreground">Trendler</h3>
+          <h3 className="font-bold text-lg mb-4 text-foreground">{t("search.trending")}</h3>
           <div className="space-y-3">
             {trends.map((trend, index) => (
               <div
@@ -86,7 +88,7 @@ export function SearchPage({ onUserClick }: SearchPageProps = {}) {
 
         {/* Mood Trends */}
         <div className="bg-card rounded-xl p-4 shadow-sm border border-border">
-          <h3 className="font-bold text-lg mb-4 text-foreground">Senin Moduna Göre</h3>
+          <h3 className="font-bold text-lg mb-4 text-foreground">{t("search.suggestions")}</h3>
           <div className="space-y-3">
             {moodTrends.map((trend, index) => (
               <div
@@ -102,7 +104,7 @@ export function SearchPage({ onUserClick }: SearchPageProps = {}) {
         
         {/* Suggested Users */}
         <div className="bg-card rounded-xl p-4 shadow-sm border border-border">
-          <h3 className="font-bold text-lg mb-4 text-foreground">Keşfet: Kullanıcılar</h3>
+          <h3 className="font-bold text-lg mb-4 text-foreground">{t("search.users")}</h3>
           <div className="space-y-4">
             {suggestedUsers.map((user, index) => (
               <div
@@ -120,9 +122,9 @@ export function SearchPage({ onUserClick }: SearchPageProps = {}) {
                   </div>
                   <p className="text-sm text-muted-foreground truncate">{user.bio}</p>
                   <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
-                    <span><strong>{user.followers}</strong> takipçi</span>
+                    <span><strong>{user.followers}</strong> {t("profile.followers")}</span>
                     <span className="inline-block w-1 h-1 rounded-full bg-muted-foreground"></span>
-                    <span><strong className="text-primary">{Math.floor(Math.random() * 30) + 70}%</strong> uyum</span>
+                    <span><strong className="text-primary">{Math.floor(Math.random() * 30) + 70}%</strong> {t("profile.compatibility")}</span>
                   </div>
                 </div>
               </div>

@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, Clock, MapPin, Users, Plus, X } from "lucide-react"
+import { useLanguage } from "../language-provider"
 
 export function ActivitiesPage() {
+  const { t } = useLanguage()
   const [filter, setFilter] = useState("all")
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [joinedActivities, setJoinedActivities] = useState<number[]>([])
@@ -144,26 +146,26 @@ export function ActivitiesPage() {
       {/* Header */}
       <div className="sticky top-0 bg-background/80 backdrop-blur-sm border-b border-border p-4">
         <div className="flex items-center justify-between mb-4">
-          <div className="w-[120px]"></div> {/* Sol tarafı dengelemek için boş alan */}
-          <h1 className="text-xl font-bold text-foreground">Etkinlikler</h1>
+          <div className="w-[120px]"></div>
+          <h1 className="text-xl font-bold text-foreground">{t("title.activities")}</h1>
           <Button
             onClick={() => setShowCreateForm(true)}
             className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Etkinlik Oluştur
+            {t("activities.create")}
           </Button>
         </div>
 
         {/* Filters */}
         <div className="flex space-x-2 overflow-x-auto">
           {[
-            { id: "all", label: "Tümü" },
-            { id: "upcoming", label: "Yaklaşan" },
-            { id: "completed", label: "Tamamlanan" },
-            { id: "spor", label: "Spor" },
-            { id: "kultur", label: "Kültür" },
-            { id: "eglence", label: "Eğlence" },
+            { id: "all", label: t("activities.all") },
+            { id: "upcoming", label: t("activities.upcoming") },
+            { id: "completed", label: t("activities.completed") },
+            { id: "spor", label: t("activities.sports") },
+            { id: "kultur", label: t("activities.culture") },
+            { id: "eglence", label: t("activities.entertainment") },
           ].map((filterOption) => (
             <Button
               key={filterOption.id}
@@ -188,7 +190,7 @@ export function ActivitiesPage() {
           <Card className="border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50">
             <CardHeader>
               <div className="flex justify-between items-center">
-                <CardTitle>Yeni Etkinlik Oluştur</CardTitle>
+                <CardTitle>{t("activities.create")}</CardTitle>
                 <Button variant="ghost" size="sm" onClick={() => setShowCreateForm(false)}>
                   <X className="w-4 h-4" />
                 </Button>
@@ -247,7 +249,7 @@ export function ActivitiesPage() {
                 onClick={handleCreateActivity}
                 className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
               >
-                Etkinlik Oluştur
+                {t("general.create")}
               </Button>
             </CardContent>
           </Card>
@@ -259,7 +261,7 @@ export function ActivitiesPage() {
               <div className="flex justify-between items-start">
                 <CardTitle className="text-lg">{activity.title}</CardTitle>
                 <Badge variant={activity.status === "upcoming" ? "default" : "secondary"}>
-                  {activity.status === "upcoming" ? "Yaklaşan" : "Tamamlandı"}
+                  {activity.status === "upcoming" ? t("activities.upcoming") : t("activities.completed")}
                 </Badge>
               </div>
             </CardHeader>
@@ -284,7 +286,9 @@ export function ActivitiesPage() {
                   <div className="flex items-center space-x-3">
                     <div className="flex items-center space-x-1 text-sm text-muted-foreground">
                       <Users className="w-4 h-4" />
-                      <span>{activity.participants} katılımcı</span>
+                      <span>
+                        {activity.participants} {t("community.members")}
+                      </span>
                     </div>
                     <Badge className={getMoodColor(activity.mood)}>{activity.mood}</Badge>
                   </div>
@@ -299,7 +303,7 @@ export function ActivitiesPage() {
                         : "border-purple-300 text-purple-600 hover:bg-purple-50"
                     }
                   >
-                    {joinedActivities.includes(activity.id) ? "Ayrıl" : "Katıl"}
+                    {joinedActivities.includes(activity.id) ? t("general.leave") : t("general.join")}
                   </Button>
                 </div>
               </div>
@@ -309,7 +313,7 @@ export function ActivitiesPage() {
 
         {filteredActivities.length === 0 && (
           <div className="text-center py-8">
-            <p className="text-muted-foreground">Bu kategoride etkinlik bulunamadı.</p>
+            <p className="text-muted-foreground">{t("activities.all")}</p>
           </div>
         )}
       </div>

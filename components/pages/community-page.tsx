@@ -7,8 +7,10 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Users, TrendingUp, Search, Compass } from "lucide-react"
 import { PostCard } from "@/components/post-card"
+import { useLanguage } from "../language-provider"
 
 export function CommunityPage() {
+  const { t } = useLanguage()
   const [searchQuery, setSearchQuery] = useState("")
   const [joinedCommunities, setJoinedCommunities] = useState<string[]>(["fenerbahce"])
   const [showCreateForm, setShowCreateForm] = useState(false)
@@ -117,14 +119,14 @@ export function CommunityPage() {
       {/* Header */}
       <div className="sticky top-0 bg-card/80 backdrop-blur-sm border-b border-border p-4">
         <div className="flex items-center justify-between mb-4">
-          <div className="w-[120px]"></div> {/* Sol tarafı dengelemek için boş alan */}
-          <h1 className="text-xl font-bold text-foreground">Topluluk</h1>
+          <div className="w-[120px]"></div>
+          <h1 className="text-xl font-bold text-foreground">{t("title.community")}</h1>
           <Button
             onClick={() => setShowCreateForm(!showCreateForm)}
             className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-primary-foreground"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Topluluk Oluştur
+            {t("community.create")}
           </Button>
         </div>
 
@@ -133,7 +135,7 @@ export function CommunityPage() {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
           <Input
             type="text"
-            placeholder="Topluluk ara..."
+            placeholder={t("community.search")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 h-12 bg-muted border-border focus:bg-card focus:ring-2 focus:ring-primary"
@@ -146,11 +148,11 @@ export function CommunityPage() {
         {showCreateForm && (
           <Card className="border-primary/20 bg-card">
             <CardContent className="p-4">
-              <h3 className="font-bold text-lg mb-3 text-foreground">Yeni Topluluk Oluştur</h3>
+              <h3 className="font-bold text-lg mb-3 text-foreground">{t("community.create")}</h3>
               <div className="flex space-x-3">
                 <Input
                   type="text"
-                  placeholder="Topluluk adı..."
+                  placeholder={t("community.search")}
                   value={newCommunityName}
                   onChange={(e) => setNewCommunityName(e.target.value)}
                   className="flex-1 bg-background border-border text-foreground"
@@ -159,7 +161,7 @@ export function CommunityPage() {
                   onClick={handleCreateCommunity}
                   className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-primary-foreground"
                 >
-                  Oluştur
+                  {t("general.create")}
                 </Button>
               </div>
             </CardContent>
@@ -171,7 +173,7 @@ export function CommunityPage() {
           <div>
             <h2 className="text-lg font-bold text-foreground mb-4 flex items-center">
               <Users className="w-5 h-5 mr-2 text-primary" />
-              Katıldığın Topluluklar
+              {t("community.joined")}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               {communities
@@ -185,15 +187,15 @@ export function CommunityPage() {
                           <div className="flex items-center justify-between mb-2">
                             <h3 className="font-bold text-foreground truncate">{community.name}</h3>
                             <Badge variant="secondary" className="bg-green-100 text-green-700">
-                              Katıldın
+                              {t("general.join")}
                             </Badge>
                           </div>
                           <p className="text-muted-foreground text-sm mb-2 line-clamp-2">{community.description}</p>
                           <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">{community.members} üye</span>
+                            <span className="text-muted-foreground">{community.members} {t("community.members")}</span>
                             <div className="flex items-center space-x-2">
                               <TrendingUp className="w-4 h-4 text-primary" />
-                              <span className="text-primary font-medium">{community.moodPercentage} Mood</span>
+                              <span className="text-primary font-medium">{community.moodPercentage} {t("profile.mood")}</span>
                             </div>
                           </div>
                         </div>
@@ -209,7 +211,7 @@ export function CommunityPage() {
         <div>
           <h2 className="text-lg font-bold text-foreground mb-4 flex items-center">
             <Compass className="w-5 h-5 mr-2 text-primary" />
-            Keşfet
+            {t("community.discover")}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredCommunities.map((community) => (
@@ -221,7 +223,7 @@ export function CommunityPage() {
                     <Badge variant="outline" className="border-border text-muted-foreground mb-2">{community.category}</Badge>
                     <p className="text-muted-foreground text-xs mb-3 line-clamp-2 h-8">{community.description}</p>
                     <div className="flex items-center justify-between text-xs w-full mb-3">
-                      <span className="text-muted-foreground">{community.members} üye</span>
+                      <span className="text-muted-foreground">{community.members} {t("community.members")}</span>
                       <div className="flex items-center space-x-1">
                         <TrendingUp className="w-3 h-3 text-primary" />
                         <span className="text-primary font-medium">{community.moodPercentage}</span>
@@ -236,7 +238,7 @@ export function CommunityPage() {
                           : "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-primary-foreground"
                       }`}
                     >
-                      {joinedCommunities.includes(community.id) ? "Ayrıl" : "Katıl"}
+                      {joinedCommunities.includes(community.id) ? t("general.leave") : t("general.join")}
                     </Button>
                   </div>
                 </CardContent>
@@ -248,7 +250,7 @@ export function CommunityPage() {
         {/* Community Posts Feed (Optional) */}
         {joinedCommunities.length > 0 && (
           <div className="mt-8">
-            <h2 className="text-lg font-bold text-foreground mb-4">Topluluk Akışı</h2>
+            <h2 className="text-lg font-bold text-foreground mb-4">{t("title.community")}</h2>
             <div className="space-y-4">
               {communityPosts.map((post) => (
                 <PostCard key={post.id} post={post} />

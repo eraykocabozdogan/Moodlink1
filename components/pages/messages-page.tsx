@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Users, Plus } from "lucide-react"
 import { CreateGroupChat, User } from "@/components/create-group-chat"
+import { useLanguage } from "../language-provider"
 
 interface ChatInfo {
   id: number
@@ -21,6 +22,7 @@ interface MessagesPageProps {
 }
 
 export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
+  const { t } = useLanguage()
   const [showCreateGroupChat, setShowCreateGroupChat] = useState(false)
   
   // Sample user list for group creation
@@ -58,14 +60,14 @@ export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
       <div className="sticky top-0 bg-card/80 backdrop-blur-sm border-b border-border p-4">
         <div className="flex justify-between items-center">
           <div className="w-24"></div>
-          <h1 className="text-xl font-bold text-foreground">Direkt Mesajlar</h1>
+          <h1 className="text-xl font-bold text-foreground">{t("title.messages")}</h1>
           <Button 
             onClick={() => setShowCreateGroupChat(true)}
             className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
             size="sm"
           >
             <Users className="w-4 h-4 mr-2" />
-            Grup Oluştur
+            {t("general.create")}
           </Button>
         </div>
       </div>
@@ -114,7 +116,7 @@ export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
                       <p className="text-muted-foreground text-sm">{conversation.handle}</p>
                     )}
                     {conversation.type === "group" && conversation.members && (
-                      <p className="text-muted-foreground text-sm">{conversation.members.length} üye</p>
+                      <p className="text-muted-foreground text-sm">{conversation.members.length} {t("community.members")}</p>
                     )}
                   </div>
                   <span className="text-muted-foreground text-xs">{conversation.time}</span>
@@ -137,7 +139,7 @@ export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
               type: "group",
               title: groupName,
               members: members,
-              lastMessage: "Grup oluşturuldu",
+              lastMessage: t("chat.noMessages"),
               time: new Date().toLocaleTimeString("tr-TR", {
                 hour: "2-digit",
                 minute: "2-digit",
