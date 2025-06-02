@@ -19,7 +19,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="tr">
-      <body className={inter.className}>
+      <body className={`${inter.className} bg-background`}>
         <ThemeProvider defaultTheme="default" storageKey="moodlink-theme">
           {children}
         </ThemeProvider>

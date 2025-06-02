@@ -135,10 +135,10 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
   return (
     <div className="max-w-2xl mx-auto h-screen flex flex-col">
       {/* Header */}
-      <div className="sticky top-0 bg-white/80 backdrop-blur-sm border-b border-gray-200 p-4">
+      <div className="sticky top-0 bg-card/80 backdrop-blur-sm border-b border-border p-4">
         <div className="flex items-center space-x-3">
-          <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-            <ArrowLeft className="w-5 h-5" />
+          <button onClick={onBack} className="p-2 hover:bg-muted rounded-full transition-colors">
+            <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>
           
           {chatDetails?.type === "user" ? (
@@ -150,18 +150,18 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
           )}
           
           <div className="flex-1">
-            <h1 className="text-xl font-bold text-gray-800">{chatDetails?.title}</h1>
+            <h1 className="text-xl font-bold text-foreground">{chatDetails?.title}</h1>
             {chatDetails?.type === "group" && (
-              <p className="text-sm text-gray-600">{chatDetails.members?.length} üye</p>
+              <p className="text-sm text-muted-foreground">{chatDetails.members?.length} üye</p>
             )}
           </div>
           
           {chatDetails?.type === "group" && (
             <button 
               onClick={toggleGroupInfo} 
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-2 hover:bg-muted rounded-full transition-colors"
             >
-              <Info className="w-5 h-5" />
+              <Info className="w-5 h-5 text-foreground" />
             </button>
           )}
         </div>
@@ -171,7 +171,7 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
         {/* Messages */}
         <div className="flex-1 p-4 space-y-4 overflow-y-auto">
           {messages.length === 0 ? (
-            <div className="text-center text-gray-500 mt-8">
+            <div className="text-center text-muted-foreground mt-8">
               <p>Henüz mesaj yok. İlk mesajı sen gönder! 👋</p>
             </div>
           ) : (
@@ -181,7 +181,7 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
                   className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
                     msg.sent 
                       ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white" 
-                      : "bg-gray-200 text-gray-800"
+                      : "bg-muted text-foreground"
                   }`}
                 >
                   {/* Show sender name for group chats */}
@@ -191,7 +191,7 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
                     </p>
                   )}
                   <p className="break-words">{msg.text}</p>
-                  <p className={`text-xs mt-1 ${msg.sent ? "text-purple-100" : "text-gray-500"}`}>{msg.time}</p>
+                  <p className={`text-xs mt-1 ${msg.sent ? "text-purple-100" : "text-muted-foreground"}`}>{msg.time}</p>
                 </div>
               </div>
             ))
@@ -200,15 +200,15 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
 
         {/* Group info sidebar */}
         {showGroupInfo && chatDetails?.type === "group" && (
-          <div className="w-64 border-l border-gray-200 p-4 overflow-y-auto">
-            <h3 className="font-bold text-lg mb-4">Grup Üyeleri</h3>
+          <div className="w-64 border-l border-border p-4 overflow-y-auto bg-card">
+            <h3 className="font-bold text-lg mb-4 text-foreground">Grup Üyeleri</h3>
             <div className="space-y-3">
               {chatDetails.members?.map(member => (
                 <div key={member.id} className="flex items-center space-x-2">
                   <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-400 rounded-full"></div>
                   <div>
-                    <p className="text-sm font-medium">{member.username}</p>
-                    <p className="text-xs text-gray-500">{member.handle}</p>
+                    <p className="text-sm font-medium text-foreground">{member.username}</p>
+                    <p className="text-xs text-muted-foreground">{member.handle}</p>
                   </div>
                 </div>
               ))}
@@ -218,7 +218,7 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
       </div>
 
       {/* Message Input */}
-      <div className="border-t border-gray-200 p-4 bg-white">
+      <div className="border-t border-border p-4 bg-card">
         <div className="flex space-x-2">
           <Input
             type="text"
@@ -226,7 +226,7 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            className="flex-1"
+            className="flex-1 bg-background border-border text-foreground"
             maxLength={500}
           />
           <Button
@@ -238,8 +238,8 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
           </Button>
         </div>
         <div className="flex justify-between items-center mt-2">
-          <span className="text-xs text-gray-400">Enter ile gönder</span>
-          {message.length > 0 && <span className="text-xs text-gray-500">{message.length}/500</span>}
+          <span className="text-xs text-muted-foreground">Enter ile gönder</span>
+          {message.length > 0 && <span className="text-xs text-muted-foreground">{message.length}/500</span>}
         </div>
       </div>
     </div>
