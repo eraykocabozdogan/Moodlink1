@@ -117,6 +117,7 @@ export function CommunityPage() {
       {/* Header */}
       <div className="sticky top-0 bg-card/80 backdrop-blur-sm border-b border-border p-4">
         <div className="flex items-center justify-between mb-4">
+          <div className="w-[120px]"></div> {/* Sol tarafı dengelemek için boş alan */}
           <h1 className="text-xl font-bold text-foreground">Topluluk</h1>
           <Button
             onClick={() => setShowCreateForm(!showCreateForm)}

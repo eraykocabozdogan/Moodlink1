@@ -19,7 +19,11 @@ interface Post {
   moodCompatibility: string;
 }
 
-export function HomePage() {
+interface HomePageProps {
+  onUserClick?: (user: any) => void;
+}
+
+export function HomePage({ onUserClick }: HomePageProps = {}) {
   const [activeTab, setActiveTab] = useState("forYou")
   const [postContent, setPostContent] = useState("")
   const [posts, setPosts] = useState<Post[]>([
@@ -134,7 +138,9 @@ export function HomePage() {
     <div className="max-w-2xl mx-auto">
       {/* Header */}
       <div className="sticky top-0 bg-card/80 backdrop-blur-sm border-b border-border p-4">
-        <h1 className="text-xl font-bold text-foreground">Ana Sayfa</h1>
+        <div className="flex items-center justify-center">
+          <h1 className="text-xl font-bold text-foreground">Ana Sayfa</h1>
+        </div>
       </div>
 
       {/* Create Post */}
@@ -217,13 +223,13 @@ export function HomePage() {
           {/* "For You" Tab Content */}
           <div className="min-w-0 flex-shrink-0 flex-grow-0 basis-full bg-background">
             {posts.map((post) => (
-              <PostCard key={post.id} post={post} />
+              <PostCard key={post.id} post={post} onUserClick={onUserClick} />
             ))}
           </div>
           {/* "Following" Tab Content */}
           <div className="min-w-0 flex-shrink-0 flex-grow-0 basis-full bg-background">
             {followingPosts.map((post) => (
-              <PostCard key={post.id} post={post} />
+              <PostCard key={post.id} post={post} onUserClick={onUserClick} />
             ))}
           </div>
         </div>

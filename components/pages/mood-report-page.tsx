@@ -74,7 +74,9 @@ export function MoodReportPage() {
     <div className="max-w-4xl mx-auto">
       {/* Header */}
       <div className="sticky top-0 bg-card/80 backdrop-blur-sm border-b border-border p-4">
-        <h1 className="text-xl font-bold text-foreground">Ruh Hali Raporu</h1>
+        <div className="flex items-center justify-center">
+          <h1 className="text-xl font-bold text-foreground">Ruh Hali Raporu</h1>
+        </div>
       </div>
 
       <div className="p-4 space-y-6">

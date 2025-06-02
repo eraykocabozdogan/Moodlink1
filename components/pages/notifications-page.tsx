@@ -42,7 +42,9 @@ export function NotificationsPage({ onPostClick }: NotificationsPageProps) {
     <div className="max-w-2xl mx-auto">
       {/* Header */}
       <div className="sticky top-0 bg-background/80 backdrop-blur-sm border-b border-border p-4">
-        <h1 className="text-xl font-bold text-foreground">Bildirimler</h1>
+        <div className="flex items-center justify-center">
+          <h1 className="text-xl font-bold text-foreground">Bildirimler</h1>
+        </div>
       </div>
 
       <div className="bg-card">

@@ -15,9 +15,10 @@ interface PostCardProps {
     moodCompatibility: string
     community?: string
   }
+  onUserClick?: (user: any) => void
 }
 
-export function PostCard({ post }: PostCardProps) {
+export function PostCard({ post, onUserClick }: PostCardProps) {
   const [liked, setLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(Math.floor(Math.random() * 50) + 10)
   const [saved, setSaved] = useState(false)
@@ -72,7 +73,23 @@ export function PostCard({ post }: PostCardProps) {
         <div className="flex-1 min-w-0">
           {/* Header */}
           <div className="flex items-center space-x-2 mb-2">
-            <span className="font-bold text-foreground">{post.username}</span>
+            <span 
+              className="font-bold text-foreground cursor-pointer hover:underline"
+              onClick={() => onUserClick && onUserClick({
+                username: post.username,
+                handle: post.handle?.replace('@', '') || 'kullanici',
+                followers: (Math.floor(Math.random() * 500) + 100).toString(),
+                following: (Math.floor(Math.random() * 200) + 50).toString(),
+                bio: `${post.username} isimli kullanıcının profili. MoodLink kullanıcısı.`,
+                moods: [
+                  { name: "Enerjik", percentage: Math.floor(Math.random() * 30 + 50) + "%" },
+                  { name: "Mutlu", percentage: Math.floor(Math.random() * 20 + 60) + "%" },
+                ],
+                badges: ["🏆", "🎯"],
+              })}
+            >
+              {post.username}
+            </span>
             {post.handle && <span className="text-muted-foreground text-sm">{post.handle}</span>}
             {post.community && (
               <>
@@ -173,7 +190,23 @@ export function PostCard({ post }: PostCardProps) {
                   <div className="w-6 h-6 bg-gradient-to-r from-green-400 to-blue-400 rounded-full flex-shrink-0"></div>
                   <div className="flex-1">
                     <div className="bg-muted p-2 rounded-lg">
-                      <span className="font-medium text-sm text-foreground">{commentItem.username}</span>
+                      <span 
+                        className="font-medium text-sm text-foreground cursor-pointer hover:underline"
+                        onClick={() => onUserClick && onUserClick({
+                          username: commentItem.username,
+                          handle: commentItem.username.toLowerCase().replace(' ', '_'),
+                          followers: (Math.floor(Math.random() * 300) + 50).toString(),
+                          following: (Math.floor(Math.random() * 100) + 20).toString(),
+                          bio: `${commentItem.username} isimli kullanıcının profili. MoodLink kullanıcısı.`,
+                          moods: [
+                            { name: "Sakin", percentage: Math.floor(Math.random() * 30 + 50) + "%" },
+                            { name: "Meraklı", percentage: Math.floor(Math.random() * 20 + 60) + "%" },
+                          ],
+                          badges: ["🌟"],
+                        })}
+                      >
+                        {commentItem.username}
+                      </span>
                       <p className="text-sm text-foreground">{commentItem.text}</p>
                     </div>
                     <span className="text-xs text-muted-foreground ml-2">{commentItem.time}</span>

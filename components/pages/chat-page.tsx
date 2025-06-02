@@ -136,34 +136,38 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
     <div className="max-w-2xl mx-auto h-screen flex flex-col">
       {/* Header */}
       <div className="sticky top-0 bg-card/80 backdrop-blur-sm border-b border-border p-4">
-        <div className="flex items-center space-x-3">
-          <button onClick={onBack} className="p-2 hover:bg-muted rounded-full transition-colors">
-            <ArrowLeft className="w-5 h-5 text-foreground" />
-          </button>
-          
-          {chatDetails?.type === "user" ? (
-            <div className="w-10 h-10 bg-gradient-to-r from-green-400 to-blue-400 rounded-full"></div>
-          ) : (
-            <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
-              <Users className="w-5 h-5 text-white" />
-            </div>
-          )}
-          
-          <div className="flex-1">
+        <div className="flex items-center justify-between">
+          {/* Sol: avatar ve geri butonu */}
+          <div className="flex items-center">
+            <button onClick={onBack} className="p-2 hover:bg-muted rounded-full transition-colors mr-2">
+              <ArrowLeft className="w-5 h-5 text-foreground" />
+            </button>
+            {chatDetails?.type === "user" ? (
+              <div className="w-10 h-10 bg-gradient-to-r from-green-400 to-blue-400 rounded-full"></div>
+            ) : (
+              <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
+                <Users className="w-5 h-5 text-white" />
+              </div>
+            )}
+          </div>
+          {/* Orta: başlık */}
+          <div className="text-center flex-1">
             <h1 className="text-xl font-bold text-foreground">{chatDetails?.title}</h1>
             {chatDetails?.type === "group" && (
               <p className="text-sm text-muted-foreground">{chatDetails.members?.length} üye</p>
             )}
           </div>
-          
-          {chatDetails?.type === "group" && (
-            <button 
-              onClick={toggleGroupInfo} 
-              className="p-2 hover:bg-muted rounded-full transition-colors"
-            >
-              <Info className="w-5 h-5 text-foreground" />
-            </button>
-          )}
+          {/* Sağ: info butonu */}
+          <div className="flex items-center justify-end min-w-[40px]">
+            {chatDetails?.type === "group" && (
+              <button 
+                onClick={toggleGroupInfo} 
+                className="p-2 hover:bg-muted rounded-full transition-colors"
+              >
+                <Info className="w-5 h-5 text-foreground" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

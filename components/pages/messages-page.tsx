@@ -17,9 +17,10 @@ interface ChatInfo {
 
 interface MessagesPageProps {
   onChatSelect: (chatInfo: ChatInfo) => void
+  onUserClick?: (user: any) => void
 }
 
-export function MessagesPage({ onChatSelect }: MessagesPageProps) {
+export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
   const [showCreateGroupChat, setShowCreateGroupChat] = useState(false)
   
   // Sample user list for group creation
@@ -56,6 +57,7 @@ export function MessagesPage({ onChatSelect }: MessagesPageProps) {
       {/* Header */}
       <div className="sticky top-0 bg-card/80 backdrop-blur-sm border-b border-border p-4">
         <div className="flex justify-between items-center">
+          <div className="w-24"></div>
           <h1 className="text-xl font-bold text-foreground">Direkt Mesajlar</h1>
           <Button 
             onClick={() => setShowCreateGroupChat(true)}
@@ -86,7 +88,28 @@ export function MessagesPage({ onChatSelect }: MessagesPageProps) {
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="font-medium text-foreground">{conversation.title}</p>
+                    <p 
+                      className="font-medium text-foreground cursor-pointer hover:underline"
+                      onClick={(e) => {
+                        if (conversation.type === "user" && onUserClick) {
+                          e.stopPropagation();
+                          onUserClick({
+                            username: conversation.title,
+                            handle: conversation.handle?.replace('@', '') || '',
+                            followers: (Math.floor(Math.random() * 2000) + 500).toString(),
+                            following: (Math.floor(Math.random() * 500) + 100).toString(),
+                            bio: `${conversation.title} isimli kullanıcının profili. MoodLink kullanıcısı.`,
+                            moods: [
+                              { name: "Enerjik", percentage: Math.floor(Math.random() * 30 + 50) + "%" },
+                              { name: "Mutlu", percentage: Math.floor(Math.random() * 20 + 60) + "%" },
+                            ],
+                            badges: ["🏆", "🎯"],
+                          });
+                        }
+                      }}
+                    >
+                      {conversation.title}
+                    </p>
                     {conversation.type === "user" && conversation.handle && (
                       <p className="text-muted-foreground text-sm">{conversation.handle}</p>
                     )}

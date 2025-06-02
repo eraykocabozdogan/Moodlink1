@@ -8,6 +8,7 @@ import { NotificationsPage } from "@/components/pages/notifications-page"
 import { MessagesPage } from "@/components/pages/messages-page"
 import { CommunityPage } from "@/components/pages/community-page"
 import { ProfilePage } from "@/components/pages/profile-page"
+import { UserProfilePage } from "@/components/pages/user-profile-page"
 import { OptionsPage } from "@/components/pages/options-page"
 import { ChatPage } from "@/components/pages/chat-page"
 import { ThemeSettingsPage } from "@/components/pages/theme-settings-page"
@@ -37,18 +38,24 @@ export function MainApp({ user, onLogout }: MainAppProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [chatDetails, setChatDetails] = useState<ChatInfo | null>(null)
   const [selectedPostId, setSelectedPostId] = useState<number | null>(null)
+  const [viewingUser, setViewingUser] = useState<any>(null)
 
   const handlePostClick = (postId: number) => {
     setSelectedPostId(postId)
     setCurrentPage("home") 
   }
 
+  const handleUserClick = (userInfo: any) => {
+    setViewingUser(userInfo)
+    setCurrentPage("userProfile")
+  }
+
   const renderPage = () => {
     switch (currentPage) {
       case "home":
-        return <HomePage />
+        return <HomePage onUserClick={handleUserClick} />
       case "search":
-        return <SearchPage />
+        return <SearchPage onUserClick={handleUserClick} />
       case "notifications":
         return <NotificationsPage />
       case "messages":
@@ -58,6 +65,7 @@ export function MainApp({ user, onLogout }: MainAppProps) {
               setChatDetails(chatInfo)
               setCurrentPage("chat")
             }}
+            onUserClick={handleUserClick}
           />
         )
       case "chat":
@@ -66,6 +74,8 @@ export function MainApp({ user, onLogout }: MainAppProps) {
         return <CommunityPage />
       case "profile":
         return <ProfilePage user={user} />
+      case "userProfile":
+        return <UserProfilePage user={viewingUser} onBack={() => setCurrentPage("home")} />
       case "activities":
         return <ActivitiesPage />
       case "moodreport":

@@ -56,11 +56,12 @@ export function OptionsPage({ onLogout, onThemeSettings }: OptionsPageProps) {
     return (
       <div className="max-w-2xl mx-auto">
         <div className="sticky top-0 bg-background/80 backdrop-blur-sm border-b border-border p-4">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center justify-between">
             <button onClick={() => setShowLanguages(false)} className="p-2 hover:bg-muted rounded-full">
               <ArrowLeft className="w-5 h-5" />
             </button>
             <h1 className="text-xl font-bold text-foreground">Dil Seçimi</h1>
+            <div className="w-10"></div> {/* Sağ tarafı dengelemek için boş alan */}
           </div>
         </div>
 
@@ -95,11 +96,12 @@ export function OptionsPage({ onLogout, onThemeSettings }: OptionsPageProps) {
     return (
       <div className="max-w-2xl mx-auto">
         <div className="sticky top-0 bg-background/80 backdrop-blur-sm border-b border-border p-4">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center justify-between">
             <button onClick={() => setShowPasswordChange(false)} className="p-2 hover:bg-muted rounded-full">
               <ArrowLeft className="w-5 h-5" />
             </button>
             <h1 className="text-xl font-bold text-foreground">Şifre Değiştir</h1>
+            <div className="w-10"></div> {/* Sağ tarafı dengelemek için boş alan */}
           </div>
         </div>
 
@@ -160,7 +162,9 @@ export function OptionsPage({ onLogout, onThemeSettings }: OptionsPageProps) {
     <div className="max-w-2xl mx-auto">
       {/* Header */}
       <div className="sticky top-0 bg-background/80 backdrop-blur-sm border-b border-border p-4">
-        <h1 className="text-xl font-bold text-foreground">Seçenekler (Ayarlar)</h1>
+        <div className="flex items-center justify-center">
+          <h1 className="text-xl font-bold text-foreground">Seçenekler (Ayarlar)</h1>
+        </div>
       </div>
 
       <div className="bg-card">

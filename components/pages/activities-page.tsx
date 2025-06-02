@@ -144,6 +144,7 @@ export function ActivitiesPage() {
       {/* Header */}
       <div className="sticky top-0 bg-background/80 backdrop-blur-sm border-b border-border p-4">
         <div className="flex items-center justify-between mb-4">
+          <div className="w-[120px]"></div> {/* Sol tarafı dengelemek için boş alan */}
           <h1 className="text-xl font-bold text-foreground">Etkinlikler</h1>
           <Button
             onClick={() => setShowCreateForm(true)}
