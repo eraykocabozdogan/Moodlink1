@@ -28,8 +28,8 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
     following: "32",
     profileImageUrl: null as string | null, // Added profileImageUrl
     moods: [
-      { name: "Energetic", percentage: "62%" },
-      { name: "Sad", percentage: "56%" },
+      { name: "Enerjik", percentage: "62%" },
+      { name: "Üzgün", percentage: "56%" },
     ],
     badges: ["🏅", "🏆"],
   }

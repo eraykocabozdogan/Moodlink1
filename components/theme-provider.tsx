@@ -4,7 +4,7 @@ import type React from "react"
 
 import { createContext, useContext, useEffect, useState } from "react"
 
-type Theme = "default" | "rock" | "red" | "white" | "love"
+type Theme = "default" | "gece" | "white" | "love" | "dogasever" | "gokyuzu" | "lavanta" | "gunbatimi"
 
 type ThemeProviderProps = {
   children: React.ReactNode
@@ -34,7 +34,7 @@ export function ThemeProvider({
 
   useEffect(() => {
     const root = window.document.documentElement
-    root.classList.remove("theme-default", "theme-rock", "theme-red", "theme-white", "theme-love")
+    root.classList.remove("theme-default", "theme-gece", "theme-white", "theme-love", "theme-dogasever", "theme-gokyuzu", "theme-lavanta", "theme-gunbatimi")
     root.classList.add(`theme-${theme}`)
   }, [theme])
 

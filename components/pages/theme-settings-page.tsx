@@ -12,18 +12,11 @@ export function ThemeSettingsPage({ onBack }: ThemeSettingsPageProps) {
 
   const themes = [
     {
-      id: "rock" as const,
-      name: "Rock",
+      id: "gece" as const,
+      name: "Gece",
       percentage: "48%",
-      colors: "from-gray-600 to-black",
-      description: "Koyu ve güçlü tonlar",
-    },
-    {
-      id: "red" as const,
-      name: "Red",
-      percentage: "60%",
-      colors: "from-red-500 to-red-700",
-      description: "Ateşli kırmızı tonları",
+      colors: "from-gray-700 to-gray-900",
+      description: "Koyu gri tonlar",
     },
     {
       id: "white" as const,
@@ -38,6 +31,34 @@ export function ThemeSettingsPage({ onBack }: ThemeSettingsPageProps) {
       percentage: "60%",
       colors: "from-pink-400 to-red-400",
       description: "Romantik pembe tonları",
+    },
+    {
+      id: "dogasever" as const,
+      name: "Doğasever",
+      percentage: "35%",
+      colors: "from-green-200 to-green-300",
+      description: "Rahatlatıcı açık yeşil tonlar",
+    },
+    {
+      id: "gokyuzu" as const,
+      name: "Gökyüzü",
+      percentage: "32%",
+      colors: "from-blue-200 to-blue-300",
+      description: "Ferahlatıcı açık mavi tonlar",
+    },
+    {
+      id: "lavanta" as const,
+      name: "Lavanta",
+      percentage: "25%",
+      colors: "from-purple-200 to-purple-300",
+      description: "Sakinleştirici mor tonlar",
+    },
+    {
+      id: "gunbatimi" as const,
+      name: "Günbatımı",
+      percentage: "27%",
+      colors: "from-amber-200 to-orange-300",
+      description: "Sıcak ve dinlendirici tonlar",
     },
   ]
 
