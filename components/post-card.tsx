@@ -91,12 +91,6 @@ export function PostCard({ post, onUserClick }: PostCardProps) {
               {post.username}
             </span>
             {post.handle && <span className="text-muted-foreground text-sm">{post.handle}</span>}
-            {post.community && (
-              <>
-                <span className="text-muted-foreground text-sm">·</span>
-                <span className="text-purple-600 text-sm font-medium">#{post.community}</span>
-              </>
-            )}
             <span className="text-muted-foreground text-sm">·</span>
             <span className="text-muted-foreground text-sm">{post.time}</span>
           </div>

@@ -12,62 +12,127 @@ export function MoodReportPage() {
   // Örnek mood verileri
   const moodData = {
     week: [
-      { day: "Pzt", mood: 7, energy: 6 },
-      { day: "Sal", mood: 8, energy: 7 },
-      { day: "Çar", mood: 6, energy: 5 },
-      { day: "Per", mood: 9, energy: 8 },
-      { day: "Cum", mood: 8, energy: 7 },
-      { day: "Cmt", mood: 9, energy: 9 },
-      { day: "Paz", mood: 7, energy: 6 },
+      { day: "Pzt", moods: {
+        mutluluk: 7, uzuntu: 3, ofke: 2, endise: 4, 
+        stres: 5, huzur: 6, enerji: 6, heyecan: 5,
+        yalnizlik: 3, mizah: 7
+      }},
+      { day: "Sal", moods: {
+        mutluluk: 8, uzuntu: 2, ofke: 1, endise: 3,
+        stres: 4, huzur: 7, enerji: 7, heyecan: 6,
+        yalnizlik: 2, mizah: 8
+      }},
+      { day: "Çar", moods: {
+        mutluluk: 6, uzuntu: 4, ofke: 3, endise: 5,
+        stres: 6, huzur: 5, enerji: 5, heyecan: 4,
+        yalnizlik: 4, mizah: 6
+      }},
+      { day: "Per", moods: {
+        mutluluk: 9, uzuntu: 1, ofke: 1, endise: 2,
+        stres: 3, huzur: 8, enerji: 8, heyecan: 7,
+        yalnizlik: 1, mizah: 9
+      }},
+      { day: "Cum", moods: {
+        mutluluk: 8, uzuntu: 2, ofke: 2, endise: 3,
+        stres: 4, huzur: 7, enerji: 7, heyecan: 6,
+        yalnizlik: 2, mizah: 8
+      }},
+      { day: "Cmt", moods: {
+        mutluluk: 9, uzuntu: 1, ofke: 1, endise: 2,
+        stres: 3, huzur: 9, enerji: 9, heyecan: 8,
+        yalnizlik: 1, mizah: 9
+      }},
+      { day: "Paz", moods: {
+        mutluluk: 7, uzuntu: 3, ofke: 2, endise: 4,
+        stres: 5, huzur: 6, enerji: 6, heyecan: 5,
+        yalnizlik: 3, mizah: 7
+      }},
     ],
     month: [
-      { day: "1. Hafta", mood: 7.5, energy: 6.8 },
-      { day: "2. Hafta", mood: 8.2, energy: 7.5 },
-      { day: "3. Hafta", mood: 6.8, energy: 6.2 },
-      { day: "4. Hafta", mood: 8.8, energy: 8.1 },
+      { day: "1. Hafta", moods: {
+        mutluluk: 7.5, uzuntu: 2.5, ofke: 2, endise: 3.5,
+        stres: 4.5, huzur: 6.5, enerji: 6.8, heyecan: 5.5,
+        yalnizlik: 2.5, mizah: 7.5
+      }},
+      { day: "2. Hafta", moods: {
+        mutluluk: 8.2, uzuntu: 2, ofke: 1.5, endise: 3,
+        stres: 4, huzur: 7.5, enerji: 7.5, heyecan: 6.5,
+        yalnizlik: 2, mizah: 8
+      }},
+      { day: "3. Hafta", moods: {
+        mutluluk: 6.8, uzuntu: 3.5, ofke: 2.5, endise: 4.5,
+        stres: 5.5, huzur: 5.5, enerji: 6.2, heyecan: 4.5,
+        yalnizlik: 3.5, mizah: 6.5
+      }},
+      { day: "4. Hafta", moods: {
+        mutluluk: 8.8, uzuntu: 1.5, ofke: 1, endise: 2,
+        stres: 3, huzur: 8.5, enerji: 8.1, heyecan: 7.5,
+        yalnizlik: 1.5, mizah: 8.5
+      }},
     ],
   }
 
   const currentData = moodData[selectedPeriod as keyof typeof moodData]
-  const avgMood = currentData.reduce((sum, item) => sum + item.mood, 0) / currentData.length
-  const avgEnergy = currentData.reduce((sum, item) => sum + item.energy, 0) / currentData.length
+  
+  // Tüm mood'ların ortalamasını hesapla
+  const calculateAverageMoods = () => {
+    const totals = {
+      mutluluk: 0, uzuntu: 0, ofke: 0, endise: 0,
+      stres: 0, huzur: 0, enerji: 0, heyecan: 0,
+      yalnizlik: 0, mizah: 0
+    }
+    
+    currentData.forEach(item => {
+      Object.keys(totals).forEach(mood => {
+        totals[mood as keyof typeof totals] += item.moods[mood as keyof typeof item.moods]
+      })
+    })
+    
+    Object.keys(totals).forEach(mood => {
+      totals[mood as keyof typeof totals] /= currentData.length
+    })
+    
+    return totals
+  }
+
+  const averageMoods = calculateAverageMoods()
 
   const insights = [
     {
-      title: "En İyi Gün",
-      value: "Cumartesi",
-      description: "Mood seviyeniz en yüksek",
+      title: "En Yüksek Mood",
+      value: "Mutluluk & Huzur",
+      description: "Bu dönemde en yüksek",
       icon: TrendingUp,
       color: "text-green-600",
     },
     {
-      title: "Dikkat Gereken Gün",
-      value: "Çarşamba",
-      description: "Mood seviyeniz düşük",
+      title: "Dikkat Edilmeli",
+      value: "Stres & Endişe",
+      description: "Bu dönemde yükselişte",
       icon: TrendingDown,
       color: "text-orange-600",
     },
     {
-      title: "Ortalama Mood",
-      value: avgMood.toFixed(1) + "/10",
-      description: "Bu dönem ortalamanız",
+      title: "Genel Durum",
+      value: (averageMoods.mutluluk + averageMoods.huzur) / 2 > 7 ? "Pozitif" : "Nötr",
+      description: "Dönem değerlendirmesi",
       icon: Heart,
       color: "text-purple-600",
     },
     {
       title: "Enerji Seviyesi",
-      value: avgEnergy.toFixed(1) + "/10",
-      description: "Ortalama enerji durumunuz",
+      value: averageMoods.enerji.toFixed(1) + "/10",
+      description: "Ortalama enerji durumu",
       icon: Brain,
       color: "text-blue-600",
     },
   ]
 
   const recommendations = [
-    "Çarşamba günleri için özel aktiviteler planlayın",
-    "Hafta sonu rutininizi korumaya devam edin",
-    "Düzenli uyku saatleri mood'unuzu olumlu etkiliyor",
-    "Sosyal aktiviteler enerji seviyenizi artırıyor",
+    "Stres seviyenizi düşürmek için meditasyon yapabilirsiniz",
+    "Endişe durumlarında nefes egzersizleri deneyin",
+    "Enerji seviyenizi yüksek tutmak için düzenli egzersiz yapın",
+    "Sosyal aktiviteler yalnızlık hissini azaltmaya yardımcı olabilir",
   ]
 
   return (
@@ -109,33 +174,105 @@ export function MoodReportPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64 flex items-end justify-between space-x-2 bg-muted/30 rounded-lg p-4">
+            <div className="h-[32rem] flex items-end justify-between space-x-2 bg-muted/30 rounded-lg p-4">
               {currentData.map((item, index) => (
                 <div key={index} className="flex flex-col items-center space-y-2 flex-1">
                   <div className="flex flex-col items-center space-y-1">
-                    {/* Energy Bar */}
+                    <div
+                      className="w-6 bg-gradient-to-t from-green-400 to-green-600 rounded-t"
+                      style={{ height: `${(item.moods.mutluluk / 10) * 60}px` }}
+                      title="Mutluluk"
+                    ></div>
                     <div
                       className="w-6 bg-gradient-to-t from-blue-400 to-blue-600 rounded-t"
-                      style={{ height: `${(item.energy / 10) * 120}px` }}
+                      style={{ height: `${(item.moods.uzuntu / 10) * 60}px` }}
+                      title="Üzüntü"
                     ></div>
-                    {/* Mood Bar */}
                     <div
-                      className="w-6 bg-gradient-to-t from-purple-400 to-pink-500 rounded-t"
-                      style={{ height: `${(item.mood / 10) * 120}px` }}
+                      className="w-6 bg-gradient-to-t from-red-400 to-red-600 rounded-t"
+                      style={{ height: `${(item.moods.ofke / 10) * 60}px` }}
+                      title="Öfke"
+                    ></div>
+                    <div
+                      className="w-6 bg-gradient-to-t from-yellow-400 to-yellow-600 rounded-t"
+                      style={{ height: `${(item.moods.endise / 10) * 60}px` }}
+                      title="Endişe"
+                    ></div>
+                    <div
+                      className="w-6 bg-gradient-to-t from-orange-400 to-orange-600 rounded-t"
+                      style={{ height: `${(item.moods.stres / 10) * 60}px` }}
+                      title="Stres"
+                    ></div>
+                    <div
+                      className="w-6 bg-gradient-to-t from-purple-400 to-purple-600 rounded-t"
+                      style={{ height: `${(item.moods.huzur / 10) * 60}px` }}
+                      title="Huzur"
+                    ></div>
+                    <div
+                      className="w-6 bg-gradient-to-t from-cyan-400 to-cyan-600 rounded-t"
+                      style={{ height: `${(item.moods.enerji / 10) * 60}px` }}
+                      title="Enerji"
+                    ></div>
+                    <div
+                      className="w-6 bg-gradient-to-t from-pink-400 to-pink-600 rounded-t"
+                      style={{ height: `${(item.moods.heyecan / 10) * 60}px` }}
+                      title="Heyecan"
+                    ></div>
+                    <div
+                      className="w-6 bg-gradient-to-t from-gray-400 to-gray-600 rounded-t"
+                      style={{ height: `${(item.moods.yalnizlik / 10) * 60}px` }}
+                      title="Yalnızlık"
+                    ></div>
+                    <div
+                      className="w-6 bg-gradient-to-t from-indigo-400 to-indigo-600 rounded-t"
+                      style={{ height: `${(item.moods.mizah / 10) * 60}px` }}
+                      title="Mizah"
                     ></div>
                   </div>
                   <span className="text-xs font-medium text-muted-foreground">{item.day}</span>
                 </div>
               ))}
             </div>
-            <div className="flex justify-center space-x-6 mt-4">
+            <div className="flex flex-wrap justify-center gap-4 mt-4">
               <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 bg-gradient-to-r from-purple-400 to-pink-500 rounded"></div>
-                <span className="text-sm text-muted-foreground">Mood</span>
+                <div className="w-4 h-4 bg-gradient-to-r from-green-400 to-green-600 rounded"></div>
+                <span className="text-sm text-muted-foreground">Mutluluk</span>
               </div>
               <div className="flex items-center space-x-2">
                 <div className="w-4 h-4 bg-gradient-to-r from-blue-400 to-blue-600 rounded"></div>
+                <span className="text-sm text-muted-foreground">Üzüntü</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-gradient-to-r from-red-400 to-red-600 rounded"></div>
+                <span className="text-sm text-muted-foreground">Öfke</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded"></div>
+                <span className="text-sm text-muted-foreground">Endişe</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-gradient-to-r from-orange-400 to-orange-600 rounded"></div>
+                <span className="text-sm text-muted-foreground">Stres</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-gradient-to-r from-purple-400 to-purple-600 rounded"></div>
+                <span className="text-sm text-muted-foreground">Huzur</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-gradient-to-r from-cyan-400 to-cyan-600 rounded"></div>
                 <span className="text-sm text-muted-foreground">Enerji</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-gradient-to-r from-pink-400 to-pink-600 rounded"></div>
+                <span className="text-sm text-muted-foreground">Heyecan</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-gradient-to-r from-gray-400 to-gray-600 rounded"></div>
+                <span className="text-sm text-muted-foreground">Yalnızlık</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-gradient-to-r from-indigo-400 to-indigo-600 rounded"></div>
+                <span className="text-sm text-muted-foreground">Mizah</span>
               </div>
             </div>
           </CardContent>
@@ -169,20 +306,52 @@ export function MoodReportPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <h4 className="font-semibold text-foreground mb-2">Mood Trendleri</h4>
+              <h4 className="font-semibold text-foreground mb-2">Mood Analizi</h4>
               <p className="text-muted-foreground text-sm">
-                Bu {selectedPeriod === "week" ? "hafta" : "ay"} boyunca mood seviyeniz genel olarak{" "}
-                {avgMood >= 7 ? "yüksek" : avgMood >= 5 ? "orta" : "düşük"} seviyede kalmış. En yüksek mood seviyeniz
-                hafta sonu günlerinde gözlemlenmiş.
+                Bu {selectedPeriod === "week" ? "hafta" : "ay"} boyunca duygusal durumunuz genel olarak{" "}
+                {averageMoods.mutluluk >= 7 ? "pozitif" : averageMoods.mutluluk >= 5 ? "dengeli" : "değişken"} seyretti. 
+                Mutluluk ve huzur seviyeleriniz yüksek, ancak stres ve endişe durumlarına dikkat etmelisiniz.
               </p>
             </div>
 
             <div>
-              <h4 className="font-semibold text-foreground mb-2">Enerji Analizi</h4>
-              <p className="text-muted-foreground text-sm">
-                Enerji seviyeniz mood seviyenizle paralel bir seyir izlemiş. Özellikle sosyal aktivitelerin yoğun olduğu
-                günlerde enerji seviyenizde artış gözlemlenmiş.
-              </p>
+              <h4 className="font-semibold text-foreground mb-2">Detaylı Mood Değerleri</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Mutluluk:</strong> {averageMoods.mutluluk.toFixed(1)}/10
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Üzüntü:</strong> {averageMoods.uzuntu.toFixed(1)}/10
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Öfke:</strong> {averageMoods.ofke.toFixed(1)}/10
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Endişe:</strong> {averageMoods.endise.toFixed(1)}/10
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Stres:</strong> {averageMoods.stres.toFixed(1)}/10
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Huzur:</strong> {averageMoods.huzur.toFixed(1)}/10
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Enerji:</strong> {averageMoods.enerji.toFixed(1)}/10
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Heyecan:</strong> {averageMoods.heyecan.toFixed(1)}/10
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Yalnızlık:</strong> {averageMoods.yalnizlik.toFixed(1)}/10
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Mizah:</strong> {averageMoods.mizah.toFixed(1)}/10
+                  </p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
