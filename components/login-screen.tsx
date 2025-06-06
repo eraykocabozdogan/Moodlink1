@@ -5,6 +5,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Heart } from "lucide-react"
+import apiClient, { setAuthToken } from "@/lib/apiClient"
+
+interface LoginResponse {
+  token: string;
+  user: {
+    id: number;
+    username: string;
+    email: string;
+  }
+}
 
 interface LoginScreenProps {
   onLogin: (userData: any) => void
@@ -15,10 +25,38 @@ interface LoginScreenProps {
 export function LoginScreen({ onLogin, onSwitchToSignup, onForgotPassword }: LoginScreenProps) {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleLogin = () => {
-    if (username && password) {
-      onLogin({ username, id: 1 })
+  const handleLogin = async () => {
+    if (!username || !password) {
+      setError("Please enter both username and password");
+      return;
+    }
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await apiClient.post<LoginResponse>('/api/Auth/Login', {
+        email: username, // Using username as email
+        password
+      });
+      
+      // Store token for subsequent requests
+      setAuthToken(response.token);
+      
+      // Call the onLogin callback with user data
+      onLogin(response.user);
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(
+        err instanceof Error 
+          ? err.message 
+          : "Failed to login. Please check your credentials and try again."
+      );
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -50,6 +88,7 @@ export function LoginScreen({ onLogin, onSwitchToSignup, onForgotPassword }: Log
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             className="h-12 border-gray-300 focus:border-white focus:ring-white text-white placeholder:text-gray-300 bg-transparent"
+            disabled={isLoading}
           />
           <Input
             type="password"
@@ -57,17 +96,27 @@ export function LoginScreen({ onLogin, onSwitchToSignup, onForgotPassword }: Log
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="h-12 border-gray-300 focus:border-white focus:ring-white text-white placeholder:text-gray-300 bg-transparent"
+            disabled={isLoading}
           />
+          
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+              <span className="block sm:inline">{error}</span>
+            </div>
+          )}
+          
           <Button
             onClick={handleLogin}
             className="w-full h-12 bg-blue-500 hover:bg-blue-600 text-white font-medium"
+            disabled={isLoading}
           >
-            Login
+            {isLoading ? "Logging in..." : "Login"}
           </Button>
           <Button
             onClick={handleGoogleLogin}
             variant="outline"
             className="w-full h-12 border-blue-500 text-blue-500 bg-transparent hover:bg-blue-500/10 hover:text-blue-600"
+            disabled={isLoading}
           >
             Login with Google
           </Button>
