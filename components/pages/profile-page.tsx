@@ -9,7 +9,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Check, X } from "lucide-react"
 import apiClient from "@/lib/apiClient"
 import { useToast } from "@/hooks/use-toast"
-import { useAuth } from "@/contexts/AuthContext"
 
 // Backend'den gelen User ve Post tiplerini tanımlayalım
 interface UserProfile {
@@ -55,23 +54,21 @@ export function ProfilePage({}: ProfilePageProps) {
   
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
-  const { user: authUser } = useAuth() // Get authenticated user from context
 
   // Veri çekme işlemini useCallback ile sarmala
   const fetchData = useCallback(async () => {
     setIsLoading(true)
     try {
       // Kullanıcı ve post verilerini paralel olarak çek
-      // Artık kimlik doğrulaması yapılmış kullanıcı verilerini AuthContext'ten alıyoruz
-      // Yine de API'den en güncel kullanıcı bilgilerini çekiyoruz
       const userPromise = apiClient.get<UserProfile>('/api/Users/GetFromAuth')
-      // Kullanıcının kendi postlarını getiren endpoint
+      // TODO: Swagger'da kullanıcının kendi postlarını getiren bir endpoint yok.
+      // Şimdilik /api/Posts endpointini kullanıp filtreleme varsayımı yapıyoruz.
+      // İdeal olan, backend'e /api/Posts/user/{userId} gibi bir endpoint eklemektir.
       const postsPromise = apiClient.get<{ items: Post[] }>('/api/Posts')
 
       const [userData, postsData] = await Promise.all([userPromise, postsPromise])
       
-      // AuthContext'teki kullanıcı ID'sine göre filtreleme yapıyoruz
-      const userPosts = postsData.items.filter(p => p.userId === authUser?.id);
+      const userPosts = postsData.items.filter(p => p.userId === userData.id);
 
       setUser(userData)
       setPosts(userPosts)
@@ -93,7 +90,7 @@ export function ProfilePage({}: ProfilePageProps) {
     } finally {
       setIsLoading(false)
     }
-  }, [toast, authUser])
+  }, [toast])
 
   // Bileşen yüklendiğinde verileri çek
   useEffect(() => {
@@ -101,7 +98,7 @@ export function ProfilePage({}: ProfilePageProps) {
   }, [fetchData])
 
   const handleProfileUpdate = async () => {
-    if (!user || !authUser) return;
+    if (!user) return;
     setIsLoading(true);
 
     try {
@@ -111,7 +108,7 @@ export function ProfilePage({}: ProfilePageProps) {
         // const fileId = await uploadProfilePicture(selectedProfileImageFile);
 
         const updateData = {
-            id: authUser.id, // Use authenticated user ID
+            id: user.id,
             userName: editForm.username,
             firstName: user.firstName, // Bu alanlar düzenlenmiyorsa mevcut veriyi gönder
             lastName: user.lastName,
