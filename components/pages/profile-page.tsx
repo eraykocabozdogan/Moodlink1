@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Check, X } from "lucide-react"
 import apiClient from "@/lib/apiClient"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/contexts/AuthContext"
 
 // Backend'den gelen User ve Post tiplerini tanımlayalım
 interface UserProfile {
@@ -40,11 +41,19 @@ interface Post {
     moodCompatibility?: string;
 }
 
-// UserProfilePage'in prop'larını basitleştirebiliriz, çünkü artık kendi verisini kendi çekecek.
-interface ProfilePageProps {}
+// ProfilePage'in prop'larını güncelleyelim
+interface ProfilePageProps {
+  user?: any; // Opsiyonel olarak dışarıdan bir kullanıcı nesnesi alabilir
+}
 
-export function ProfilePage({}: ProfilePageProps) {
-  const [user, setUser] = useState<UserProfile | null>(null)
+export function ProfilePage({ user: externalUser }: ProfilePageProps) {
+  // Auth context'ten kullanıcı bilgilerini al
+  const { user: authUser, updateUser: updateAuthUser } = useAuth()
+  
+  // Dışarıdan gelen kullanıcı veya auth context'ten gelen kullanıcıyı kullan
+  const currentUser = externalUser || authUser
+  
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [posts, setPosts] = useState<Post[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
@@ -57,21 +66,29 @@ export function ProfilePage({}: ProfilePageProps) {
 
   // Veri çekme işlemini useCallback ile sarmala
   const fetchData = useCallback(async () => {
+    if (!currentUser) {
+      setIsLoading(false)
+      return
+    }
+    
     setIsLoading(true)
     try {
-      // Kullanıcı ve post verilerini paralel olarak çek
-      const userPromise = apiClient.get<UserProfile>('/api/Users/GetFromAuth')
-      // TODO: Swagger'da kullanıcının kendi postlarını getiren bir endpoint yok.
-      // Şimdilik /api/Posts endpointini kullanıp filtreleme varsayımı yapıyoruz.
-      // İdeal olan, backend'e /api/Posts/user/{userId} gibi bir endpoint eklemektir.
-      const postsPromise = apiClient.get<{ items: Post[] }>('/api/Posts')
-
-      const [userData, postsData] = await Promise.all([userPromise, postsPromise])
+      // Kullanıcı profil bilgilerini çek
+      let userData: UserProfile
       
-      const userPosts = postsData.items.filter(p => p.userId === userData.id);
+      if (currentUser.id) {
+        // Eğer currentUser zaten tam bir kullanıcı nesnesi ise, onu kullan
+        userData = currentUser as UserProfile
+      } else {
+        // Değilse API'den çek
+        userData = await apiClient.get<UserProfile>('/api/Users/GetFromAuth')
+      }
+      
+      // Kullanıcının postlarını doğrudan kullanıcıya özel endpoint'ten çek
+      const postsData = await apiClient.get<{ items: Post[] }>(`/api/Posts/user/${userData.id}`)
 
-      setUser(userData)
-      setPosts(userPosts)
+      setUserProfile(userData)
+      setPosts(postsData.items)
       
       // Düzenleme formu için başlangıç değerlerini ayarla
       setEditForm({
@@ -90,36 +107,73 @@ export function ProfilePage({}: ProfilePageProps) {
     } finally {
       setIsLoading(false)
     }
-  }, [toast])
+  }, [currentUser, toast])
 
   // Bileşen yüklendiğinde verileri çek
   useEffect(() => {
     fetchData()
   }, [fetchData])
 
+  // Profil resmini yükleyen fonksiyon
+  const uploadProfilePicture = async (file: File | null): Promise<string | null> => {
+    if (!file) return null;
+    
+    try {
+      // FileAttachments API'sine dosyayı yükle
+      const response = await apiClient.uploadFile<{id: string}>('/api/FileAttachments', file, {
+        // StorageType: 1 = Local, 2 = Azure, 3 = AWS
+        StorageType: 1,
+        // OwnerType: 0 = User, 1 = Post, 2 = Activity, 3 = Comment, 5 = Message, 6 = Group
+        OwnerType: 0,
+        // FileType: 1 = Image, 2 = Video, 3 = Audio, 4 = Document
+        FileType: 1,
+        OwnerId: userProfile?.id
+      });
+      
+      return response.id;
+    } catch (error) {
+      console.error("Failed to upload profile picture:", error);
+      toast({
+        variant: "destructive",
+        title: "Hata",
+        description: "Profil resmi yüklenirken bir sorun oluştu.",
+      });
+      return null;
+    }
+  };
+
   const handleProfileUpdate = async () => {
-    if (!user) return;
+    if (!userProfile) return;
     setIsLoading(true);
 
     try {
-        // TODO: Resim yükleme mantığı.
-        // Önce /api/FileAttachments'a resmi gönderip bir ID almanız,
-        // sonra bu ID'yi aşağıdaki güncelleme verisine eklemeniz gerekir.
-        // const fileId = await uploadProfilePicture(selectedProfileImageFile);
+        // Eğer yeni bir profil resmi seçildiyse, önce onu yükle
+        let profileImageFileId = null;
+        if (selectedProfileImageFile) {
+          profileImageFileId = await uploadProfilePicture(selectedProfileImageFile);
+        }
 
         const updateData = {
-            id: user.id,
+            id: userProfile.id,
             userName: editForm.username,
-            firstName: user.firstName, // Bu alanlar düzenlenmiyorsa mevcut veriyi gönder
-            lastName: user.lastName,
+            firstName: userProfile.firstName, // Bu alanlar düzenlenmiyorsa mevcut veriyi gönder
+            lastName: userProfile.lastName,
             bio: editForm.bio,
-            // profileImageFileId: fileId || user.profileImageFileId
+            profileImageFileId: profileImageFileId // Eğer yeni resim yüklendiyse, onun ID'sini kullan
         };
 
         await apiClient.put('/api/Users/FromAuth', updateData);
 
         // Başarılı güncelleme sonrası local state'i ve UI'ı güncelle
-        setUser(prevUser => prevUser ? { ...prevUser, ...updateData, userName: editForm.username } : null);
+        // Profil resmi URL'sini güncellemek için yeniden veri çekme işlemi yapılabilir
+        // veya backend'den dönen yanıtta profil resmi URL'si varsa doğrudan güncellenebilir
+        await fetchData(); // Profil verilerini yeniden çek
+        
+        // Auth context'i de güncelle
+        if (updateAuthUser && userProfile) {
+          updateAuthUser({...userProfile, userName: editForm.username, bio: editForm.bio});  
+        }
+        
         setIsEditing(false);
         setProfileImagePreview(null);
         setSelectedProfileImageFile(null);
@@ -146,11 +200,11 @@ export function ProfilePage({}: ProfilePageProps) {
   }
   
   const handleCancelEdit = () => {
-    if(user) {
+    if(userProfile) {
         setEditForm({
-            username: user.userName,
-            handle: `@${user.userName}`,
-            bio: user.bio || "",
+            username: userProfile.userName,
+            handle: `@${userProfile.userName}`,
+            bio: userProfile.bio || "",
         });
     }
     setProfileImagePreview(null);
@@ -171,7 +225,7 @@ export function ProfilePage({}: ProfilePageProps) {
     }
   };
 
-  if (isLoading && !user) {
+  if (isLoading && !userProfile) {
     return (
         <div className="max-w-2xl mx-auto p-6 space-y-4">
             <div className="text-center space-y-4">
@@ -187,7 +241,7 @@ export function ProfilePage({}: ProfilePageProps) {
     )
   }
 
-  if (!user) {
+  if (!userProfile) {
     return <div className="text-center p-4">Kullanıcı bulunamadı.</div>
   }
 
@@ -214,8 +268,8 @@ export function ProfilePage({}: ProfilePageProps) {
               </label>
             ) : (
                 <img
-                    src={user.profileImageUrl || `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=random`}
-                    alt={user.userName}
+                    src={userProfile.profileImageUrl || `https://ui-avatars.com/api/?name=${userProfile.firstName}+${userProfile.lastName}&background=random`}
+                    alt={userProfile.userName}
                     className="w-24 h-24 rounded-full object-cover mx-auto"
                 />
             )}
@@ -238,10 +292,10 @@ export function ProfilePage({}: ProfilePageProps) {
           ) : (
             <>
               <div>
-                <h3 className="text-xl font-bold text-foreground">{user.userName}</h3>
-                <p className="text-muted-foreground">@{user.email.split('@')[0]}</p>
+                <h3 className="text-xl font-bold text-foreground">{userProfile.userName}</h3>
+                <p className="text-muted-foreground">@{userProfile.email.split('@')[0]}</p>
               </div>
-              <p className="text-muted-foreground max-w-md mx-auto">{user.bio}</p>
+              <p className="text-muted-foreground max-w-md mx-auto">{userProfile.bio}</p>
               <div className="flex justify-center space-x-6 text-sm text-muted-foreground">
                 <span><strong className="text-foreground">0</strong> Followers</span>
                 <span><strong className="text-foreground">0</strong> Following</span>
@@ -258,7 +312,7 @@ export function ProfilePage({}: ProfilePageProps) {
           <h4 className="font-bold text-foreground">Gönderilerim</h4>
         </div>
         {posts.length > 0 ? (
-            posts.map(post => <PostCard key={post.id} post={{...post, handle: `@${user.userName}`}} />)
+            posts.map(post => <PostCard key={post.id} post={{...post, handle: `@${userProfile.userName}`}} />)
         ) : (
             !isLoading && <p className="p-4 text-center text-muted-foreground">Henüz hiç gönderi paylaşmadınız.</p>
         )}

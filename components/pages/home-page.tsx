@@ -9,6 +9,7 @@ import { ImagePlus } from 'lucide-react'
 import useEmblaCarousel from 'embla-carousel-react'
 import apiClient from "@/lib/apiClient"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/contexts/AuthContext"
 
 // Backend'den gelen post verisinin tipini tanımlayalım
 // Bu, swagger.json'daki GetListPostListItemDto'ya dayanmaktadır.
@@ -47,13 +48,11 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false })
   const { toast } = useToast()
 
-  // Postları backend'den çeken fonksiyon
-  const fetchPosts = useCallback(async () => {
+  // Tüm gönderileri çeken fonksiyon
+  const fetchAllPosts = useCallback(async () => {
     setIsLoading(true)
     setError(null)
     try {
-      // Şimdilik hem "For You" hem de "Following" için aynı endpoint'i kullanıyoruz.
-      // Gerçekte, "Following" için `/api/Posts/followed-users/{userId}` gibi bir endpoint kullanılmalıdır.
       const response = await apiClient.get<{ items: Post[] }>('/api/Posts')
       setPosts(response.items)
     } catch (err) {
@@ -62,26 +61,97 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [user])
+  
+  // Takip edilen kullanıcıların gönderilerini çeken fonksiyon
+  const fetchFollowingPosts = useCallback(async () => {
+    if (!user) return
+    
+    setIsLoading(true)
+    setError(null)
+    try {
+      const response = await apiClient.get<{ items: Post[] }>(`/api/Posts/followed-users/${user.id}`)
+      setFollowingPosts(response.items)
+    } catch (err) {
+      setError("Takip edilen kullanıcıların gönderileri yüklenirken bir hata oluştu.")
+      console.error(err)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [user])
 
-  // Sayfa yüklendiğinde postları çek
+  // Sayfa yüklendiğinde ve sekme değiştiğinde ilgili postları çek
   useEffect(() => {
-    fetchPosts()
-  }, [fetchPosts])
+    if (activeTab === 'forYou') {
+      fetchAllPosts()
+    } else if (activeTab === 'following' && user) {
+      fetchFollowingPosts()
+    }
+  }, [activeTab, fetchAllPosts, fetchFollowingPosts, user])
+
+  // Auth context'ten kullanıcı bilgilerini al
+  const { user } = useAuth()
+
+  // Gönderi resmini yükleyen fonksiyon
+  const uploadPostImage = async (dataUrl: string | null): Promise<string | null> => {
+    if (!dataUrl || !user) return null;
+    
+    try {
+      // Base64 formatındaki dataUrl'i File nesnesine dönüştür
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      const file = new File([blob], "post-image.jpg", { type: "image/jpeg" });
+      
+      // FileAttachments API'sine dosyayı yükle
+      const uploadResponse = await apiClient.uploadFile<{id: string}>('/api/FileAttachments', file, {
+        // StorageType: 1 = Local, 2 = Azure, 3 = AWS
+        StorageType: 1,
+        // OwnerType: 1 = Post
+        OwnerType: 1,
+        // FileType: 1 = Image
+        FileType: 1,
+        OwnerId: user.id
+      });
+      
+      return uploadResponse.id;
+    } catch (error) {
+      console.error("Failed to upload post image:", error);
+      toast({
+        variant: "destructive",
+        title: "Hata!",
+        description: "Gönderi resmi yüklenirken bir sorun oluştu.",
+      });
+      return null;
+    }
+  };
 
   // Yeni post gönderme fonksiyonu
   const handlePostSubmit = async () => {
     if (!postContent.trim() && !selectedImage) return
+    
+    // Kullanıcı giriş yapmamışsa işlemi durdur
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Hata!",
+        description: "Gönderi paylaşmak için giriş yapmalısınız.",
+      })
+      return
+    }
 
     try {
-      // Swagger'a göre `CreatePostCommand` `userId` ve `contentText` bekliyor.
-      // `userId`'yi oturum açmış kullanıcıdan almamız gerekiyor, şimdilik sabit bir değer kullanabiliriz.
+      // Eğer resim seçildiyse, önce onu yükle
+      let postImageFileId = null;
+      if (selectedImage) {
+        postImageFileId = await uploadPostImage(selectedImage);
+      }
+      
+      // Swagger'a göre `CreatePostCommand` `userId`, `contentText` ve opsiyonel `postImageFileId` bekliyor.
       const newPostData = {
-        // TODO: Bu ID'yi giriş yapan kullanıcının ID'si ile değiştir.
-        userId: "00000000-0000-0000-0000-000000000000", 
+        // Auth context'ten gelen kullanıcı ID'sini kullan
+        userId: user.id,
         contentText: postContent,
-        // TODO: Resim yükleme
-        postImageFileId: null, 
+        postImageFileId: postImageFileId
       }
 
       await apiClient.post('/api/Posts', newPostData)
@@ -90,8 +160,12 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
       setSelectedImage(null)
       toast({ title: "Başarılı!", description: "Gönderiniz paylaşıldı." })
 
-      // Yeni post gönderildikten sonra listeyi yenile
-      fetchPosts()
+      // Yeni post gönderildikten sonra aktif sekmeye göre listeyi yenile
+      if (activeTab === 'forYou') {
+        fetchAllPosts()
+      } else if (activeTab === 'following') {
+        fetchFollowingPosts()
+      }
 
     } catch (err) {
       toast({
