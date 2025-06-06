@@ -70,8 +70,6 @@ export function MainApp({ user, onLogout }: MainAppProps) {
         )
       case "chat":
         return <ChatPage chatDetails={chatDetails} onBack={() => setCurrentPage("messages")} />
-      case "community":
-        return <CommunityPage />
       case "profile":
         return <ProfilePage user={user} />
       case "userProfile":
@@ -115,7 +113,7 @@ export function MainApp({ user, onLogout }: MainAppProps) {
         <main className={`flex-1 ${showRightSidebar ? "xl:mr-80" : ""}`}>{renderPage()}</main>
 
         {/* Right sidebar */}
-        {showRightSidebar && <RightSidebar currentPage={currentPage} />}
+        {showRightSidebar && <RightSidebar currentPage={currentPage} onUserClick={handleUserClick} />}
       </div>
     </div>
   )

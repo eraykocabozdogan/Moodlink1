@@ -30,7 +30,6 @@ export function Sidebar({ currentPage, onPageChange, onLogout, isOpen, onClose }
     { id: "search", label: "Arama", icon: Search },
     { id: "notifications", label: "Bildirimler", icon: Bell },
     { id: "messages", label: "Direkt Mesajlar", icon: MessageCircle },
-    { id: "community", label: "Topluluk", icon: Users },
     { id: "profile", label: "Profil", icon: User },
     { id: "activities", label: "Etkinlikler", icon: Calendar },
     { id: "moodreport", label: "Ruh Hali Raporu", icon: BarChart3 },
