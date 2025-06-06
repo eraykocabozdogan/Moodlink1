@@ -77,7 +77,9 @@ export function MainApp({ user, onLogout }: MainAppProps) {
       case "activities":
         return <ActivitiesPage />
       case "moodreport":
-        return <MoodReportPage />
+        // --- DEĞİŞİKLİK BURADA ---
+        // MoodReportPage bileşenine 'user' prop'u aktarılıyor.
+        return <MoodReportPage user={user} />
       case "options":
         return <OptionsPage onLogout={onLogout} onThemeSettings={() => setCurrentPage("themeSettings")} />
       case "themeSettings":

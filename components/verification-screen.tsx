@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
 import { Heart, Mail } from "lucide-react"
+import apiClient from "@/lib/apiClient" // API istemcisini import et
+import { useToast } from "@/hooks/use-toast" // Toast hook'unu import et
 
 interface VerificationScreenProps {
   email: string
@@ -23,7 +25,8 @@ export function VerificationScreen({
 }: VerificationScreenProps) {
   const [code, setCode] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [resendCooldown, setResendCooldown] = useState(0)
+  const [resendCooldown, setResendCooldown] = useState(60) // Başlangıçta 60 sn bekleme süresi
+  const { toast } = useToast()
 
   useEffect(() => {
     if (resendCooldown > 0) {
@@ -33,19 +36,47 @@ export function VerificationScreen({
   }, [resendCooldown])
 
   const handleVerify = async () => {
-    if (code.length === 6) {
-      setIsLoading(true)
-      try {
-        await onVerify(code)
-      } finally {
-        setIsLoading(false)
-      }
+    if (code.length !== 6) return
+
+    setIsLoading(true)
+    
+    try {
+      const validationType = type === "signup" ? 1 : 2; // 1: Register, 2: PasswordReset (swagger'a göre)
+      
+      await apiClient.post('/api/Auth/VerifyCode', {
+        email,
+        code,
+        validationType
+      });
+
+      toast({
+        title: "Success!",
+        description: "Your account has been verified successfully.",
+      })
+      
+      // onVerify prop'unu çağırarak bir sonraki adıma geç (uygulamaya giriş)
+      onVerify(code)
+
+    } catch (err) {
+      console.error('Verification error:', err)
+      toast({
+        variant: "destructive",
+        title: "Verification Failed",
+        description: err instanceof Error ? err.message : "Invalid or expired code. Please try again.",
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const handleResendCode = async () => {
-    setResendCooldown(60) // 60 second cooldown
+    // TODO: Bu fonksiyonu da /api/Auth/SendEmailValidation endpoint'ine bağlayabilirsin.
+    setResendCooldown(60)
     await onResendCode()
+    toast({
+      title: "Code Resent",
+      description: "A new verification code has been sent to your email.",
+    })
   }
 
   const getTitle = () => {
@@ -93,6 +124,7 @@ export function VerificationScreen({
                 value={code}
                 onChange={(value) => setCode(value)}
                 onComplete={handleVerify}
+                disabled={isLoading}
               >
                 <InputOTPGroup>
                   <InputOTPSlot index={0} className="h-12 w-12 border-gray-200 focus:border-purple-400 text-lg font-medium" />
@@ -120,7 +152,7 @@ export function VerificationScreen({
             </p>
             <Button
               onClick={handleResendCode}
-              disabled={resendCooldown > 0}
+              disabled={resendCooldown > 0 || isLoading}
               variant="outline"
               className="h-10 border-gray-200 hover:bg-gray-50 text-purple-600 hover:text-purple-700"
             >
@@ -135,6 +167,7 @@ export function VerificationScreen({
             <button 
               onClick={onGoBack}
               className="text-sm text-gray-500 hover:text-purple-600 hover:underline"
+              disabled={isLoading}
             >
               ← Go back
             </button>

@@ -1,22 +1,30 @@
 "use client"
 
-import type React from "react"
-import { useState, useEffect, useCallback } from "react" // Added useEffect and useCallback
+import React, { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { PostCard } from "@/components/post-card"
-import useEmblaCarousel from 'embla-carousel-react' // Added embla-carousel-react
-import { ImagePlus } from 'lucide-react' // Added ImagePlus icon
+import { Skeleton } from "@/components/ui/skeleton"
+import { ImagePlus } from 'lucide-react'
+import useEmblaCarousel from 'embla-carousel-react'
+import apiClient from "@/lib/apiClient"
+import { useToast } from "@/hooks/use-toast"
 
-// Define a type for the Post structure
+// Backend'den gelen post verisinin tipini tanımlayalım
+// Bu, swagger.json'daki GetListPostListItemDto'ya dayanmaktadır.
 interface Post {
-  id: number;
-  username: string;
-  handle: string;
-  time: string;
-  content: string;
-  image?: string; 
-  moodCompatibility: string;
+  id: string; // UUID'ler string olarak gelir
+  userId: string;
+  contentText: string;
+  postImageFileId?: string | null;
+  createdDate: string; // Veya Date
+  userFirstName: string;
+  userLastName: string;
+  userEmail: string; // Bu alanlar swagger'a göre olmayabilir, gerekirse eklenir veya çıkarılır
+  // Statik verilerdeki bu alanları da ekleyebiliriz, ancak API'dan gelip gelmediğine bağlı
+  handle?: string;
+  time?: string;
+  moodCompatibility?: string;
 }
 
 interface HomePageProps {
@@ -26,96 +34,75 @@ interface HomePageProps {
 export function HomePage({ onUserClick }: HomePageProps = {}) {
   const [activeTab, setActiveTab] = useState("forYou")
   const [postContent, setPostContent] = useState("")
-  const [posts, setPosts] = useState<Post[]>([
-    {
-      id: 1,
-      username: "Doğan",
-      handle: "@dogansengul",
-      time: "6s",
-      content: "Hello Madritistas",
-      moodCompatibility: "75%",
-    },
-    {
-      id: 2,
-      username: "Eray",
-      handle: "@eraykocabozdogan",
-      time: "2m",
-      content: "Çankırı is beautiful",
-      image: "/placeholder.svg?height=200&width=400",
-      moodCompatibility: "88%",
-    },
-  ])
+  
+  // Post state'ini başlangıçta boş bir dizi olarak ayarlıyoruz.
+  const [posts, setPosts] = useState<Post[]>([])
+  const [followingPosts, setFollowingPosts] = useState<Post[]>([])
 
-  const [followingPosts, setFollowingPosts] = useState<Post[]>([
-    {
-      id: 3,
-      username: "Following1",
-      handle: "@flw1",
-      time: "10m",
-      content: "My new post!",
-      moodCompatibility: "60%",
-    },
-  ])
-  const [selectedImage, setSelectedImage] = useState<string | null>(null) // Added state for selected image
+  // Yükleme ve hata durumları için state'ler
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false })
+  const { toast } = useToast()
 
-  // useCallback hooks for emblaApi
-  const scrollPrev = useCallback(() => {
-    if (emblaApi) emblaApi.scrollPrev()
-  }, [emblaApi])
-
-  const scrollNext = useCallback(() => {
-    if (emblaApi) emblaApi.scrollNext()
-  }, [emblaApi])
-
-  // Effect to sync Embla carousel with activeTab state
-  useEffect(() => {
-    if (emblaApi) {
-      const onSelect = () => {
-        const newIndex = emblaApi.selectedScrollSnap()
-        setActiveTab(newIndex === 0 ? "forYou" : "following")
-      }
-      emblaApi.on("select", onSelect)
-      // Cleanup listener on component unmount
-      return () => {
-        emblaApi.off("select", onSelect)
-      }
+  // Postları backend'den çeken fonksiyon
+  const fetchPosts = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      // Şimdilik hem "For You" hem de "Following" için aynı endpoint'i kullanıyoruz.
+      // Gerçekte, "Following" için `/api/Posts/followed-users/{userId}` gibi bir endpoint kullanılmalıdır.
+      const response = await apiClient.get<{ items: Post[] }>('/api/Posts')
+      setPosts(response.items)
+    } catch (err) {
+      setError("Gönderiler yüklenirken bir hata oluştu.")
+      console.error(err)
+    } finally {
+      setIsLoading(false)
     }
-  }, [emblaApi])
+  }, [])
 
-  // Effect to sync activeTab state with Embla carousel
+  // Sayfa yüklendiğinde postları çek
   useEffect(() => {
-    if (emblaApi) {
-      const targetIndex = activeTab === "forYou" ? 0 : 1
-      if (emblaApi.selectedScrollSnap() !== targetIndex) {
-        emblaApi.scrollTo(targetIndex)
-      }
-    }
-  }, [activeTab, emblaApi])
+    fetchPosts()
+  }, [fetchPosts])
 
-  const handlePostSubmit = () => {
-    if (postContent.trim() || selectedImage) { // Allow post if there\'s content or an image
-      const newPost: Post = {
-        id: Date.now(), 
-        username: "You", 
-        handle: "@you",
-        time: "now",
-        content: postContent,
-        image: selectedImage ?? undefined, // Add selected image to post, ensure undefined if null
-        moodCompatibility: Math.floor(Math.random() * 30 + 70) + "%",
+  // Yeni post gönderme fonksiyonu
+  const handlePostSubmit = async () => {
+    if (!postContent.trim() && !selectedImage) return
+
+    try {
+      // Swagger'a göre `CreatePostCommand` `userId` ve `contentText` bekliyor.
+      // `userId`'yi oturum açmış kullanıcıdan almamız gerekiyor, şimdilik sabit bir değer kullanabiliriz.
+      const newPostData = {
+        // TODO: Bu ID'yi giriş yapan kullanıcının ID'si ile değiştir.
+        userId: "00000000-0000-0000-0000-000000000000", 
+        contentText: postContent,
+        // TODO: Resim yükleme
+        postImageFileId: null, 
       }
 
-      if (activeTab === "forYou") {
-        setPosts([newPost, ...posts])
-      } else {
-        setFollowingPosts([newPost, ...followingPosts])
-      }
-
+      await apiClient.post('/api/Posts', newPostData)
+      
       setPostContent("")
-      setSelectedImage(null) // Clear selected image after posting
+      setSelectedImage(null)
+      toast({ title: "Başarılı!", description: "Gönderiniz paylaşıldı." })
+
+      // Yeni post gönderildikten sonra listeyi yenile
+      fetchPosts()
+
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Hata!",
+        description: "Gönderi paylaşılamadı. Lütfen tekrar deneyin.",
+      })
+      console.error(err)
     }
   }
-
+  
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       handlePostSubmit()
@@ -130,9 +117,37 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
         setSelectedImage(reader.result as string)
       }
       reader.readAsDataURL(file)
-      event.target.value = "" // Reset file input value
+      event.target.value = ""
     }
   }
+  
+  const renderContent = () => {
+    if (isLoading) {
+      // Yüklenirken gösterilecek iskelet (skeleton) bileşenleri
+      return (
+        <div className="space-y-4 p-4">
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+        </div>
+      )
+    }
+
+    if (error) {
+      return <div className="p-4 text-center text-red-500">{error}</div>
+    }
+
+    const currentPosts = activeTab === 'forYou' ? posts : followingPosts;
+
+    return currentPosts.map((post) => (
+      <PostCard 
+          key={post.id} 
+          post={{...post, handle: `@${post.userEmail?.split('@')[0]}`}} // handle ve diğer eksik alanlar için geçici çözüm
+          onUserClick={onUserClick} 
+      />
+    ));
+  };
+
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -155,35 +170,32 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
               onKeyDown={handleKeyPress}
               className="border-none resize-none text-xl placeholder-muted-foreground focus:ring-0 min-h-[80px] bg-transparent text-foreground"
               rows={3}
-              maxLength={280} // Added maxLength for character limit
+              maxLength={280}
             />
-            {/* Image preview section */}
             {selectedImage && (
-              <div className="mt-2">
+              <div className="mt-2 relative">
                 <img src={selectedImage} alt="Preview" className="rounded-lg max-h-40 object-contain" />
-                <Button variant="ghost" size="sm" onClick={() => setSelectedImage(null)} className="mt-1 text-destructive hover:text-destructive/90">
-                  Remove
+                <Button variant="ghost" size="sm" onClick={() => setSelectedImage(null)} className="absolute top-1 right-1 bg-black/50 hover:bg-black/70 text-white rounded-full h-6 w-6 p-0">
+                  <X size={16} />
                 </Button>
               </div>
             )}
             <div className="flex justify-between items-center mt-3">
               <div className="flex items-center space-x-2">
-                {/* Image upload button */}
                 <label htmlFor="image-upload" className="cursor-pointer">
                   <ImagePlus className="text-primary hover:text-primary/90" size={24} />
                 </label>
                 <input id="image-upload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                {/* Character count */}
                 <span className="text-sm text-muted-foreground">
                   {postContent.length}/280
                 </span>
               </div>
-              <div className="flex space-x-2 items-center"> {/* Changed to items-center for vertical alignment */}
+              <div className="flex space-x-2 items-center">
                 <span className="text-xs text-muted-foreground">Press Ctrl+Enter to send</span>
                 <Button
                   onClick={handlePostSubmit}
                   className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-primary-foreground px-6"
-                  disabled={(!postContent.trim() && !selectedImage) || postContent.length > 280} // Updated disabled condition
+                  disabled={(!postContent.trim() && !selectedImage) || postContent.length > 280}
                 >
                   Post
                 </Button>
@@ -217,22 +229,9 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
         </button>
       </div>
 
-      {/* Carousel for posts */}
-      <div className="overflow-hidden" ref={emblaRef}>
-        <div className="flex">
-          {/* "For You" Tab Content */}
-          <div className="min-w-0 flex-shrink-0 flex-grow-0 basis-full bg-background">
-            {posts.map((post) => (
-              <PostCard key={post.id} post={post} onUserClick={onUserClick} />
-            ))}
-          </div>
-          {/* "Following" Tab Content */}
-          <div className="min-w-0 flex-shrink-0 flex-grow-0 basis-full bg-background">
-            {followingPosts.map((post) => (
-              <PostCard key={post.id} post={post} onUserClick={onUserClick} />
-            ))}
-          </div>
-        </div>
+      {/* Render Content based on state */}
+      <div className="bg-background">
+        {renderContent()}
       </div>
     </div>
   )

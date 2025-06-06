@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Heart } from "lucide-react"
 import { VerificationScreen } from "./verification-screen"
+import apiClient from "@/lib/apiClient" // API istemcisini import et
+import { useToast } from "@/hooks/use-toast" // Toast hook'unu import et
 
 interface SignupScreenProps {
   onSignup: (userData: any) => void
@@ -19,25 +21,76 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
   const [password, setPassword] = useState("")
   const [showVerification, setShowVerification] = useState(false)
 
-  const handleSignup = () => {
-    if (fullName && email && password) {
-      // Simulate sending verification email
+  // Yükleme ve hata durumları için state'ler
+  const [isLoading, setIsLoading] = useState(false)
+  const { toast } = useToast()
+
+  const handleSignup = async () => {
+    if (!fullName || !email || !password || !birthDate) {
+      toast({
+        variant: "destructive",
+        title: "Hata",
+        description: "Lütfen tüm alanları doldurun.",
+      })
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      // fullName'i firstName ve lastName'e ayır
+      const nameParts = fullName.split(' ')
+      const firstName = nameParts[0]
+      const lastName = nameParts.slice(1).join(' ')
+      
+      // email'den userName oluştur
+      const userName = email.split('@')[0]
+
+      const registrationData = {
+        email,
+        password,
+        userName,
+        firstName,
+        lastName,
+        dateOfBirth: birthDate,
+      }
+
+      // Backend'e kayıt isteği gönder
+      await apiClient.post('/api/Auth/Register', registrationData)
+
+      // Başarılı olursa doğrulama ekranını göster
       setShowVerification(true)
+
+    } catch (err) {
+      console.error('Signup error:', err)
+      toast({
+        variant: "destructive",
+        title: "Kayıt Başarısız",
+        description: err instanceof Error ? err.message : "Bir hata oluştu. Lütfen tekrar deneyin.",
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const handleVerification = (code: string) => {
-    // Simulate verification process
-    console.log("Verification code:", code)
-    onSignup({ username: fullName, email, id: 1 })
+  // Bu fonksiyon, doğrulama başarılı olduktan sonra çağrılacak.
+  // Şimdilik, sadece simüle edilmiş bir kullanıcı verisiyle onSignup'ı tetikliyor.
+  // Gerçek akışta, doğrulama sonrası belki tekrar login olmak gerekebilir.
+  const handleVerificationSuccess = (code: string) => {
+    console.log("Verification successful with code:", code)
+    // Doğrulama sonrası kullanıcıyı otomatik olarak login yapabilir veya login ekranına yönlendirebiliriz.
+    // Şimdilik, başarılı bir kayıt sonrası direkt uygulamaya alıyoruz.
+    onSignup({ username: fullName, email, id: Date.now() })
   }
 
   const handleResendCode = () => {
-    // Simulate resending verification code
+    // TODO: `/api/Auth/SendEmailValidation` endpoint'ini çağır
     console.log("Resending verification code to:", email)
+    toast({ title: "Kod Tekrar Gönderildi", description: `Doğrulama kodu ${email} adresine tekrar gönderildi.` })
   }
 
   const handleGoogleSignup = () => {
+    // TODO: Google ile giriş akışını backend'e bağla
     onSignup({ username: "Google User", email: "user@gmail.com", id: 1 })
   }
 
@@ -46,7 +99,7 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
       <VerificationScreen
         email={email}
         type="signup"
-        onVerify={handleVerification}
+        onVerify={handleVerificationSuccess} // Başarılı doğrulama sonrası çağrılacak fonksiyon
         onResendCode={handleResendCode}
         onGoBack={() => setShowVerification(false)}
       />
@@ -77,6 +130,7 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
+            disabled={isLoading}
           />
           <Input
             type="email"
@@ -84,6 +138,7 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
+            disabled={isLoading}
           />
           <Input
             type="date"
@@ -91,6 +146,7 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
             value={birthDate}
             onChange={(e) => setBirthDate(e.target.value)}
             className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
+            disabled={isLoading}
           />
           <Input
             type="password"
@@ -98,23 +154,26 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
+            disabled={isLoading}
           />
           <Button
             onClick={handleSignup}
             className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium"
+            disabled={isLoading}
           >
-            Sign Up
+            {isLoading ? "Signing up..." : "Sign Up"}
           </Button>
           <Button
             onClick={handleGoogleSignup}
             variant="outline"
             className="w-full h-12 border-gray-200 hover:bg-gray-50"
+            disabled={isLoading}
           >
             Sign Up with Google
           </Button>
           <div className="text-center text-sm text-gray-600">
             Already have an account?{" "}
-            <button onClick={onSwitchToLogin} className="text-purple-600 hover:underline">
+            <button onClick={onSwitchToLogin} className="text-purple-600 hover:underline" disabled={isLoading}>
               Login
             </button>
           </div>

@@ -1,21 +1,29 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import React, { useState, useEffect, useCallback, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ArrowLeft, Send, Users, Info } from "lucide-react"
+import apiClient from "@/lib/apiClient"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useToast } from "@/hooks/use-toast"
 import { User } from "@/components/create-group-chat"
 
+// Tipleri güncelleyelim
 interface ChatInfo {
-  id: number
-  type: "user" | "group"
-  title: string
-  handle?: string
-  members?: User[]
-  lastMessage: string
-  time: string
+  id: string;
+  name: string;
+  type: string;
+  members?: User[];
+}
+
+interface Message {
+  id: string;
+  chatId: string;
+  senderUserId: string;
+  senderUserName?: string;
+  content: string;
+  sentDate: string;
 }
 
 interface ChatPageProps {
@@ -23,227 +31,125 @@ interface ChatPageProps {
   onBack: () => void
 }
 
-interface Message {
-  id: number
-  text: string
-  time: string
-  sent: boolean
-  sender?: string
-}
-
 export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
-  const [message, setMessage] = useState("")
-  const [showGroupInfo, setShowGroupInfo] = useState(false)
+  const [messages, setMessages] = useState<Message[]>([])
+  const [newMessage, setNewMessage] = useState("")
+  const [isLoading, setIsLoading] = useState(true)
+  const { toast } = useToast()
+  const messagesEndRef = useRef<null | HTMLDivElement>(null)
+  
+  // TODO: Giriş yapmış kullanıcının ID'sini bir context veya state'den almalısın.
+  const loggedInUserId = "00000000-0000-0000-0000-000000000000"; 
 
-  // Initial messages
-  const initialMessages: { [key: string]: Message[] } = {
-    "Doğan": [
-      { id: 1, text: "Heyy!", time: "23:46", sent: false },
-      { id: 2, text: "Hello!", time: "23:47", sent: true },
-    ],
-    "Eray2": [
-      { id: 1, text: "Hey dude! Wanna see...?", time: "Yesterday 15:30", sent: false },
-      { id: 2, text: "Sure, when?", time: "Yesterday 15:32", sent: true },
-    ],
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
-  const [messages, setMessages] = useState<Message[]>(() => {
-    if (!chatDetails) return [];
-    
-    // For existing individual chats, use the chat title as key
-    if (chatDetails.type === "user" && initialMessages[chatDetails.title]) {
-      return initialMessages[chatDetails.title];
+  const fetchMessages = useCallback(async () => {
+    if (!chatDetails) return
+    setIsLoading(true)
+    try {
+      const response = await apiClient.get<{ messages: Message[] }>(`/api/Messages/chat/${chatDetails.id}`)
+      setMessages(response.messages)
+    } catch (error) {
+      console.error("Failed to fetch messages:", error)
+      toast({ variant: "destructive", title: "Hata", description: "Mesajlar yüklenemedi." })
+    } finally {
+      setIsLoading(false)
     }
-    
-    // For new group chats, start with an empty array or a welcome message
-    if (chatDetails.type === "group") {
-      return [
-        {
-          id: 1,
-          text: `${chatDetails.title} group chat created.`,
-          time: chatDetails.time || new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
-          sent: false,
-          sender: "System"
-        }
-      ];
+  }, [chatDetails, toast])
+
+  useEffect(() => {
+    fetchMessages()
+  }, [fetchMessages])
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
+
+
+  const handleSend = async () => {
+    if (!newMessage.trim() || !chatDetails) return
+
+    const messageData = {
+      chatId: chatDetails.id,
+      senderUserId: loggedInUserId,
+      content: newMessage,
     }
-    
-    return [];
-  });
 
-  const handleSend = () => {
-    if (message.trim()) {
-      const newMessage: Message = {
-        id: Date.now(),
-        text: message,
-        time: new Date().toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        sent: true,
-      }
+    try {
+      // Mesajı optimistic olarak UI'a ekle
+      const optimisticMessage: Message = {
+        ...messageData,
+        id: Date.now().toString(), // Geçici ID
+        sentDate: new Date().toISOString(),
+      };
+      setMessages(prev => [...prev, optimisticMessage]);
+      setNewMessage("");
 
-      setMessages([...messages, newMessage])
-      setMessage("")
-
-      // Otomatik yanıt simülasyonu (opsiyonel)
-      if (chatDetails?.type === "user") {
-        setTimeout(() => {
-          const autoReply: Message = {
-            id: Date.now() + 1,
-            text: "Thanks for your message! 😊",
-            time: new Date().toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-            sent: false,
-          }
-          setMessages((prev) => [...prev, autoReply])
-        }, 2000)
-      } else if (chatDetails?.type === "group" && chatDetails.members && chatDetails.members.length > 0) {
-        // Simulate responses from group members
-        setTimeout(() => {
-          const randomMember = chatDetails.members![Math.floor(Math.random() * chatDetails.members!.length)];
-          const autoReply: Message = {
-            id: Date.now() + 1,
-            text: "Reply to group message! 👍",
-            time: new Date().toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-            sent: false,
-            sender: randomMember.username
-          }
-          setMessages((prev) => [...prev, autoReply])
-        }, 2000)
-      }
+      // API'ye isteği gönder
+      await apiClient.post('/api/Messages/send', messageData)
+      
+      // Başarılı olursa listeyi yenile (veya websocket ile bekle)
+      fetchMessages(); 
+      
+    } catch (error) {
+      console.error("Failed to send message:", error)
+      toast({ variant: "destructive", title: "Hata", description: "Mesaj gönderilemedi." })
+      // Hata durumunda optimistic olarak eklenen mesajı kaldır
+      setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
     }
-  }
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
-  }
-
-  // Toggle group info panel
-  const toggleGroupInfo = () => {
-    setShowGroupInfo(!showGroupInfo)
   }
 
   return (
     <div className="max-w-2xl mx-auto h-screen flex flex-col">
       {/* Header */}
       <div className="sticky top-0 bg-card/80 backdrop-blur-sm border-b border-border p-4">
-        <div className="flex items-center justify-between">
-          {/* Left: avatar and back button */}
-          <div className="flex items-center">
-            <button onClick={onBack} className="p-2 hover:bg-muted rounded-full transition-colors mr-2">
-              <ArrowLeft className="w-5 h-5 text-foreground" />
-            </button>
-            {chatDetails?.type === "user" ? (
-              <div className="w-10 h-10 bg-gradient-to-r from-green-400 to-blue-400 rounded-full"></div>
-            ) : (
-              <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
-                <Users className="w-5 h-5 text-white" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <button onClick={onBack} className="p-2 hover:bg-muted rounded-full mr-2"><ArrowLeft className="w-5 h-5" /></button>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-r ${chatDetails?.type === "Direct" ? "from-green-400 to-blue-400" : "from-purple-400 to-pink-400"}`}>
+                {chatDetails?.type === "Group" && <Users className="w-5 h-5 text-white" />}
               </div>
-            )}
+            </div>
+            <div className="text-center flex-1 mx-2">
+              <h1 className="text-xl font-bold truncate">{chatDetails?.name}</h1>
+            </div>
+            <div className="w-10 h-10 flex items-center justify-center">
+              {chatDetails?.type === "Group" && <button className="p-2 hover:bg-muted rounded-full"><Info className="w-5 h-5" /></button>}
+            </div>
           </div>
-          {/* Middle: title */}
-          <div className="text-center flex-1">
-            <h1 className="text-xl font-bold text-foreground">{chatDetails?.title}</h1>
-            {chatDetails?.type === "group" && (
-              <p className="text-sm text-muted-foreground">{chatDetails.members?.length} members</p>
-            )}
-          </div>
-          {/* Right: info button */}
-          <div className="flex items-center justify-end min-w-[40px]">
-            {chatDetails?.type === "group" && (
-              <button 
-                onClick={toggleGroupInfo} 
-                className="p-2 hover:bg-muted rounded-full transition-colors"
-              >
-                <Info className="w-5 h-5 text-foreground" />
-              </button>
-            )}
-          </div>
-        </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Messages */}
-        <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-          {messages.length === 0 ? (
-            <div className="text-center text-muted-foreground mt-8">
-              <p>No messages yet. Send the first message! 👋</p>
+      {/* Messages */}
+      <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+        {isLoading ? (
+            <div className="space-y-4">
+                <Skeleton className="h-12 w-3/4 rounded-lg" />
+                <Skeleton className="h-16 w-1/2 rounded-lg self-end" />
+                <Skeleton className="h-8 w-2/3 rounded-lg" />
             </div>
-          ) : (
-            messages.map((msg) => (
-              <div key={msg.id} className={`flex ${msg.sent ? "justify-end" : "justify-start"}`}>
-                <div
-                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
-                    msg.sent 
-                      ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white" 
-                      : "bg-muted text-foreground"
-                  }`}
-                >
-                  {/* Show sender name for group chats */}
-                  {!msg.sent && chatDetails?.type === "group" && msg.sender && (
-                    <p className="text-xs font-medium mb-1">
-                      {msg.sender}
-                    </p>
-                  )}
-                  <p className="break-words">{msg.text}</p>
-                  <p className={`text-xs mt-1 ${msg.sent ? "text-purple-100" : "text-muted-foreground"}`}>{msg.time}</p>
-                </div>
+        ) : (
+          messages.map((msg) => (
+            <div key={msg.id} className={`flex ${msg.senderUserId === loggedInUserId ? "justify-end" : "justify-start"}`}>
+              <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${msg.senderUserId === loggedInUserId ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white" : "bg-muted text-foreground"}`}>
+                {chatDetails?.type === "Group" && msg.senderUserId !== loggedInUserId && (
+                    <p className="text-xs font-medium mb-1">{msg.senderUserName || 'Bilinmeyen Kullanıcı'}</p>
+                )}
+                <p className="break-words">{msg.content}</p>
+                <p className={`text-xs mt-1 opacity-70`}>{new Date(msg.sentDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
               </div>
-            ))
-          )}
-        </div>
-
-        {/* Group info sidebar */}
-        {showGroupInfo && chatDetails?.type === "group" && (
-          <div className="w-64 border-l border-border p-4 overflow-y-auto bg-card">
-            <h3 className="font-bold text-lg mb-4 text-foreground">Group Members</h3>
-            <div className="space-y-3">
-              {chatDetails.members?.map(member => (
-                <div key={member.id} className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-400 rounded-full"></div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{member.username}</p>
-                    <p className="text-xs text-muted-foreground">{member.handle}</p>
-                  </div>
-                </div>
-              ))}
             </div>
-          </div>
+          ))
         )}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Message Input */}
       <div className="border-t border-border p-4 bg-card">
         <div className="flex space-x-2">
-          <Input
-            type="text"
-            placeholder="Type a message..."
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            className="flex-1 bg-background border-border text-foreground"
-            maxLength={500}
-          />
-          <Button
-            onClick={handleSend}
-            disabled={!message.trim()}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:opacity-50"
-          >
-            <Send className="w-4 h-4" />
-          </Button>
-        </div>
-        <div className="flex justify-between items-center mt-2">
-          <span className="text-xs text-muted-foreground">Press Enter to send</span>
-          {message.length > 0 && <span className="text-xs text-muted-foreground">{message.length}/500</span>}
+          <Input type="text" placeholder="Bir mesaj yaz..." value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} className="flex-1 bg-background" />
+          <Button onClick={handleSend} disabled={!newMessage.trim()} className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"><Send className="w-4 h-4" /></Button>
         </div>
       </div>
     </div>
