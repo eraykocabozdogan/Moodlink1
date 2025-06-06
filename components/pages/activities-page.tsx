@@ -19,53 +19,53 @@ export function ActivitiesPage() {
     time: "",
     location: "",
     description: "",
-    category: "spor",
-    mood: "Heyecanlı",
+    category: "sports",
+    mood: "Excited",
   })
 
   const [activities, setActivities] = useState([
     {
       id: 1,
-      title: "Fenerbahçe - Galatasaray Maçı İzleme",
+      title: "Fenerbahçe - Galatasaray Match Viewing",
       date: "2024-01-15",
       time: "20:00",
-      location: "Spor Barı",
+      location: "Sports Bar",
       participants: 12,
-      mood: "Heyecanlı",
-      category: "spor",
+      mood: "Excited",
+      category: "sports",
       status: "upcoming",
     },
     {
       id: 2,
-      title: "Kitap Kulübü Buluşması",
+      title: "Book Club Meeting",
       date: "2024-01-18",
       time: "19:00",
-      location: "Kahve Dükkanı",
+      location: "Coffee Shop",
       participants: 8,
-      mood: "Huzurlu",
-      category: "kultur",
+      mood: "Peaceful",
+      category: "culture",
       status: "upcoming",
     },
     {
       id: 3,
-      title: "Doğa Yürüyüşü",
+      title: "Nature Walk",
       date: "2024-01-20",
       time: "09:00",
-      location: "Belgrad Ormanı",
+      location: "Belgrad Forest",
       participants: 15,
-      mood: "Enerjik",
-      category: "spor",
+      mood: "Energetic",
+      category: "sports",
       status: "upcoming",
     },
     {
       id: 4,
-      title: "Film Gecesi",
+      title: "Movie Night",
       date: "2024-01-10",
       time: "21:00",
-      location: "Sinema",
+      location: "Cinema",
       participants: 6,
-      mood: "Rahat",
-      category: "eglence",
+      mood: "Relaxed",
+      category: "entertainment",
       status: "completed",
     },
   ])
@@ -110,8 +110,8 @@ export function ActivitiesPage() {
         time: "",
         location: "",
         description: "",
-        category: "spor",
-        mood: "Heyecanlı",
+        category: "sports",
+        mood: "Excited",
       })
       setShowCreateForm(false)
     }
@@ -126,13 +126,13 @@ export function ActivitiesPage() {
 
   const getMoodColor = (mood: string) => {
     switch (mood) {
-      case "Heyecanlı":
+      case "Excited":
         return "bg-red-100 text-red-700"
-      case "Huzurlu":
+      case "Peaceful":
         return "bg-blue-100 text-blue-700"
-      case "Enerjik":
+      case "Energetic":
         return "bg-green-100 text-green-700"
-      case "Rahat":
+      case "Relaxed":
         return "bg-purple-100 text-purple-700"
       default:
         return "bg-gray-100 text-gray-700"
@@ -144,26 +144,26 @@ export function ActivitiesPage() {
       {/* Header */}
       <div className="sticky top-0 bg-background/80 backdrop-blur-sm border-b border-border p-4">
         <div className="flex items-center justify-between mb-4">
-          <div className="w-[120px]"></div> {/* Sol tarafı dengelemek için boş alan */}
-          <h1 className="text-xl font-bold text-foreground">Etkinlikler</h1>
+          <div className="w-[120px]"></div> {/* Empty space to balance the left side */}
+          <h1 className="text-xl font-bold text-foreground">Activities</h1>
           <Button
             onClick={() => setShowCreateForm(true)}
             className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Etkinlik Oluştur
+            Create Activity
           </Button>
         </div>
 
         {/* Filters */}
         <div className="flex space-x-2 overflow-x-auto">
           {[
-            { id: "all", label: "Tümü" },
-            { id: "upcoming", label: "Yaklaşan" },
-            { id: "completed", label: "Tamamlanan" },
-            { id: "spor", label: "Spor" },
-            { id: "kultur", label: "Kültür" },
-            { id: "eglence", label: "Eğlence" },
+            { id: "all", label: "All" },
+            { id: "upcoming", label: "Upcoming" },
+            { id: "completed", label: "Completed" },
+            { id: "sports", label: "Sports" },
+            { id: "culture", label: "Culture" },
+            { id: "entertainment", label: "Entertainment" },
           ].map((filterOption) => (
             <Button
               key={filterOption.id}
@@ -188,7 +188,7 @@ export function ActivitiesPage() {
           <Card className="border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50">
             <CardHeader>
               <div className="flex justify-between items-center">
-                <CardTitle>Yeni Etkinlik Oluştur</CardTitle>
+                <CardTitle>Create New Activity</CardTitle>
                 <Button variant="ghost" size="sm" onClick={() => setShowCreateForm(false)}>
                   <X className="w-4 h-4" />
                 </Button>
@@ -196,7 +196,7 @@ export function ActivitiesPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <Input
-                placeholder="Etkinlik başlığı"
+                placeholder="Activity title"
                 value={newActivity.title}
                 onChange={(e) => setNewActivity({ ...newActivity, title: e.target.value })}
               />
@@ -213,12 +213,12 @@ export function ActivitiesPage() {
                 />
               </div>
               <Input
-                placeholder="Konum"
+                placeholder="Location"
                 value={newActivity.location}
                 onChange={(e) => setNewActivity({ ...newActivity, location: e.target.value })}
               />
               <Textarea
-                placeholder="Açıklama (opsiyonel)"
+                placeholder="Description (optional)"
                 value={newActivity.description}
                 onChange={(e) => setNewActivity({ ...newActivity, description: e.target.value })}
               />
@@ -228,26 +228,26 @@ export function ActivitiesPage() {
                   value={newActivity.category}
                   onChange={(e) => setNewActivity({ ...newActivity, category: e.target.value })}
                 >
-                  <option value="spor">Spor</option>
-                  <option value="kultur">Kültür</option>
-                  <option value="eglence">Eğlence</option>
+                  <option value="sports">Sports</option>
+                  <option value="culture">Culture</option>
+                  <option value="entertainment">Entertainment</option>
                 </select>
                 <select
                   className="p-2 border rounded-md"
                   value={newActivity.mood}
                   onChange={(e) => setNewActivity({ ...newActivity, mood: e.target.value })}
                 >
-                  <option value="Heyecanlı">Heyecanlı</option>
-                  <option value="Huzurlu">Huzurlu</option>
-                  <option value="Enerjik">Enerjik</option>
-                  <option value="Rahat">Rahat</option>
+                  <option value="Excited">Excited</option>
+                  <option value="Peaceful">Peaceful</option>
+                  <option value="Energetic">Energetic</option>
+                  <option value="Relaxed">Relaxed</option>
                 </select>
               </div>
               <Button
                 onClick={handleCreateActivity}
                 className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
               >
-                Etkinlik Oluştur
+                Create Activity
               </Button>
             </CardContent>
           </Card>
@@ -259,7 +259,7 @@ export function ActivitiesPage() {
               <div className="flex justify-between items-start">
                 <CardTitle className="text-lg">{activity.title}</CardTitle>
                 <Badge variant={activity.status === "upcoming" ? "default" : "secondary"}>
-                  {activity.status === "upcoming" ? "Yaklaşan" : "Tamamlandı"}
+                  {activity.status === "upcoming" ? "Upcoming" : "Completed"}
                 </Badge>
               </div>
             </CardHeader>
@@ -284,7 +284,7 @@ export function ActivitiesPage() {
                   <div className="flex items-center space-x-3">
                     <div className="flex items-center space-x-1 text-sm text-muted-foreground">
                       <Users className="w-4 h-4" />
-                      <span>{activity.participants} katılımcı</span>
+                      <span>{activity.participants} participants</span>
                     </div>
                     <Badge className={getMoodColor(activity.mood)}>{activity.mood}</Badge>
                   </div>
@@ -299,7 +299,7 @@ export function ActivitiesPage() {
                         : "border-purple-300 text-purple-600 hover:bg-purple-50"
                     }
                   >
-                    {joinedActivities.includes(activity.id) ? "Ayrıl" : "Katıl"}
+                    {joinedActivities.includes(activity.id) ? "Leave" : "Join"}
                   </Button>
                 </div>
               </div>
@@ -309,7 +309,7 @@ export function ActivitiesPage() {
 
         {filteredActivities.length === 0 && (
           <div className="text-center py-8">
-            <p className="text-muted-foreground">Bu kategoride etkinlik bulunamadı.</p>
+            <p className="text-muted-foreground">No activities found in this category.</p>
           </div>
         )}
       </div>

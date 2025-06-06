@@ -19,17 +19,17 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
   const [selectedProfileImageFile, setSelectedProfileImageFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Varsayılan kullanıcı verilerini güvenli şekilde ayarlayalım
+  // Set default user data safely
   const defaultUser = {
-    username: "Kullanıcı Adı",
-    handle: "kullanici_adi",
-    bio: "Merhaba! Ben MoodLink kullanıyorum.",
+    username: "User Name",
+    handle: "user_name",
+    bio: "Hello! I'm using MoodLink.",
     followers: "13K",
     following: "32",
     profileImageUrl: null as string | null, // Added profileImageUrl
     moods: [
-      { name: "Enerjik", percentage: "62%" },
-      { name: "Üzgün", percentage: "56%" },
+      { name: "Energetic", percentage: "62%" },
+      { name: "Sad", percentage: "56%" },
     ],
     badges: ["🏅", "🏆"],
   }
@@ -38,7 +38,7 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
     ...defaultUser,
     ...(initialUser || {}), // Handle potential null/undefined initialUser
     profileImageUrl: initialUser?.profileImageUrl || defaultUser.profileImageUrl, // Initialize profileImageUrl
-    // Moods array'inin var olduğundan emin olalım
+    // Make sure moods array exists
     moods: initialUser?.moods || defaultUser.moods,
     badges: initialUser?.badges || defaultUser.badges,
   })
@@ -46,7 +46,7 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
   const [editForm, setEditForm] = useState({
     username: user.username,
     handle: user.handle,
-    bio: user.bio || "Merhaba! Ben MoodLink kullanıyorum.",
+    bio: user.bio || "Hello! I'm using MoodLink.",
   })
 
   const userPosts = [
@@ -55,7 +55,7 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
       username: user.username,
       handle: `@${user.handle}`,
       time: "1s",
-      content: "Bu benim ilk gönderim!",
+      content: "This is my first post!",
       moodCompatibility: "90%",
     },
   ]
@@ -119,7 +119,7 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
       {/* Header */}
       <div className="sticky top-0 bg-card/80 backdrop-blur-sm border-b border-border p-4">
         <div className="flex items-center justify-center">
-          <h1 className="text-xl font-bold text-foreground">Profil</h1>
+          <h1 className="text-xl font-bold text-foreground">Profile</h1>
         </div>
       </div>
 
@@ -137,7 +137,7 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
                   {profileImagePreview ? (
                     <img
                       src={profileImagePreview}
-                      alt="Profil Resmi Önizleme"
+                      alt="Profile Picture Preview"
                       className="w-full h-full object-cover"
                     />
                   ) : user.profileImageUrl ? (
@@ -148,11 +148,11 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center text-primary-foreground">
-                      <span className="text-xs">Resim Seç</span>
+                      <span className="text-xs">Select Image</span>
                     </div>
                   )}
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 rounded-full flex items-center justify-center transition-opacity">
-                    <span className="text-white text-sm opacity-0 group-hover:opacity-100">Değiştir</span>
+                    <span className="text-white text-sm opacity-0 group-hover:opacity-100">Change</span>
                   </div>
                 </label>
                 <input
@@ -184,14 +184,14 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
                   name="username"
                   value={editForm.username}
                   onChange={handleInputChange}
-                  placeholder="Kullanıcı adı"
+                  placeholder="Username"
                   className="text-center font-bold bg-background border-border text-foreground"
                 />
                 <Input
                   name="handle"
                   value={editForm.handle}
                   onChange={handleInputChange}
-                  placeholder="Kullanıcı kodu"
+                  placeholder="User handle"
                   className="text-center text-muted-foreground mt-2 bg-background border-border"
                 />
               </div>
@@ -199,7 +199,7 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
                 name="bio"
                 value={editForm.bio}
                 onChange={handleInputChange}
-                placeholder="Biyografi"
+                placeholder="Bio"
                 className="min-h-[100px] bg-background border-border text-foreground"
               />
               <div className="flex justify-center space-x-3">
@@ -208,11 +208,11 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
                   className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-primary-foreground"
                 >
                   <Check className="w-4 h-4 mr-2" />
-                  Kaydet
+                  Save
                 </Button>
                 <Button onClick={handleCancelEdit} variant="outline" className="border-border text-foreground hover:bg-muted">
                   <X className="w-4 h-4 mr-2" />
-                  İptal
+                  Cancel
                 </Button>
               </div>
             </div>
@@ -225,10 +225,10 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
               {user.bio && <p className="text-muted-foreground max-w-md mx-auto">{user.bio}</p>}
               <div className="flex justify-center space-x-6 text-sm text-muted-foreground">
                 <span>
-                  <strong className="text-foreground">{user.followers}</strong> Takipçi
+                  <strong className="text-foreground">{user.followers}</strong> Followers
                 </span>
                 <span>
-                  <strong className="text-foreground">{user.following}</strong> Takip Edilen
+                  <strong className="text-foreground">{user.following}</strong> Following
                 </span>
               </div>
               <div className="bg-muted/50 p-4 rounded-xl">
@@ -242,19 +242,19 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
                       </span>
                     ))
                   ) : (
-                    <span>Henüz mood verisi yok</span>
+                    <span>No mood data yet</span>
                   )}
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  <strong className="text-foreground">Rozetler:</strong>{" "}
-                  {user.badges && user.badges.length > 0 ? user.badges.join(" ") : "Henüz rozet yok"}
+                  <strong className="text-foreground">Badges:</strong>{" "}
+                  {user.badges && user.badges.length > 0 ? user.badges.join(" ") : "No badges yet"}
                 </p>
               </div>
               <Button
                 onClick={handleEditToggle}
                 className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-primary-foreground"
               >
-                Profili Düzenle
+                Edit Profile
               </Button>
             </>
           )}
@@ -264,7 +264,7 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
       {/* Posts */}
       <div className="bg-card">
         <div className="p-4 border-b border-border">
-          <h4 className="font-bold text-foreground">Gönderilerim</h4>
+          <h4 className="font-bold text-foreground">My Posts</h4>
         </div>
         {userPosts.map((post) => (
           <PostCard key={post.id} post={post} />

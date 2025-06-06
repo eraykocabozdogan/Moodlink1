@@ -26,14 +26,14 @@ interface SidebarProps {
 
 export function Sidebar({ currentPage, onPageChange, onLogout, isOpen, onClose }: SidebarProps) {
   const menuItems = [
-    { id: "home", label: "Ana Sayfa", icon: Home },
-    { id: "search", label: "Arama", icon: Search },
-    { id: "notifications", label: "Bildirimler", icon: Bell },
-    { id: "messages", label: "Direkt Mesajlar", icon: MessageCircle },
-    { id: "profile", label: "Profil", icon: User },
-    { id: "activities", label: "Etkinlikler", icon: Calendar },
-    { id: "moodreport", label: "Ruh Hali Raporu", icon: BarChart3 },
-    { id: "options", label: "Seçenekler", icon: Settings },
+    { id: "home", label: "Home", icon: Home },
+    { id: "search", label: "Search", icon: Search },
+    { id: "notifications", label: "Notifications", icon: Bell },
+    { id: "messages", label: "Direct Messages", icon: MessageCircle },
+    { id: "profile", label: "Profile", icon: User },
+    { id: "activities", label: "Activities", icon: Calendar },
+    { id: "moodreport", label: "Mood Report", icon: BarChart3 },
+    { id: "options", label: "Options", icon: Settings },
   ]
 
   return (
@@ -101,7 +101,7 @@ export function Sidebar({ currentPage, onPageChange, onLogout, isOpen, onClose }
               className="w-full justify-start text-destructive hover:text-destructive/90 hover:bg-destructive/10"
             >
               <LogOut className="w-5 h-5 mr-3" />
-              Çıkış Yap
+              Logout
             </Button>
           </div>
         </div>

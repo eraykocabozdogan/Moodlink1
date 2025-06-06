@@ -35,15 +35,15 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
   const [message, setMessage] = useState("")
   const [showGroupInfo, setShowGroupInfo] = useState(false)
 
-  // Başlangıç mesajları
+  // Initial messages
   const initialMessages: { [key: string]: Message[] } = {
     "Doğan": [
       { id: 1, text: "Heyy!", time: "23:46", sent: false },
-      { id: 2, text: "Selam!", time: "23:47", sent: true },
+      { id: 2, text: "Hello!", time: "23:47", sent: true },
     ],
     "Eray2": [
-      { id: 1, text: "Hey dude! Wanna see...?", time: "Dün 15:30", sent: false },
-      { id: 2, text: "Olur, ne zaman?", time: "Dün 15:32", sent: true },
+      { id: 1, text: "Hey dude! Wanna see...?", time: "Yesterday 15:30", sent: false },
+      { id: 2, text: "Sure, when?", time: "Yesterday 15:32", sent: true },
     ],
   }
 
@@ -60,10 +60,10 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
       return [
         {
           id: 1,
-          text: `${chatDetails.title} grup sohbeti oluşturuldu.`,
-          time: chatDetails.time || new Date().toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" }),
+          text: `${chatDetails.title} group chat created.`,
+          time: chatDetails.time || new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
           sent: false,
-          sender: "Sistem"
+          sender: "System"
         }
       ];
     }
@@ -76,7 +76,7 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
       const newMessage: Message = {
         id: Date.now(),
         text: message,
-        time: new Date().toLocaleTimeString("tr-TR", {
+        time: new Date().toLocaleTimeString("en-US", {
           hour: "2-digit",
           minute: "2-digit",
         }),
@@ -91,8 +91,8 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
         setTimeout(() => {
           const autoReply: Message = {
             id: Date.now() + 1,
-            text: "Mesajın için teşekkürler! 😊",
-            time: new Date().toLocaleTimeString("tr-TR", {
+            text: "Thanks for your message! 😊",
+            time: new Date().toLocaleTimeString("en-US", {
               hour: "2-digit",
               minute: "2-digit",
             }),
@@ -106,8 +106,8 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
           const randomMember = chatDetails.members![Math.floor(Math.random() * chatDetails.members!.length)];
           const autoReply: Message = {
             id: Date.now() + 1,
-            text: "Grup mesajına cevap! 👍",
-            time: new Date().toLocaleTimeString("tr-TR", {
+            text: "Reply to group message! 👍",
+            time: new Date().toLocaleTimeString("en-US", {
               hour: "2-digit",
               minute: "2-digit",
             }),
@@ -137,7 +137,7 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
       {/* Header */}
       <div className="sticky top-0 bg-card/80 backdrop-blur-sm border-b border-border p-4">
         <div className="flex items-center justify-between">
-          {/* Sol: avatar ve geri butonu */}
+          {/* Left: avatar and back button */}
           <div className="flex items-center">
             <button onClick={onBack} className="p-2 hover:bg-muted rounded-full transition-colors mr-2">
               <ArrowLeft className="w-5 h-5 text-foreground" />
@@ -150,14 +150,14 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
               </div>
             )}
           </div>
-          {/* Orta: başlık */}
+          {/* Middle: title */}
           <div className="text-center flex-1">
             <h1 className="text-xl font-bold text-foreground">{chatDetails?.title}</h1>
             {chatDetails?.type === "group" && (
-              <p className="text-sm text-muted-foreground">{chatDetails.members?.length} üye</p>
+              <p className="text-sm text-muted-foreground">{chatDetails.members?.length} members</p>
             )}
           </div>
-          {/* Sağ: info butonu */}
+          {/* Right: info button */}
           <div className="flex items-center justify-end min-w-[40px]">
             {chatDetails?.type === "group" && (
               <button 
@@ -176,7 +176,7 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
         <div className="flex-1 p-4 space-y-4 overflow-y-auto">
           {messages.length === 0 ? (
             <div className="text-center text-muted-foreground mt-8">
-              <p>Henüz mesaj yok. İlk mesajı sen gönder! 👋</p>
+              <p>No messages yet. Send the first message! 👋</p>
             </div>
           ) : (
             messages.map((msg) => (
@@ -205,7 +205,7 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
         {/* Group info sidebar */}
         {showGroupInfo && chatDetails?.type === "group" && (
           <div className="w-64 border-l border-border p-4 overflow-y-auto bg-card">
-            <h3 className="font-bold text-lg mb-4 text-foreground">Grup Üyeleri</h3>
+            <h3 className="font-bold text-lg mb-4 text-foreground">Group Members</h3>
             <div className="space-y-3">
               {chatDetails.members?.map(member => (
                 <div key={member.id} className="flex items-center space-x-2">
@@ -226,7 +226,7 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
         <div className="flex space-x-2">
           <Input
             type="text"
-            placeholder="Mesaj yaz..."
+            placeholder="Type a message..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
@@ -242,7 +242,7 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
           </Button>
         </div>
         <div className="flex justify-between items-center mt-2">
-          <span className="text-xs text-muted-foreground">Enter ile gönder</span>
+          <span className="text-xs text-muted-foreground">Press Enter to send</span>
           {message.length > 0 && <span className="text-xs text-muted-foreground">{message.length}/500</span>}
         </div>
       </div>

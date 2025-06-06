@@ -49,13 +49,13 @@ export function VerificationScreen({
   }
 
   const getTitle = () => {
-    return type === "signup" ? "E-posta Doğrulama" : "Şifre Sıfırlama"
+    return type === "signup" ? "Email Verification" : "Password Reset"
   }
 
   const getDescription = () => {
     return type === "signup" 
-      ? "Hesabınızı doğrulamak için e-postanıza gönderilen 6 haneli kodu girin."
-      : "Şifrenizi sıfırlamak için e-postanıza gönderilen 6 haneli kodu girin."
+      ? "Enter the 6-digit code sent to your email to verify your account."
+      : "Enter the 6-digit code sent to your email to reset your password."
   }
 
   return (
@@ -110,13 +110,13 @@ export function VerificationScreen({
               disabled={code.length !== 6 || isLoading}
               className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium disabled:opacity-50"
             >
-              {isLoading ? "Doğrulanıyor..." : "Doğrula"}
+              {isLoading ? "Verifying..." : "Verify"}
             </Button>
           </div>
 
           <div className="text-center space-y-3">
             <p className="text-sm text-gray-600">
-              Kodu almadın mı?
+              Didn't receive the code?
             </p>
             <Button
               onClick={handleResendCode}
@@ -125,8 +125,8 @@ export function VerificationScreen({
               className="h-10 border-gray-200 hover:bg-gray-50 text-purple-600 hover:text-purple-700"
             >
               {resendCooldown > 0 
-                ? `Tekrar gönder (${resendCooldown}s)` 
-                : "Kodu Tekrar Gönder"
+                ? `Resend (${resendCooldown}s)` 
+                : "Resend Code"
               }
             </Button>
           </div>
@@ -136,7 +136,7 @@ export function VerificationScreen({
               onClick={onGoBack}
               className="text-sm text-gray-500 hover:text-purple-600 hover:underline"
             >
-              ← Geri dön
+              ← Go back
             </button>
           </div>
         </CardContent>

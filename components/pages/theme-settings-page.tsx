@@ -13,52 +13,52 @@ export function ThemeSettingsPage({ onBack }: ThemeSettingsPageProps) {
   const themes = [
     {
       id: "gece" as const,
-      name: "Gece",
+      name: "Night",
       percentage: "48%",
       colors: "from-gray-700 to-gray-900",
-      description: "Koyu gri tonlar",
+      description: "Dark gray tones",
     },
     {
       id: "white" as const,
       name: "White",
       percentage: "28%",
       colors: "from-gray-100 to-white border border-gray-300",
-      description: "Temiz ve minimal",
+      description: "Clean and minimal",
     },
     {
       id: "love" as const,
       name: "Love",
       percentage: "60%",
       colors: "from-pink-400 to-red-400",
-      description: "Romantik pembe tonları",
+      description: "Romantic pink tones",
     },
     {
       id: "dogasever" as const,
-      name: "Doğasever",
+      name: "Nature Lover",
       percentage: "35%",
       colors: "from-green-200 to-green-300",
-      description: "Rahatlatıcı açık yeşil tonlar",
+      description: "Relaxing light green tones",
     },
     {
       id: "gokyuzu" as const,
-      name: "Gökyüzü",
+      name: "Sky",
       percentage: "32%",
       colors: "from-blue-200 to-blue-300",
-      description: "Ferahlatıcı açık mavi tonlar",
+      description: "Refreshing light blue tones",
     },
     {
       id: "lavanta" as const,
-      name: "Lavanta",
+      name: "Lavender",
       percentage: "25%",
       colors: "from-purple-200 to-purple-300",
-      description: "Sakinleştirici mor tonlar",
+      description: "Calming purple tones",
     },
     {
       id: "gunbatimi" as const,
-      name: "Günbatımı",
+      name: "Sunset",
       percentage: "27%",
       colors: "from-amber-200 to-orange-300",
-      description: "Sıcak ve dinlendirici tonlar",
+      description: "Warm and relaxing tones",
     },
   ]
 
@@ -70,13 +70,13 @@ export function ThemeSettingsPage({ onBack }: ThemeSettingsPageProps) {
           <button onClick={onBack} className="p-2 hover:bg-muted rounded-full">
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-xl font-bold text-foreground">Tema Seçimi</h1>
-          <div className="w-10"></div> {/* Sağ tarafı dengelemek için boş alan */}
+          <h1 className="text-xl font-bold text-foreground">Theme Selection</h1>
+          <div className="w-10"></div> {/* Empty space to balance the right side */}
         </div>
       </div>
 
       <div className="p-4">
-        <p className="text-muted-foreground mb-6">Mevcut Temalar:</p>
+        <p className="text-muted-foreground mb-6">Available Themes:</p>
         <div className="space-y-4">
           {themes.map((themeOption) => (
             <div

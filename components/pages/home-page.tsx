@@ -39,8 +39,8 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
       id: 2,
       username: "Eray",
       handle: "@eraykocabozdogan",
-      time: "2dk",
-      content: "Çankırı çok güzel",
+      time: "2m",
+      content: "Çankırı is beautiful",
       image: "/placeholder.svg?height=200&width=400",
       moodCompatibility: "88%",
     },
@@ -49,10 +49,10 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
   const [followingPosts, setFollowingPosts] = useState<Post[]>([
     {
       id: 3,
-      username: "TakipEdilen1",
-      handle: "@tkp1",
-      time: "10dk",
-      content: "Yeni gönderim!",
+      username: "Following1",
+      handle: "@flw1",
+      time: "10m",
+      content: "My new post!",
       moodCompatibility: "60%",
     },
   ])
@@ -97,9 +97,9 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
     if (postContent.trim() || selectedImage) { // Allow post if there\'s content or an image
       const newPost: Post = {
         id: Date.now(), 
-        username: "Sen", 
-        handle: "@sen",
-        time: "şimdi",
+        username: "You", 
+        handle: "@you",
+        time: "now",
         content: postContent,
         image: selectedImage ?? undefined, // Add selected image to post, ensure undefined if null
         moodCompatibility: Math.floor(Math.random() * 30 + 70) + "%",
@@ -139,7 +139,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
       {/* Header */}
       <div className="sticky top-0 bg-card/80 backdrop-blur-sm border-b border-border p-4">
         <div className="flex items-center justify-center">
-          <h1 className="text-xl font-bold text-foreground">Ana Sayfa</h1>
+          <h1 className="text-xl font-bold text-foreground">Home</h1>
         </div>
       </div>
 
@@ -149,7 +149,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
           <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex-shrink-0"></div>
           <div className="flex-1">
             <Textarea
-              placeholder="Neler oluyor?"
+              placeholder="What's happening?"
               value={postContent}
               onChange={(e) => setPostContent(e.target.value)}
               onKeyDown={handleKeyPress}
@@ -162,7 +162,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
               <div className="mt-2">
                 <img src={selectedImage} alt="Preview" className="rounded-lg max-h-40 object-contain" />
                 <Button variant="ghost" size="sm" onClick={() => setSelectedImage(null)} className="mt-1 text-destructive hover:text-destructive/90">
-                  Kaldır
+                  Remove
                 </Button>
               </div>
             )}
@@ -179,13 +179,13 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
                 </span>
               </div>
               <div className="flex space-x-2 items-center"> {/* Changed to items-center for vertical alignment */}
-                <span className="text-xs text-muted-foreground">Ctrl+Enter ile gönder</span>
+                <span className="text-xs text-muted-foreground">Press Ctrl+Enter to send</span>
                 <Button
                   onClick={handlePostSubmit}
                   className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-primary-foreground px-6"
                   disabled={(!postContent.trim() && !selectedImage) || postContent.length > 280} // Updated disabled condition
                 >
-                  Gönder
+                  Post
                 </Button>
               </div>
             </div>
@@ -203,7 +203,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          Sizin İçin
+          For You
         </button>
         <button
           onClick={() => setActiveTab("following")}
@@ -213,7 +213,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          Takip Edilenler
+          Following
         </button>
       </div>
 
