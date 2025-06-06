@@ -74,9 +74,9 @@ export function ForgotPasswordScreen({ onResetComplete, onBackToLogin }: ForgotP
               <div className="w-16 h-16 bg-gradient-to-r from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto">
                 <KeyRound className="w-8 h-8 text-purple-600" />
               </div>
-              <h2 className="text-xl font-semibold text-gray-800">Yeni Şifre Belirle</h2>
+              <h2 className="text-xl font-semibold text-gray-800">Set New Password</h2>
               <p className="text-sm text-gray-600">
-                Hesabın için yeni bir şifre oluştur.
+                Create a new password for your account.
               </p>
             </div>
           </CardHeader>
@@ -84,14 +84,14 @@ export function ForgotPasswordScreen({ onResetComplete, onBackToLogin }: ForgotP
           <CardContent className="space-y-4">
             <Input
               type="password"
-              placeholder="Yeni Şifre"
+              placeholder="New Password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
             />
             <Input
               type="password"
-              placeholder="Şifre Tekrarı"
+              placeholder="Confirm Password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
@@ -101,14 +101,14 @@ export function ForgotPasswordScreen({ onResetComplete, onBackToLogin }: ForgotP
               disabled={!newPassword || newPassword !== confirmPassword}
               className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium"
             >
-              Şifreyi Güncelle
+              Update Password
             </Button>
             <div className="text-center">
               <button 
                 onClick={() => setCurrentStep("verification")}
                 className="text-sm text-gray-500 hover:text-purple-600 hover:underline"
               >
-                ← Geri dön
+                ← Go back
               </button>
             </div>
           </CardContent>
@@ -134,9 +134,9 @@ export function ForgotPasswordScreen({ onResetComplete, onBackToLogin }: ForgotP
             <div className="w-16 h-16 bg-gradient-to-r from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto">
               <KeyRound className="w-8 h-8 text-purple-600" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-800">Şifreni mi Unuttun?</h2>
+            <h2 className="text-xl font-semibold text-gray-800">Forgot Password?</h2>
             <p className="text-sm text-gray-600">
-              E-posta adresini gir, sana şifre sıfırlama kodu gönderelim.
+              Enter your email address and we'll send you a password reset code.
             </p>
           </div>
         </CardHeader>
@@ -144,7 +144,7 @@ export function ForgotPasswordScreen({ onResetComplete, onBackToLogin }: ForgotP
         <CardContent className="space-y-4">
           <Input
             type="email"
-            placeholder="E-posta adresin"
+            placeholder="Your email address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
@@ -154,14 +154,14 @@ export function ForgotPasswordScreen({ onResetComplete, onBackToLogin }: ForgotP
             disabled={!email}
             className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium"
           >
-            Doğrulama Kodu Gönder
+            Send Verification Code
           </Button>
           <div className="text-center">
             <button 
               onClick={onBackToLogin}
               className="text-sm text-gray-500 hover:text-purple-600 hover:underline"
             >
-              ← Giriş ekranına dön
+              ← Return to login
             </button>
           </div>
         </CardContent>

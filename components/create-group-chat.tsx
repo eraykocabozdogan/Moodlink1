@@ -48,23 +48,23 @@ export function CreateGroupChat({ onClose, onCreateGroup, availableUsers }: Crea
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle>Yeni Grup Sohbeti Oluştur</CardTitle>
+          <CardTitle>Create New Group Chat</CardTitle>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
         </CardHeader>
         <CardContent className="space-y-4">
           <Input
-            placeholder="Grup adı"
+            placeholder="Group name"
             value={groupName}
             onChange={(e) => setGroupName(e.target.value)}
             className="mb-4"
           />
 
           <div className="space-y-2">
-            <div className="text-sm font-medium">Seçilen Üyeler</div>
+            <div className="text-sm font-medium">Selected Members</div>
             {selectedMembers.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Henüz üye seçilmedi</p>
+              <p className="text-sm text-muted-foreground">No members selected yet</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {selectedMembers.map((member) => (
@@ -90,7 +90,7 @@ export function CreateGroupChat({ onClose, onCreateGroup, availableUsers }: Crea
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Kullanıcı ara..."
+              placeholder="Search users..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-8"
@@ -98,9 +98,9 @@ export function CreateGroupChat({ onClose, onCreateGroup, availableUsers }: Crea
           </div>
 
           <div className="max-h-60 overflow-y-auto">
-            <div className="text-sm font-medium mb-2">Kullanıcılar</div>
+            <div className="text-sm font-medium mb-2">Users</div>
             {filteredUsers.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Kullanıcı bulunamadı</p>
+              <p className="text-sm text-muted-foreground">No users found</p>
             ) : (
               <div className="space-y-2">
                 {filteredUsers.map((user) => (
@@ -125,14 +125,14 @@ export function CreateGroupChat({ onClose, onCreateGroup, availableUsers }: Crea
 
           <div className="flex justify-end space-x-2 pt-4">
             <Button variant="outline" onClick={onClose}>
-              İptal
+              Cancel
             </Button>
             <Button
               onClick={handleCreateGroup}
               disabled={!groupName.trim() || selectedMembers.length === 0}
               className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
             >
-              Grup Oluştur
+              Create Group
             </Button>
           </div>
         </CardContent>

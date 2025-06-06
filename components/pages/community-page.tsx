@@ -18,55 +18,55 @@ export function CommunityPage() {
     {
       id: "fenerbahce",
       name: "Fenerbahçe Fans",
-      description: "Sarı lacivertli kalpler burada buluşuyor! 💛💙",
+      description: "Yellow and blue hearts meet here! 💛💙",
       members: "45.2K",
       moodPercentage: "92%",
-      category: "Spor",
+      category: "Sports",
       image: "from-yellow-400 to-blue-600",
     },
     {
       id: "gameofthrones",
       name: "Game of Thrones",
-      description: "Winter is coming... Westeros'un en büyük topluluğu ⚔️",
+      description: "Winter is coming... The biggest Westeros community ⚔️",
       members: "128K",
       moodPercentage: "78%",
-      category: "Eğlence",
+      category: "Entertainment",
       image: "from-gray-700 to-red-600",
     },
     {
       id: "teknoloji",
-      name: "Teknoloji Meraklıları",
-      description: "En son teknoloji haberleri ve tartışmaları 🚀",
+      name: "Technology Enthusiasts",
+      description: "Latest technology news and discussions 🚀",
       members: "67.8K",
       moodPercentage: "85%",
-      category: "Teknoloji",
+      category: "Technology",
       image: "from-blue-500 to-purple-600",
     },
     {
       id: "muzik",
-      name: "Müzik Severler",
-      description: "Her türden müzik ve sanatçı tartışmaları 🎵",
+      name: "Music Lovers",
+      description: "Discussions about all types of music and artists 🎵",
       members: "89.3K",
       moodPercentage: "88%",
-      category: "Müzik",
+      category: "Music",
       image: "from-pink-500 to-orange-500",
     },
     {
       id: "yemek",
-      name: "Yemek Kültürü",
-      description: "Lezzetli tarifler ve restoran önerileri 🍽️",
+      name: "Food Culture",
+      description: "Delicious recipes and restaurant recommendations 🍽️",
       members: "34.7K",
       moodPercentage: "95%",
-      category: "Yaşam",
+      category: "Lifestyle",
       image: "from-green-500 to-yellow-500",
     },
     {
       id: "seyahat",
-      name: "Seyahat Tutkunları",
-      description: "Dünyayı keşfetmeyi sevenler burada! ✈️",
+      name: "Travel Enthusiasts",
+      description: "For those who love exploring the world! ✈️",
       members: "52.1K",
       moodPercentage: "91%",
-      category: "Seyahat",
+      category: "Travel",
       image: "from-cyan-500 to-blue-500",
     },
   ]
@@ -77,7 +77,7 @@ export function CommunityPage() {
       username: "Mehmet",
       handle: "@mehmet_fb",
       time: "2s",
-      content: "Bu sezon şampiyonluk bizim! Forza Fenerbahçe! 💛💙",
+      content: "Championship is ours this season! Forza Fenerbahçe! 💛💙",
       moodCompatibility: "94%",
       community: "Fenerbahçe Fans",
     },
@@ -85,8 +85,8 @@ export function CommunityPage() {
       id: 2,
       username: "Ayşe",
       handle: "@ayse_got",
-      time: "5dk",
-      content: "House of Dragon'un yeni bölümü harikaydı! Jon Snow'u özlüyorum 😭",
+      time: "5m",
+      content: "The new episode of House of Dragon was amazing! I miss Jon Snow 😭",
       moodCompatibility: "82%",
       community: "Game of Thrones",
     },
@@ -117,14 +117,14 @@ export function CommunityPage() {
       {/* Header */}
       <div className="sticky top-0 bg-card/80 backdrop-blur-sm border-b border-border p-4">
         <div className="flex items-center justify-between mb-4">
-          <div className="w-[120px]"></div> {/* Sol tarafı dengelemek için boş alan */}
-          <h1 className="text-xl font-bold text-foreground">Topluluk</h1>
+          <div className="w-[120px]"></div> {/* Empty space to balance the left side */}
+          <h1 className="text-xl font-bold text-foreground">Community</h1>
           <Button
             onClick={() => setShowCreateForm(!showCreateForm)}
             className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-primary-foreground"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Topluluk Oluştur
+            Create Community
           </Button>
         </div>
 

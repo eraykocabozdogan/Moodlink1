@@ -39,21 +39,21 @@ export function LoginScreen({ onLogin, onSwitchToSignup, onForgotPassword }: Log
             </h1>
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-white">MoodLink'e Giriş Yap</h2>
+            <h2 className="text-xl font-semibold text-white">Login to MoodLink</h2>
             <p className="text-sm text-white mt-1">For your Mood</p>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <Input
             type="text"
-            placeholder="Kullanıcı Adı"
+            placeholder="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             className="h-12 border-gray-300 focus:border-white focus:ring-white text-white placeholder:text-gray-300 bg-transparent"
           />
           <Input
             type="password"
-            placeholder="Şifre"
+            placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="h-12 border-gray-300 focus:border-white focus:ring-white text-white placeholder:text-gray-300 bg-transparent"
@@ -62,25 +62,25 @@ export function LoginScreen({ onLogin, onSwitchToSignup, onForgotPassword }: Log
             onClick={handleLogin}
             className="w-full h-12 bg-blue-500 hover:bg-blue-600 text-white font-medium"
           >
-            Giriş Yap
+            Login
           </Button>
           <Button
             onClick={handleGoogleLogin}
             variant="outline"
             className="w-full h-12 border-blue-500 text-blue-500 bg-transparent hover:bg-blue-500/10 hover:text-blue-600"
           >
-            Google ile Giriş Yap
+            Login with Google
           </Button>
           <div className="text-center text-sm text-white space-x-2">
             <button 
               onClick={onForgotPassword}
               className="hover:underline"
             >
-              Şifreni mi unuttun?
+              Forgot Password?
             </button>
             <span>|</span>
             <button onClick={onSwitchToSignup} className="hover:underline">
-              Yeni Hesap Oluştur
+              Create New Account
             </button>
           </div>
         </CardContent>

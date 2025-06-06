@@ -25,8 +25,8 @@ export function PostCard({ post, onUserClick }: PostCardProps) {
   const [showComments, setShowComments] = useState(false)
   const [comment, setComment] = useState("")
   const [comments, setComments] = useState([
-    { id: 1, username: "Ali", text: "Harika post!", time: "2dk" },
-    { id: 2, username: "Ayşe", text: "Katılıyorum!", time: "5dk" },
+    { id: 1, username: "Ali", text: "Great post!", time: "2m" },
+    { id: 2, username: "Ayşe", text: "I agree!", time: "5m" },
   ])
 
   const handleLike = () => {
@@ -47,7 +47,7 @@ export function PostCard({ post, onUserClick }: PostCardProps) {
       })
     } else {
       navigator.clipboard.writeText(window.location.href)
-      alert("Link kopyalandı!")
+      alert("Link copied!")
     }
   }
 
@@ -55,9 +55,9 @@ export function PostCard({ post, onUserClick }: PostCardProps) {
     if (comment.trim()) {
       const newComment = {
         id: Date.now(),
-        username: "Sen",
+        username: "You",
         text: comment,
-        time: "şimdi",
+        time: "now",
       }
       setComments([newComment, ...comments])
       setComment("")
@@ -75,15 +75,14 @@ export function PostCard({ post, onUserClick }: PostCardProps) {
           <div className="flex items-center space-x-2 mb-2">
             <span 
               className="font-bold text-foreground cursor-pointer hover:underline"
-              onClick={() => onUserClick && onUserClick({
-                username: post.username,
-                handle: post.handle?.replace('@', '') || 'kullanici',
+              onClick={() => onUserClick && onUserClick({              username: post.username,
+              handle: post.handle?.replace('@', '') || 'user',
                 followers: (Math.floor(Math.random() * 500) + 100).toString(),
                 following: (Math.floor(Math.random() * 200) + 50).toString(),
-                bio: `${post.username} isimli kullanıcının profili. MoodLink kullanıcısı.`,
+                bio: `${post.username}'s profile. MoodLink user.`,
                 moods: [
-                  { name: "Enerjik", percentage: Math.floor(Math.random() * 30 + 50) + "%" },
-                  { name: "Mutlu", percentage: Math.floor(Math.random() * 20 + 60) + "%" },
+                  { name: "Energetic", percentage: Math.floor(Math.random() * 30 + 50) + "%" },
+                  { name: "Happy", percentage: Math.floor(Math.random() * 20 + 60) + "%" },
                 ],
                 badges: ["🏆", "🎯"],
               })}
@@ -137,7 +136,7 @@ export function PostCard({ post, onUserClick }: PostCardProps) {
                 className="flex items-center space-x-2 hover:text-green-500 transition-colors"
               >
                 <Share className="w-4 h-4" />
-                <span>Paylaş</span>
+                <span>Share</span>
               </button>
 
               <button
@@ -147,12 +146,12 @@ export function PostCard({ post, onUserClick }: PostCardProps) {
                 }`}
               >
                 <Bookmark className={`w-4 h-4 ${saved ? "fill-current" : ""}`} />
-                <span>Kaydet</span>
+                <span>Save</span>
               </button>
             </div>
 
             <div className="bg-accent px-3 py-1 rounded-full">
-              <span className="text-accent-foreground font-medium">{post.moodCompatibility} Mood Uyumu</span>
+              <span className="text-accent-foreground font-medium">{post.moodCompatibility} Mood Compatibility</span>
             </div>
           </div>
 
@@ -163,7 +162,7 @@ export function PostCard({ post, onUserClick }: PostCardProps) {
               <div className="flex space-x-2">
                 <input
                   type="text"
-                  placeholder="Yorum yaz..."
+                  placeholder="Write a comment..."
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && handleComment()}
@@ -174,7 +173,7 @@ export function PostCard({ post, onUserClick }: PostCardProps) {
                   disabled={!comment.trim()}
                   className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg disabled:opacity-50"
                 >
-                  Gönder
+                  Send
                 </button>
               </div>
 
@@ -191,10 +190,10 @@ export function PostCard({ post, onUserClick }: PostCardProps) {
                           handle: commentItem.username.toLowerCase().replace(' ', '_'),
                           followers: (Math.floor(Math.random() * 300) + 50).toString(),
                           following: (Math.floor(Math.random() * 100) + 20).toString(),
-                          bio: `${commentItem.username} isimli kullanıcının profili. MoodLink kullanıcısı.`,
+                          bio: `${commentItem.username}'s profile. MoodLink user.`,
                           moods: [
-                            { name: "Sakin", percentage: Math.floor(Math.random() * 30 + 50) + "%" },
-                            { name: "Meraklı", percentage: Math.floor(Math.random() * 20 + 60) + "%" },
+                            { name: "Calm", percentage: Math.floor(Math.random() * 30 + 50) + "%" },
+                            { name: "Curious", percentage: Math.floor(Math.random() * 20 + 60) + "%" },
                           ],
                           badges: ["🌟"],
                         })}

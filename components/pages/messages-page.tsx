@@ -48,7 +48,7 @@ export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
       title: "Eray2",
       handle: "@erayy",
       lastMessage: "Hey dude! Wanna see...",
-      time: "Dün",
+      time: "Yesterday",
     },
   ])
 
@@ -58,14 +58,14 @@ export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
       <div className="sticky top-0 bg-card/80 backdrop-blur-sm border-b border-border p-4">
         <div className="flex justify-between items-center">
           <div className="w-24"></div>
-          <h1 className="text-xl font-bold text-foreground">Direkt Mesajlar</h1>
+          <h1 className="text-xl font-bold text-foreground">Direct Messages</h1>
           <Button 
             onClick={() => setShowCreateGroupChat(true)}
             className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
             size="sm"
           >
             <Users className="w-4 h-4 mr-2" />
-            Grup Oluştur
+            Create Group
           </Button>
         </div>
       </div>
@@ -98,10 +98,10 @@ export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
                             handle: conversation.handle?.replace('@', '') || '',
                             followers: (Math.floor(Math.random() * 2000) + 500).toString(),
                             following: (Math.floor(Math.random() * 500) + 100).toString(),
-                            bio: `${conversation.title} isimli kullanıcının profili. MoodLink kullanıcısı.`,
+                            bio: `${conversation.title}'s profile. MoodLink user.`,
                             moods: [
-                              { name: "Enerjik", percentage: Math.floor(Math.random() * 30 + 50) + "%" },
-                              { name: "Mutlu", percentage: Math.floor(Math.random() * 20 + 60) + "%" },
+                              { name: "Energetic", percentage: Math.floor(Math.random() * 30 + 50) + "%" },
+                              { name: "Happy", percentage: Math.floor(Math.random() * 20 + 60) + "%" },
                             ],
                             badges: ["🏆", "🎯"],
                           });
@@ -114,7 +114,7 @@ export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
                       <p className="text-muted-foreground text-sm">{conversation.handle}</p>
                     )}
                     {conversation.type === "group" && conversation.members && (
-                      <p className="text-muted-foreground text-sm">{conversation.members.length} üye</p>
+                      <p className="text-muted-foreground text-sm">{conversation.members.length} members</p>
                     )}
                   </div>
                   <span className="text-muted-foreground text-xs">{conversation.time}</span>
@@ -137,8 +137,8 @@ export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
               type: "group",
               title: groupName,
               members: members,
-              lastMessage: "Grup oluşturuldu",
-              time: new Date().toLocaleTimeString("tr-TR", {
+              lastMessage: "Group created",
+              time: new Date().toLocaleTimeString("en-US", {
                 hour: "2-digit",
                 minute: "2-digit",
               }),

@@ -66,35 +66,35 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
             </h1>
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-gray-800">Hesap Oluştur</h2>
+            <h2 className="text-xl font-semibold text-gray-800">Create Account</h2>
             <p className="text-sm text-gray-600 mt-1">For your Mood</p>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <Input
             type="text"
-            placeholder="Adınız Soyadınız"
+            placeholder="Full Name"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
           />
           <Input
             type="email"
-            placeholder="E-posta"
+            placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
           />
           <Input
             type="date"
-            placeholder="Doğum Tarihi"
+            placeholder="Birth Date"
             value={birthDate}
             onChange={(e) => setBirthDate(e.target.value)}
             className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
           />
           <Input
             type="password"
-            placeholder="Şifre"
+            placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
@@ -103,19 +103,19 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
             onClick={handleSignup}
             className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium"
           >
-            Kayıt Ol
+            Sign Up
           </Button>
           <Button
             onClick={handleGoogleSignup}
             variant="outline"
             className="w-full h-12 border-gray-200 hover:bg-gray-50"
           >
-            Google ile Kayıt Ol
+            Sign Up with Google
           </Button>
           <div className="text-center text-sm text-gray-600">
-            Zaten bir hesabın var mı?{" "}
+            Already have an account?{" "}
             <button onClick={onSwitchToLogin} className="text-purple-600 hover:underline">
-              Giriş Yap
+              Login
             </button>
           </div>
         </CardContent>

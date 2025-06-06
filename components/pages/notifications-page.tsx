@@ -8,7 +8,7 @@ export function NotificationsPage({ onPostClick }: NotificationsPageProps) {
   const notifications = [
     {
       id: 1,
-      text: "Doğan ve 2 diğer kişi gönderini beğendi.",
+      text: "Doğan and 2 others liked your post.",
       snippet: "I really like #invincible",
       time: "2s",
       postId: 1,
@@ -16,17 +16,17 @@ export function NotificationsPage({ onPostClick }: NotificationsPageProps) {
     },
     {
       id: 2,
-      text: "Eray sana yanıt verdi.",
+      text: "Eray replied to you.",
       snippet: "I don't care!",
-      time: "5dk",
+      time: "5m",
       postId: 2,
       type: "reply",
     },
     {
       id: 3,
-      text: "Ahmet gönderini paylaştı.",
+      text: "Ahmet shared your post.",
       snippet: "Hello Madritistas",
-      time: "1sa",
+      time: "1h",
       postId: 1,
       type: "share",
     },
@@ -43,7 +43,7 @@ export function NotificationsPage({ onPostClick }: NotificationsPageProps) {
       {/* Header */}
       <div className="sticky top-0 bg-background/80 backdrop-blur-sm border-b border-border p-4">
         <div className="flex items-center justify-center">
-          <h1 className="text-xl font-bold text-foreground">Bildirimler</h1>
+          <h1 className="text-xl font-bold text-foreground">Notifications</h1>
         </div>
       </div>
 

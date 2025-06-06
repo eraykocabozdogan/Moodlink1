@@ -15,24 +15,24 @@ export function SearchPage({ onUserClick }: SearchPageProps = {}) {
     { 
       username: "Ahmet Yılmaz", 
       handle: "ahmet_yilmaz", 
-      bio: "Sporcu ve fotoğrafçı",
+      bio: "Athlete and photographer",
       followers: "2.5K",
       following: "450",
       moods: [
-        { name: "Enerjik", percentage: "78%" },
-        { name: "Heyecanlı", percentage: "65%" },
+        { name: "Energetic", percentage: "78%" },
+        { name: "Excited", percentage: "65%" },
       ],
       badges: ["🏆", "📸"]
     },
     { 
       username: "Ayşe Kaya", 
       handle: "ayse_kaya", 
-      bio: "Yazar ve doğa sever",
+      bio: "Writer and nature lover",
       followers: "1.8K",
       following: "302",
       moods: [
-        { name: "Sakin", percentage: "82%" },
-        { name: "İlham Dolu", percentage: "74%" },
+        { name: "Calm", percentage: "82%" },
+        { name: "Inspired", percentage: "74%" },
       ],
       badges: ["✍️", "🌿"]
     },
@@ -43,7 +43,7 @@ export function SearchPage({ onUserClick }: SearchPageProps = {}) {
       {/* Header */}
       <div className="sticky top-0 bg-card/80 backdrop-blur-sm border-b border-border p-4">
         <div className="flex items-center justify-center">
-          <h1 className="text-xl font-bold text-foreground">Arama</h1>
+          <h1 className="text-xl font-bold text-foreground">Search</h1>
         </div>
       </div>
 
@@ -53,7 +53,7 @@ export function SearchPage({ onUserClick }: SearchPageProps = {}) {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
           <Input
             type="text"
-            placeholder="Kullanıcı ara..."
+            placeholder="Search users..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 h-12 bg-muted border-border focus:bg-card focus:ring-2 focus:ring-primary"
@@ -62,7 +62,7 @@ export function SearchPage({ onUserClick }: SearchPageProps = {}) {
 
         {/* Suggested Users */}
         <div className="bg-card rounded-xl p-4 shadow-sm border border-border">
-          <h3 className="font-bold text-lg mb-4 text-foreground">Önerilen Kullanıcılar</h3>
+          <h3 className="font-bold text-lg mb-4 text-foreground">Suggested Users</h3>
           <div className="space-y-4">
             {suggestedUsers.map((user, index) => (
               <div
@@ -79,10 +79,10 @@ export function SearchPage({ onUserClick }: SearchPageProps = {}) {
                   <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{user.bio}</p>
                   <div className="flex items-center space-x-4 mt-2">
                     <span className="text-xs text-muted-foreground">
-                      <strong className="text-foreground">{user.followers}</strong> Takipçi
+                      <strong className="text-foreground">{user.followers}</strong> Followers
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      <strong className="text-foreground">{user.following}</strong> Takip
+                      <strong className="text-foreground">{user.following}</strong> Following
                     </span>
                   </div>
                 </div>
