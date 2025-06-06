@@ -3,11 +3,13 @@
 import React, { useState, useEffect, useCallback, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ArrowLeft, Send, Users, Info } from "lucide-react"
+import { ArrowLeft, Send, Users, Info, Wifi, WifiOff } from "lucide-react"
 import apiClient from "@/lib/apiClient"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
 import { User } from "@/components/create-group-chat"
+import signalRService, { Message as SignalRMessage } from "@/lib/signalr-service"
+import { useAuth } from "@/contexts/AuthContext"
 
 // Tipleri güncelleyelim
 interface ChatInfo {
@@ -17,14 +19,8 @@ interface ChatInfo {
   members?: User[];
 }
 
-interface Message {
-  id: string;
-  chatId: string;
-  senderUserId: string;
-  senderUserName?: string;
-  content: string;
-  sentDate: string;
-}
+// SignalR servisinden Message tipini kullanıyoruz
+type Message = SignalRMessage;
 
 interface ChatPageProps {
   chatDetails: ChatInfo | null
@@ -35,11 +31,14 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState("")
   const [isLoading, setIsLoading] = useState(true)
+  const [isSending, setIsSending] = useState(false)
+  const [isConnected, setIsConnected] = useState(false)
   const { toast } = useToast()
   const messagesEndRef = useRef<null | HTMLDivElement>(null)
+  const { user } = useAuth()
   
-  // TODO: Giriş yapmış kullanıcının ID'sini bir context veya state'den almalısın.
-  const loggedInUserId = "00000000-0000-0000-0000-000000000000"; 
+  // Auth context'ten kullanıcı ID'sini al
+  const loggedInUserId = user?.id || "00000000-0000-0000-0000-000000000000";
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -59,23 +58,67 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
     }
   }, [chatDetails, toast])
 
+  // SignalR bağlantısını yönet
   useEffect(() => {
-    fetchMessages()
-  }, [fetchMessages])
+    if (!user?.id || !chatDetails) return;
+    
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+    
+    // SignalR bağlantısını başlat
+    const connectSignalR = async () => {
+      const connected = await signalRService.startConnection(token, user.id);
+      setIsConnected(connected);
+    };
+    
+    connectSignalR();
+    
+    // Bağlantı durumu değişikliklerini dinle
+    const unsubscribeConnectionChange = signalRService.onConnectionChange((connected) => {
+      setIsConnected(connected);
+    });
+    
+    // Yeni mesajları dinle
+    const unsubscribeMessages = signalRService.onReceiveMessage((message) => {
+      if (message.chatId === chatDetails.id) {
+        // Mesaj bu sohbete aitse, mesajlar listesine ekle
+        setMessages(prev => {
+          // Mesaj zaten listede var mı kontrol et
+          const exists = prev.some(m => m.id === message.id);
+          if (exists) return prev;
+          return [...prev, message];
+        });
+      }
+    });
+    
+    // Temizleme işlevi
+    return () => {
+      unsubscribeConnectionChange();
+      unsubscribeMessages();
+    };
+  }, [user, chatDetails]);
 
+  // İlk yükleme için mesajları getir
   useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+    fetchMessages();
+  }, [fetchMessages]);
+
+  // Mesajlar değiştiğinde otomatik kaydır
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
 
   const handleSend = async () => {
-    if (!newMessage.trim() || !chatDetails) return
+    if (!newMessage.trim() || !chatDetails || !user) return;
+    setIsSending(true);
 
     const messageData = {
       chatId: chatDetails.id,
       senderUserId: loggedInUserId,
       content: newMessage,
-    }
+      senderUserName: user.userName,
+    };
 
     try {
       // Mesajı optimistic olarak UI'a ekle
@@ -87,17 +130,25 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
       setMessages(prev => [...prev, optimisticMessage]);
       setNewMessage("");
 
-      // API'ye isteği gönder
-      await apiClient.post('/api/Messages/send', messageData)
-      
-      // Başarılı olursa listeyi yenile (veya websocket ile bekle)
-      fetchMessages(); 
+      // SignalR bağlantısı varsa, SignalR üzerinden gönder
+      if (isConnected) {
+        const success = await signalRService.sendMessage(chatDetails.id, newMessage);
+        if (!success) {
+          // SignalR ile gönderilemezse API'yi dene
+          await apiClient.post('/api/Messages/send', messageData);
+        }
+      } else {
+        // SignalR bağlantısı yoksa API'yi kullan
+        await apiClient.post('/api/Messages/send', messageData);
+      }
       
     } catch (error) {
-      console.error("Failed to send message:", error)
-      toast({ variant: "destructive", title: "Hata", description: "Mesaj gönderilemedi." })
+      console.error("Failed to send message:", error);
+      toast({ variant: "destructive", title: "Hata", description: "Mesaj gönderilemedi." });
       // Hata durumunda optimistic olarak eklenen mesajı kaldır
       setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
+    } finally {
+      setIsSending(false);
     }
   }
 
@@ -114,6 +165,14 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
             </div>
             <div className="text-center flex-1 mx-2">
               <h1 className="text-xl font-bold truncate">{chatDetails?.name}</h1>
+              {/* Bağlantı durumu göstergesi */}
+              <div className="flex items-center justify-center text-xs text-muted-foreground">
+                {isConnected ? (
+                  <span className="flex items-center"><Wifi className="w-3 h-3 mr-1 text-green-500" />Canlı</span>
+                ) : (
+                  <span className="flex items-center"><WifiOff className="w-3 h-3 mr-1 text-red-500" />Çevrimdışı</span>
+                )}
+              </div>
             </div>
             <div className="w-10 h-10 flex items-center justify-center">
               {chatDetails?.type === "Group" && <button className="p-2 hover:bg-muted rounded-full"><Info className="w-5 h-5" /></button>}
@@ -148,8 +207,26 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
       {/* Message Input */}
       <div className="border-t border-border p-4 bg-card">
         <div className="flex space-x-2">
-          <Input type="text" placeholder="Bir mesaj yaz..." value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} className="flex-1 bg-background" />
-          <Button onClick={handleSend} disabled={!newMessage.trim()} className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"><Send className="w-4 h-4" /></Button>
+          <Input 
+            type="text" 
+            placeholder="Bir mesaj yaz..." 
+            value={newMessage} 
+            onChange={(e) => setNewMessage(e.target.value)} 
+            onKeyDown={(e) => e.key === 'Enter' && !isSending && handleSend()} 
+            className="flex-1 bg-background" 
+            disabled={isSending}
+          />
+          <Button 
+            onClick={handleSend} 
+            disabled={!newMessage.trim() || isSending} 
+            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+          >
+            {isSending ? (
+              <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+          </Button>
         </div>
       </div>
     </div>

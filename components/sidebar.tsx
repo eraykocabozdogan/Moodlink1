@@ -13,6 +13,8 @@ import {
   Settings,
   LogOut,
   X,
+  Wifi,
+  WifiOff,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -22,9 +24,21 @@ interface SidebarProps {
   onLogout: () => void
   isOpen: boolean
   onClose: () => void
+  hasNewNotifications?: boolean
+  hasNewMessages?: boolean
+  isSignalRConnected?: boolean
 }
 
-export function Sidebar({ currentPage, onPageChange, onLogout, isOpen, onClose }: SidebarProps) {
+export function Sidebar({ 
+  currentPage, 
+  onPageChange, 
+  onLogout, 
+  isOpen, 
+  onClose,
+  hasNewNotifications = false,
+  hasNewMessages = false,
+  isSignalRConnected = false
+}: SidebarProps) {
   const menuItems = [
     { id: "home", label: "Home", icon: Home },
     { id: "search", label: "Search", icon: Search },
@@ -55,9 +69,19 @@ export function Sidebar({ currentPage, onPageChange, onLogout, isOpen, onClose }
               <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
                 <Heart className="w-4 h-4 text-primary-foreground" />
               </div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                MoodLink
-              </h1>
+              <div>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  MoodLink
+                </h1>
+                {/* SignalR bağlantı durumu */}
+                <div className="flex items-center text-xs text-muted-foreground">
+                  {isSignalRConnected ? (
+                    <span className="flex items-center"><Wifi className="w-3 h-3 mr-1 text-green-500" />Canlı</span>
+                  ) : (
+                    <span className="flex items-center"><WifiOff className="w-3 h-3 mr-1 text-red-500" />Çevrimdışı</span>
+                  )}
+                </div>
+              </div>
             </div>
             <button onClick={onClose} className="p-1 hover:bg-muted rounded-full transition-colors">
               <X className="w-5 h-5 text-muted-foreground" />
@@ -78,7 +102,7 @@ export function Sidebar({ currentPage, onPageChange, onLogout, isOpen, onClose }
                     onClose()
                   }}
                   className={`
-                    w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200
+                    w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200
                     ${
                       isActive
                         ? "bg-gradient-to-r from-purple-500 to-pink-500 text-primary-foreground shadow-lg"
@@ -86,8 +110,18 @@ export function Sidebar({ currentPage, onPageChange, onLogout, isOpen, onClose }
                     }
                   `}
                 >
-                  <Icon className="w-5 h-5" />
-                  <span className="font-medium">{item.label}</span>
+                  <div className="flex items-center space-x-3">
+                    <Icon className="w-5 h-5" />
+                    <span className="font-medium">{item.label}</span>
+                  </div>
+                  
+                  {/* Bildirim göstergeleri */}
+                  {item.id === "notifications" && hasNewNotifications && (
+                    <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                  )}
+                  {item.id === "messages" && hasNewMessages && (
+                    <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                  )}
                 </button>
               )
             })}

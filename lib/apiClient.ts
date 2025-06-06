@@ -129,6 +129,37 @@ export async function del<T>(endpoint: string, data?: any): Promise<T> {
 }
 
 /**
+ * Upload file using multipart/form-data
+ * @param endpoint - API endpoint to call (without base URL)
+ * @param file - File object to upload
+ * @param formData - Additional form data to include
+ * @returns Promise with parsed response data
+ */
+export async function uploadFile<T>(endpoint: string, file: File, formData: Record<string, any> = {}): Promise<T> {
+  const form = new FormData();
+  
+  // Append the file
+  form.append('File', file);
+  
+  // Append additional form data
+  Object.entries(formData).forEach(([key, value]) => {
+    form.append(key, value.toString());
+  });
+  
+  // Create headers without Content-Type, browser will set it automatically with boundary
+  const uploadHeaders = { ...headers };
+  delete uploadHeaders['Content-Type'];
+  
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: 'POST',
+    headers: uploadHeaders,
+    body: form,
+  });
+  
+  return handleResponse<T>(response);
+}
+
+/**
  * API client object that contains all methods
  */
 const apiClient = {
@@ -136,6 +167,7 @@ const apiClient = {
   post,
   put,
   delete: del,
+  uploadFile,
   setAuthToken,
 };
 
