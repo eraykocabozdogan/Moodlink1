@@ -100,59 +100,29 @@ export function ProfilePage({}: ProfilePageProps) {
     fetchData()
   }, [fetchData])
 
-  // Profil resmini yükleme fonksiyonu
-  const uploadProfilePicture = async (file: File | null): Promise<string | null> => {
-    if (!file) return null;
-    
-    try {
-      // FileAttachments endpoint'ine dosyayı yükle
-      const response = await apiClient.uploadFile<{ id: string }>('/api/FileAttachments', file, {
-        // İsteğe bağlı olarak, dosya ile ilgili ek bilgiler eklenebilir
-        contentType: file.type,
-        fileName: file.name,
-        description: 'Profile Image'
-      });
-      
-      // Başarılı yükleme sonrası dönen dosya ID'sini döndür
-      return response.id;
-    } catch (error) {
-      console.error("Failed to upload profile image:", error);
-      toast({
-        variant: "destructive",
-        title: "Hata",
-        description: "Profil resmi yüklenirken bir sorun oluştu.",
-      });
-      return null;
-    }
-  };
-
   const handleProfileUpdate = async () => {
     if (!user || !authUser) return;
     setIsLoading(true);
 
     try {
-        // Resim yükleme işlemi - eğer kullanıcı yeni bir resim seçtiyse
-        let fileId = null;
-        if (selectedProfileImageFile) {
-            fileId = await uploadProfilePicture(selectedProfileImageFile);
-        }
+        // TODO: Resim yükleme mantığı.
+        // Önce /api/FileAttachments'a resmi gönderip bir ID almanız,
+        // sonra bu ID'yi aşağıdaki güncelleme verisine eklemeniz gerekir.
+        // const fileId = await uploadProfilePicture(selectedProfileImageFile);
 
         const updateData = {
-            id: authUser.id,
+            id: authUser.id, // Use authenticated user ID
             userName: editForm.username,
-            firstName: user.firstName,
+            firstName: user.firstName, // Bu alanlar düzenlenmiyorsa mevcut veriyi gönder
             lastName: user.lastName,
             bio: editForm.bio,
-            profileImageFileId: fileId // Dosya yüklendiyse ID'yi ekle, yoksa undefined
+            // profileImageFileId: fileId || user.profileImageFileId
         };
 
         await apiClient.put('/api/Users/FromAuth', updateData);
 
-        // Profil resim URL'ini güncellemek için kullanıcı verilerini yeniden çek
-        const updatedUser = await apiClient.get<UserProfile>('/api/Users/GetFromAuth');
-        
         // Başarılı güncelleme sonrası local state'i ve UI'ı güncelle
-        setUser(updatedUser);
+        setUser(prevUser => prevUser ? { ...prevUser, ...updateData, userName: editForm.username } : null);
         setIsEditing(false);
         setProfileImagePreview(null);
         setSelectedProfileImageFile(null);

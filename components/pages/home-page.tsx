@@ -84,32 +84,13 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
     }
 
     try {
-      // Eğer bir resim seçildiyse, önce onu yükle
-      let uploadedImageId = null;
-      if (selectedImage) {
-        // Base64 formatındaki resmi File nesnesine dönüştür
-        const dataURLtoFile = (dataurl: string, filename: string): File => {
-          const arr = dataurl.split(',');
-          const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
-          const bstr = atob(arr[1]);
-          let n = bstr.length;
-          const u8arr = new Uint8Array(n);
-          while (n--) {
-            u8arr[n] = bstr.charCodeAt(n);
-          }
-          return new File([u8arr], filename, { type: mime });
-        };
-        
-        const imageFile = dataURLtoFile(selectedImage, 'post-image.jpg');
-        uploadedImageId = await uploadPostImage(imageFile);
-      }
-
       // Swagger'a göre `CreatePostCommand` `userId` ve `contentText` bekliyor.
       const newPostData = {
         userId: user.id, // AuthContext'ten gelen kullanıcı ID'si
         contentText: postContent,
-        postImageFileId: uploadedImageId // Resim yüklendiyse ID'yi ekle
-      };
+        // TODO: Resim yükleme
+        postImageFileId: null, 
+      }
 
       await apiClient.post('/api/Posts', newPostData)
       
@@ -147,32 +128,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
       event.target.value = ""
     }
   }
-
-  // Gönderi resmi yükleme fonksiyonu
-  const uploadPostImage = async (file: File | null): Promise<string | null> => {
-    if (!file) return null;
-    
-    try {
-      // FileAttachments endpoint'ine dosyayı yükle
-      const response = await apiClient.uploadFile<{ id: string }>('/api/FileAttachments', file, {
-        contentType: file.type,
-        fileName: file.name,
-        description: 'Post Image'
-      });
-      
-      // Başarılı yükleme sonrası dönen dosya ID'sini döndür
-      return response.id;
-    } catch (error) {
-      console.error("Failed to upload post image:", error);
-      toast({
-        variant: "destructive",
-        title: "Hata",
-        description: "Gönderi resmi yüklenirken bir sorun oluştu.",
-      });
-      return null;
-    }
-  };
-
+  
   const renderContent = () => {
     if (isLoading) {
       // Yüklenirken gösterilecek iskelet (skeleton) bileşenleri

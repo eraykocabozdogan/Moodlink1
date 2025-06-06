@@ -129,46 +129,6 @@ export async function del<T>(endpoint: string, data?: any): Promise<T> {
 }
 
 /**
- * Upload file method - handles multipart/form-data requests
- * @param endpoint - API endpoint to call (without base URL)
- * @param file - The file to upload
- * @param additionalData - Optional additional form data to include
- * @returns Promise with parsed response data (usually contains fileId)
- */
-export async function uploadFile<T>(endpoint: string, file: File, additionalData?: Record<string, string>): Promise<T> {
-  // Create a FormData object to handle multipart/form-data
-  const formData = new FormData();
-  
-  // Append the file to the form data
-  formData.append('file', file);
-  
-  // Append any additional data if provided
-  if (additionalData) {
-    Object.entries(additionalData).forEach(([key, value]) => {
-      formData.append(key, value);
-    });
-  }
-  
-  // Create headers without Content-Type, browser will set it automatically with boundary
-  const uploadHeaders: HeadersInit = {};
-  
-  // Copy all headers except Content-Type
-  Object.entries(headers).forEach(([key, value]) => {
-    if (key !== 'Content-Type') {
-      uploadHeaders[key] = value;
-    }
-  });
-  
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    method: 'POST',
-    headers: uploadHeaders,
-    body: formData,
-  });
-  
-  return handleResponse<T>(response);
-}
-
-/**
  * API client object that contains all methods
  */
 const apiClient = {
@@ -177,7 +137,6 @@ const apiClient = {
   put,
   delete: del,
   setAuthToken,
-  uploadFile,
 };
 
 export default apiClient;
