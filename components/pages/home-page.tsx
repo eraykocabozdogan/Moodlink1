@@ -33,6 +33,9 @@ interface HomePageProps {
 }
 
 export function HomePage({ onUserClick }: HomePageProps = {}) {
+  // Auth context'ten kullanıcı bilgilerini al - moved to the top
+  const { user } = useAuth()
+  
   const [activeTab, setActiveTab] = useState("forYou")
   const [postContent, setPostContent] = useState("")
   
@@ -61,7 +64,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
     } finally {
       setIsLoading(false)
     }
-  }, [user])
+  }, []) // Removed user from dependency array
   
   // Takip edilen kullanıcıların gönderilerini çeken fonksiyon
   const fetchFollowingPosts = useCallback(async () => {
@@ -88,9 +91,6 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
       fetchFollowingPosts()
     }
   }, [activeTab, fetchAllPosts, fetchFollowingPosts, user])
-
-  // Auth context'ten kullanıcı bilgilerini al
-  const { user } = useAuth()
 
   // Gönderi resmini yükleyen fonksiyon
   const uploadPostImage = async (dataUrl: string | null): Promise<string | null> => {

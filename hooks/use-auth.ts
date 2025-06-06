@@ -47,20 +47,31 @@ export function useAuth() {
   const fetchUser = async () => {
     try {
       const token = localStorage.getItem('token');
-      console.log('Attempting to fetch user with:', {
-        token: token ? 'present' : 'missing',
-        baseUrl: process.env.NEXT_PUBLIC_API_URL || 'https://moodlinkbackend.onrender.com'
-      });
-
-      const response = await apiClient.get<User>('/Users/me');
-      console.log('Successfully received user data:', response);
+      console.log('Attempting to fetch user with token:', token ? `${token.substring(0, 10)}...` : 'missing');
       
-      if (!response) {
-        throw new Error('No user data received');
+      if (!token) {
+        throw new Error('No authentication token available');
       }
 
-      setUser(response);
-      setLoading(false);
+      console.log('Making request to:', '/api/Users/GetFromAuth');
+      
+      try {
+        const response = await apiClient.get<User>('/api/Users/GetFromAuth');
+        console.log('Successfully received user data:', JSON.stringify(response, null, 2));
+        
+        if (!response) {
+          throw new Error('No user data received');
+        }
+
+        setUser(response);
+        setLoading(false);
+      } catch (apiError) {
+        console.error('API request failed:', {
+          error: apiError,
+          message: apiError instanceof Error ? apiError.message : 'Unknown API error'
+        });
+        throw apiError; // Re-throw to be caught by outer catch
+      }
     } catch (error) {
       console.error('User fetch failed with error:', {
         error,
@@ -68,6 +79,7 @@ export function useAuth() {
         stack: error instanceof Error ? error.stack : undefined
       });
       
+      console.log('Clearing auth state due to error');
       localStorage.removeItem('token');
       setAuthToken(null);
       setLoading(false);
@@ -75,28 +87,55 @@ export function useAuth() {
     }
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, authenticatorCode: string = "") => {
     try {
       const loginData: LoginRequest = {
         email,
         password,
+        authenticatorCode
       };
 
       console.log('Attempting login with:', {
-        url: '/Auth/login',
+        url: '/api/Auth/Login', // Büyük 'L' ile Login
         data: loginData
       });
 
-      const response = await apiClient.post<{ accessToken: string; user: User }>('/Auth/login', loginData);
+      // Removed headers logging as headers is not accessible here
 
-      console.log('Login response:', response);
+      const response = await apiClient.post<any>('/api/Auth/Login', loginData);
+
+      console.log('Login response:', JSON.stringify(response, null, 2));
       
-      if (response.accessToken) {
-        localStorage.setItem('token', response.accessToken);
-        setAuthToken(response.accessToken);
+      // Token yapısını kontrol edelim
+      let token = null;
+      
+      // Kompleks yapı kontrolü
+      if (response?.accessToken?.token) {
+        token = response.accessToken.token;
+      } 
+      // Basit yapı kontrolü
+      else if (response?.accessToken || response?.token || response?.access_token) {
+        token = response?.accessToken || response?.token || response?.access_token;
+      }
+      
+      if (response && token) {
+        console.log('Login successful, token received:', token.substring(0, 10) + '...');
+        localStorage.setItem('token', token);
+        setAuthToken(token);
+        
+        // Verify token was stored
+        const storedToken = localStorage.getItem('token');
+        console.log('Token stored in localStorage:', storedToken ? 'yes' : 'no', 
+                   storedToken ? `(${storedToken.substring(0, 10)}...)` : '');
+        
         if (response.user) {
+          console.log('User data received:', response.user);
           setUser(response.user);
+        } else {
+          console.warn('No user data in login response');
+          // Eğer user data yoksa sadece login olup kullanıcı bilgilerini sonra çekeceğiz
         }
+        
         router.push('/');
         return true;
       } else {

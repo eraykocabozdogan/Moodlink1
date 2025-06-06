@@ -64,50 +64,99 @@ export function ProfilePage({ user: externalUser }: ProfilePageProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
 
-  // Veri çekme işlemini useCallback ile sarmala
+  // Profil verilerini çeken fonksiyon
   const fetchData = useCallback(async () => {
-    if (!currentUser) {
-      setIsLoading(false)
-      return
-    }
-    
     setIsLoading(true)
     try {
       // Kullanıcı profil bilgilerini çek
       let userData: UserProfile
       
-      if (currentUser.id) {
+      console.log('Fetching profile data, current user:', currentUser);
+      
+      if (currentUser && currentUser.id) {
         // Eğer currentUser zaten tam bir kullanıcı nesnesi ise, onu kullan
-        userData = currentUser as UserProfile
+        console.log('Using existing user data from auth context:', currentUser);
+        userData = {
+          id: currentUser.id,
+          userName: currentUser.userName || '',
+          firstName: currentUser.firstName || '',
+          lastName: currentUser.lastName || '',
+          email: currentUser.email || '',
+          bio: currentUser.bio || '',
+          profileImageUrl: currentUser.profileImageUrl || null
+        };
       } else {
         // Değilse API'den çek
-        userData = await apiClient.get<UserProfile>('/api/Users/GetFromAuth')
+        console.log('Fetching user data from API');
+        try {
+          userData = await apiClient.get<UserProfile>('/api/Users/GetFromAuth');
+          console.log('Successfully fetched user data from API:', userData);
+        } catch (apiError) {
+          console.error('Error fetching user from API:', apiError);
+          toast({
+            variant: "destructive",
+            title: "Kullanıcı Bilgileri Alınamadı",
+            description: "Kullanıcı bilgileriniz yüklenemedi. Lütfen tekrar giriş yapın.",
+          });
+          throw apiError;
+        }
       }
       
       // Kullanıcının postlarını doğrudan kullanıcıya özel endpoint'ten çek
-      const postsData = await apiClient.get<{ items: Post[] }>(`/api/Posts/user/${userData.id}`)
+      try {
+        console.log(`Fetching posts for user ${userData.id}`);
+        const postsEndpoint = `/api/Posts/user/${userData.id}`;
+        console.log(`Making request to endpoint: ${postsEndpoint}`);
+        
+        const postsData = await apiClient.get<{ items: Post[] }>(postsEndpoint);
+        
+        // Add additional verification to avoid undefined errors
+        if (!postsData) {
+          console.warn('Posts data is undefined or null');
+          setPosts([]);
+        } else if (!postsData.items) {
+          console.warn('Posts items array is undefined or null');
+          setPosts([]);
+        } else {
+          console.log(`Successfully fetched ${postsData.items.length} posts`);
+          setPosts(postsData.items);
+        }
+      } catch (postsError) {
+        console.error('Error fetching posts:', postsError);
+        // Log additional details if available
+        if (postsError instanceof Error && (postsError as any).details) {
+          console.error('Detailed error info:', (postsError as any).details);
+        }
+        
+        toast({
+          variant: "destructive",
+          title: "Gönderiler Alınamadı",
+          description: "Kullanıcı gönderileri yüklenemedi. Sunucu yanıt vermiyor olabilir.",
+        });
+        // Don't throw here, we still want to show the profile
+        setPosts([]);
+      }
 
-      setUserProfile(userData)
-      setPosts(postsData.items)
+      setUserProfile(userData);
       
       // Düzenleme formu için başlangıç değerlerini ayarla
       setEditForm({
-        username: userData.userName,
-        handle: `@${userData.userName}`, // handle için geçici çözüm
+        username: userData.userName || '',
+        handle: `@${userData.userName || ''}`, // handle için geçici çözüm
         bio: userData.bio || "Hello! I'm using MoodLink.",
-      })
+      });
 
     } catch (error) {
-      console.error("Failed to fetch profile data:", error)
+      console.error("Failed to fetch profile data:", error);
       toast({
         variant: "destructive",
         title: "Hata",
         description: "Profil verileri yüklenirken bir sorun oluştu.",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [currentUser, toast])
+  }, [currentUser, toast]);
 
   // Bileşen yüklendiğinde verileri çek
   useEffect(() => {
@@ -258,7 +307,7 @@ export function ProfilePage({ user: externalUser }: ProfilePageProps) {
             {isEditing ? (
               <label htmlFor="profileImageInput" className="relative group block w-24 h-24 rounded-full cursor-pointer overflow-hidden">
                 <img
-                    src={profileImagePreview || user.profileImageUrl || `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=random`}
+                    src={profileImagePreview || userProfile.profileImageUrl || `https://ui-avatars.com/api/?name=${userProfile.firstName}+${userProfile.lastName}&background=random`}
                     alt="Profil"
                     className="w-full h-full object-cover"
                 />

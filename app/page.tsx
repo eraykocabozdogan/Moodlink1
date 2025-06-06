@@ -2,10 +2,10 @@
 
 import { useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { MessagesPage } from '@/components/pages/messages-page';
+import { MainApp } from '@/components/main-app';
 
 export default function Home() {
-  const { user, loading } = useAuth();
+  const { user, loading, logout } = useAuth();
 
   if (loading) {
     return (
@@ -15,14 +15,19 @@ export default function Home() {
     );
   }
 
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="mb-4">Oturum açmanız gerekiyor.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-background">
-      <MessagesPage 
-        onChatSelect={(chat) => {
-          console.log('Selected chat:', chat);
-          // TODO: Implement chat selection
-        }} 
-      />
+      <MainApp user={user} onLogout={logout} />
     </main>
   );
 }

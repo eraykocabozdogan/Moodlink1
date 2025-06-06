@@ -3,13 +3,14 @@
 /**
  * Base URL for API requests fetched from environment variables
  */
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moodlinkbackend.onrender.com/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moodlinkbackend.onrender.com';
 
 /**
  * Default request headers
  */
 let headers: HeadersInit = {
   'Content-Type': 'application/json',
+  'Accept': 'application/json'
 };
 
 /**
@@ -17,33 +18,36 @@ let headers: HeadersInit = {
  * @param token - JWT token to be included in the Authorization header
  */
 export function setAuthToken(token: string | null): void {
+  console.log('Setting auth token:', token ? token.substring(0, 10) + '...' : 'missing');
+  
   if (token) {
     headers = {
       ...headers,
       'Authorization': `Bearer ${token}`,
-      'Accept': 'application/json',
     };
+    console.log('Updated headers with token');
   } else {
     // Remove Authorization header if token is null
     const { Authorization, ...rest } = headers as Record<string, string>;
     headers = rest;
+    console.log('Removed token from headers');
   }
 }
 
 /**
- * Handles API responses, automatically parsing JSON and handling errors
+ * Handle API response and parse JSON
  * @param response - Fetch Response object
- * @returns Parsed JSON response
- * @throws Error with status code and message if response is not ok
+ * @returns Promise with parsed response data
  */
-async function handleResponse<T>(response: Response): Promise<T> {
+async function handleResponse<T>(response: Response, requestInfo?: { method: string, url: string, data?: any }): Promise<T> {
+  // Store metadata about the response
   const responseData = {
     status: response.status,
     statusText: response.statusText,
     url: response.url,
-    headers: Object.fromEntries(response.headers.entries())
+    headers: Object.fromEntries(response.headers.entries()),
   };
-
+  
   console.log('API Response:', responseData);
 
   if (!response.ok) {
@@ -66,18 +70,26 @@ async function handleResponse<T>(response: Response): Promise<T> {
       console.error('Failed to read error response:', textError);
     }
 
-    console.error('API Error:', {
+    // Create a detailed error object
+    const detailedError = {
       ...responseData,
       errorMessage,
-      errorDetails
-    });
+      errorDetails,
+      request: requestInfo || { url: response.url }
+    };
 
-    throw new Error(errorMessage);
+    console.error('API Error:', detailedError);
+    
+    // Create an error object with the message and additional details
+    const error = new Error(errorMessage);
+    (error as any).details = detailedError;
+    
+    throw error;
   }
 
   try {
     const text = await response.text();
-    console.log('Raw success response:', text);
+    console.log('Raw success response:', text.substring(0, 1000) + (text.length > 1000 ? '...(truncated)' : ''));
 
     if (!text) {
       console.log('Empty response received');
@@ -86,7 +98,19 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
     try {
       const data = JSON.parse(text);
-      console.log('Parsed response data:', data);
+      
+      // For debugging
+      if (response.url.includes('/api/Auth/Login')) {
+        console.log('Login response structure:', 
+          Object.keys(data).length > 0 
+            ? `Keys: ${Object.keys(data).join(', ')}` 
+            : 'Empty object');
+        
+        if (data.token) console.log('Found token with key "token"');
+        if (data.accessToken) console.log('Found token with key "accessToken"');
+        if (data.access_token) console.log('Found token with key "access_token"');
+      }
+      
       return data as T;
     } catch (parseError) {
       console.error('Failed to parse success response as JSON:', parseError);
@@ -115,15 +139,24 @@ export async function get<T>(endpoint: string, params?: Record<string, string>):
   
   console.log('Making GET request:', {
     url,
-    headers,
+    hasAuthHeader: typeof headers === 'object' && 'Authorization' in headers ? 'yes' : 'no'
   });
   
-  const response = await fetch(url, {
-    method: 'GET',
-    headers,
-  });
+  // Log header info but not the full token
+  console.log('Request headers present:', 
+    Object.keys(typeof headers === 'object' ? headers : {}).join(', '));
   
-  return handleResponse<T>(response);
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+    });
+    
+    return handleResponse<T>(response, { method: 'GET', url });
+  } catch (error) {
+    console.error(`Network error during GET request to ${url}:`, error);
+    throw error;
+  }
 }
 
 /**
@@ -134,19 +167,29 @@ export async function get<T>(endpoint: string, params?: Record<string, string>):
  */
 export async function post<T>(endpoint: string, data?: any): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
+  
   console.log('Making POST request:', {
     url,
-    headers,
-    data
-  });
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: data ? JSON.stringify(data) : undefined,
+    hasAuthHeader: typeof headers === 'object' && 'Authorization' in headers ? 'yes' : 'no'
   });
   
-  return handleResponse<T>(response);
+  // Log header info but not the full token
+  console.log('Request headers present:', 
+    Object.keys(typeof headers === 'object' ? headers : {}).join(', '));
+  console.log('Request body:', data ? JSON.stringify(data) : 'empty');
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: data ? JSON.stringify(data) : undefined,
+    });
+    
+    return handleResponse<T>(response, { method: 'POST', url, data });
+  } catch (error) {
+    console.error(`Network error during POST request to ${url}:`, error);
+    throw error;
+  }
 }
 
 /**
@@ -156,13 +199,30 @@ export async function post<T>(endpoint: string, data?: any): Promise<T> {
  * @returns Promise with parsed response data
  */
 export async function put<T>(endpoint: string, data?: any): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    method: 'PUT',
-    headers,
-    body: data ? JSON.stringify(data) : undefined,
+  const url = `${API_BASE_URL}${endpoint}`;
+  
+  console.log('Making PUT request:', {
+    url,
+    hasAuthHeader: typeof headers === 'object' && 'Authorization' in headers ? 'yes' : 'no'
   });
   
-  return handleResponse<T>(response);
+  // Log header info but not the full token
+  console.log('Request headers present:', 
+    Object.keys(typeof headers === 'object' ? headers : {}).join(', '));
+  console.log('Request body:', data ? JSON.stringify(data) : 'empty');
+
+  try {
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers,
+      body: data ? JSON.stringify(data) : undefined,
+    });
+    
+    return handleResponse<T>(response, { method: 'PUT', url, data });
+  } catch (error) {
+    console.error(`Network error during PUT request to ${url}:`, error);
+    throw error;
+  }
 }
 
 /**
@@ -172,13 +232,29 @@ export async function put<T>(endpoint: string, data?: any): Promise<T> {
  * @returns Promise with parsed response data
  */
 export async function del<T>(endpoint: string, data?: any): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    method: 'DELETE',
-    headers,
-    body: data ? JSON.stringify(data) : undefined,
+  const url = `${API_BASE_URL}${endpoint}`;
+  
+  console.log('Making DELETE request:', {
+    url,
+    hasAuthHeader: typeof headers === 'object' && 'Authorization' in headers ? 'yes' : 'no'
   });
   
-  return handleResponse<T>(response);
+  // Log header info but not the full token
+  console.log('Request headers present:', 
+    Object.keys(typeof headers === 'object' ? headers : {}).join(', '));
+  
+  try {
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers,
+      body: data ? JSON.stringify(data) : undefined,
+    });
+    
+    return handleResponse<T>(response, { method: 'DELETE', url, data });
+  } catch (error) {
+    console.error(`Network error during DELETE request to ${url}:`, error);
+    throw error;
+  }
 }
 
 /**
@@ -189,6 +265,16 @@ export async function del<T>(endpoint: string, data?: any): Promise<T> {
  * @returns Promise with parsed response data
  */
 export async function uploadFile<T>(endpoint: string, file: File, formData: Record<string, any> = {}): Promise<T> {
+  const url = `${API_BASE_URL}${endpoint}`;
+  
+  console.log('Making file upload request:', {
+    url,
+    fileName: file.name,
+    fileSize: file.size,
+    fileType: file.type,
+    hasAuthHeader: typeof headers === 'object' && 'Authorization' in headers ? 'yes' : 'no'
+  });
+  
   const form = new FormData();
   
   // Append the file
@@ -200,16 +286,32 @@ export async function uploadFile<T>(endpoint: string, file: File, formData: Reco
   });
   
   // Create headers without Content-Type, browser will set it automatically with boundary
-  const uploadHeaders = { ...headers };
-  delete uploadHeaders['Content-Type'];
+  const uploadHeaders = { ...headers } as Record<string, string>;
+  if ('Content-Type' in uploadHeaders) {
+    delete uploadHeaders['Content-Type'];
+  }
   
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    method: 'POST',
-    headers: uploadHeaders,
-    body: form,
-  });
-  
-  return handleResponse<T>(response);
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: uploadHeaders,
+      body: form,
+    });
+    
+    return handleResponse<T>(response, { 
+      method: 'POST', 
+      url, 
+      data: { 
+        fileName: file.name, 
+        fileSize: file.size, 
+        fileType: file.type,
+        ...formData 
+      } 
+    });
+  } catch (error) {
+    console.error(`Network error during file upload to ${url}:`, error);
+    throw error;
+  }
 }
 
 /**

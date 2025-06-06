@@ -24,6 +24,15 @@ interface ChatInfo {
   joinedDate: string;
 }
 
+interface ChatsResponse {
+  chats: ChatInfo[];
+  totalCount: number;
+  pageIndex: number;
+  pageSize: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+
 interface MessagesPageProps {
   onChatSelect: (chatInfo: ChatInfo) => void
   onUserClick?: (user: any) => void
@@ -38,10 +47,16 @@ export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
   const fetchConversations = useCallback(async () => {
     setIsLoading(true);
     try {
-      console.log('Fetching conversations...');
-      const response = await apiClient.get<ChatInfo[]>('/Chats/user-chats');
+      const token = localStorage.getItem('token');
+      console.log('Fetching conversations with token:', token ? 'present' : 'missing');
+      
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await apiClient.get<ChatsResponse>('/api/Chats/user-chats');
       console.log('Conversations response:', response);
-      setConversations(response || []);
+      setConversations(response.chats || []);
     } catch (error) {
       console.error("Failed to fetch conversations:", error);
       toast({
@@ -67,7 +82,7 @@ export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
           participantUserIds
         });
         
-        await apiClient.post('/Chats/create', {
+        await apiClient.post('/api/Chats/create', {
             name: groupName,
             type: 2, // 2: Group Chat
             participantUserIds

@@ -113,6 +113,7 @@ export function MainApp({ user: initialUser, onLogout: externalLogout }: MainApp
         handlePostClick={handlePostClick}
         handleUserClick={handleUserClick}
         renderPage={renderPage}
+        showRightSidebar={showRightSidebar}
       />
     </AuthProvider>
   )
@@ -134,13 +135,18 @@ function MainAppContent({
   setViewingUser,
   handlePostClick,
   handleUserClick,
-  renderPage
+  renderPage,
+  showRightSidebar
 }: any) {
   const { user, logout } = useAuth()
   const { toast } = useToast()
   const [hasNewNotifications, setHasNewNotifications] = useState(false)
   const [hasNewMessages, setHasNewMessages] = useState(false)
   const [isSignalRConnected, setIsSignalRConnected] = useState(false)
+  
+  // Define showRightSidebar locally if it's not passed as a prop
+  const displayRightSidebar = showRightSidebar !== undefined ? 
+    showRightSidebar : ["home", "search"].includes(currentPage)
   
   // Dış logout fonksiyonunu ve auth context'in logout fonksiyonunu birleştir
   const handleLogout = () => {
@@ -158,13 +164,47 @@ function MainAppContent({
   useEffect(() => {
     if (!currentUser?.id) return
     
-    const token = localStorage.getItem('auth_token')
+    const token = localStorage.getItem('token')
     if (!token) return
+    
+    // Check if SignalR is already disabled
+    if (signalRService.isDisabled()) {
+      console.log('SignalR is disabled, not attempting to connect');
+      setIsSignalRConnected(false);
+      
+      // Show a toast notification once per session
+      if (typeof window !== 'undefined' && !sessionStorage.getItem('signalr-disabled-toast-shown')) {
+        toast({
+          title: "Bilgi",
+          description: "Gerçek zamanlı bildirimler şu anda kullanılamıyor. Güncellemeleri görmek için sayfayı yenileyebilirsiniz.",
+        });
+        sessionStorage.setItem('signalr-disabled-toast-shown', 'true');
+      }
+      
+      return;
+    }
     
     // SignalR bağlantısını başlat
     const connectSignalR = async () => {
-      const connected = await signalRService.startConnection(token, currentUser.id)
-      setIsSignalRConnected(connected)
+      try {
+        const connected = await signalRService.startConnection(token, currentUser.id)
+        setIsSignalRConnected(connected)
+      } catch (error) {
+        console.error('SignalR connection failed:', error);
+        setIsSignalRConnected(false);
+        
+        // Show a toast notification once per session
+        if (typeof window !== 'undefined' && !sessionStorage.getItem('signalr-error-toast-shown')) {
+          toast({
+            title: "Bilgi",
+            description: "Gerçek zamanlı bildirimler kullanılamıyor. Güncellemeleri görmek için sayfayı yenileyebilirsiniz.",
+          });
+          sessionStorage.setItem('signalr-error-toast-shown', 'true');
+        }
+        
+        // Disable SignalR to prevent further connection attempts
+        signalRService.disableSignalR();
+      }
     }
     
     connectSignalR()
@@ -264,7 +304,7 @@ function MainAppContent({
 
       {/* Main content */}
       <div className="flex-1 flex">
-        <main className={`flex-1 ${showRightSidebar ? "xl:mr-80" : ""} overflow-auto p-4 md:p-6 pt-16 md:pt-6`}>
+        <main className={`flex-1 ${displayRightSidebar ? "xl:mr-80" : ""} overflow-auto p-4 md:p-6 pt-16 md:pt-6`}>
         {/* renderPage fonksiyonunu burada yeniden tanımlayarak currentUser'ı kullanmasını sağlıyoruz */}
         {(() => {
           switch (currentPage) {
@@ -305,7 +345,7 @@ function MainAppContent({
       </main>
 
         {/* Right sidebar */}
-        {showRightSidebar && <RightSidebar currentPage={currentPage} onUserClick={handleUserClick} />}
+        {displayRightSidebar && <RightSidebar currentPage={currentPage} onUserClick={handleUserClick} />}
       </div>
     </div>
   )
