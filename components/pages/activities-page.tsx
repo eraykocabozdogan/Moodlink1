@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Calendar, Clock, MapPin, Users, Plus, X } from "lucide-react"
 import apiClient from "@/lib/apiClient"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/contexts/AuthContext"
 
 // Backend'den gelen Activity tipini tanımlayalım
 interface Activity {
@@ -23,7 +24,7 @@ interface Activity {
   targetMoodDescription?: string;
   // Bu alanlar API'den gelmeyebilir, gerekirse kaldırılır veya ayarlanır
   participants?: number; 
-  status?: 'upcoming' | 'completed';
+  status?: 'upcoming' | 'completed' | string;
 }
 
 export function ActivitiesPage() {
@@ -46,6 +47,7 @@ export function ActivitiesPage() {
   })
   
   const { toast } = useToast()
+  const { user: authUser } = useAuth() // Get authenticated user from context
 
   const fetchActivities = useCallback(async () => {
     setIsLoading(true)
@@ -78,6 +80,11 @@ export function ActivitiesPage() {
         return
     }
 
+    if (!authUser) {
+        toast({ variant: "destructive", title: "Hata", description: "Aktivite oluşturmak için giriş yapmalısınız."})
+        return
+    }
+
     // Tarih ve zamanı birleştirip ISO formatına çevir
     const eventTime = new Date(`${newActivity.date}T${newActivity.time}`).toISOString()
 
@@ -88,8 +95,7 @@ export function ActivitiesPage() {
         location: newActivity.location,
         category: newActivity.category,
         targetMoodDescription: newActivity.targetMoodDescription,
-        // TODO: Bu ID'yi giriş yapan kullanıcının ID'si ile değiştir.
-        createdByUserId: "00000000-0000-0000-0000-000000000000",
+        createdByUserId: authUser.id, // Use the authenticated user's ID
     }
 
     try {

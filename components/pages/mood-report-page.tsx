@@ -8,6 +8,7 @@ import { TrendingUp, TrendingDown, Calendar, BarChart3, Heart, Brain } from "luc
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import apiClient from "@/lib/apiClient"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/contexts/AuthContext"
 
 // --- API'den Gelecek Veriler İçin Tipler (Varsayımsal) ---
 // NOT: Bu tipleri, backend'den gelen gerçek yanıta göre güncellemeniz gerekebilir.
@@ -26,30 +27,26 @@ interface AdvancedAnalysis {
 }
 // ---
 
-interface MoodReportPageProps {
-  user: {
-    id: string;
-    // ...diğer kullanıcı bilgileri
-  };
-}
+interface MoodReportPageProps {}
 
 type Period = 'week' | 'month';
 
-export function MoodReportPage({ user }: MoodReportPageProps) {
+export function MoodReportPage({}: MoodReportPageProps) {
   const [selectedPeriod, setSelectedPeriod] = useState<Period>("week")
   const [reportData, setReportData] = useState<any[]>([]) // Grafik için veriyi tutar
   const [analysis, setAnalysis] = useState<AdvancedAnalysis | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const { toast } = useToast()
+  const { user: authUser } = useAuth() // Get authenticated user from context
 
   const fetchMoodReport = useCallback(async (period: Period) => {
-    if (!user?.id) return;
+    if (!authUser?.id) return;
     setIsLoading(true);
 
     try {
       // API endpoint'leri ve parametreleri swagger'a göre ayarlandı.
-      const reportPromise = apiClient.get<MoodScore[]>(`/api/EmotionScores/mood-report/${user.id}`, { period: period });
-      const analysisPromise = apiClient.get<AdvancedAnalysis>(`/api/EmotionScores/advanced-analysis/${user.id}`);
+      const reportPromise = apiClient.get<MoodScore[]>(`/api/EmotionScores/mood-report/${authUser.id}`, { period: period });
+      const analysisPromise = apiClient.get<AdvancedAnalysis>(`/api/EmotionScores/advanced-analysis/${authUser.id}`);
       
       const [reportResponse, analysisResponse] = await Promise.all([reportPromise, analysisPromise]);
 
@@ -81,7 +78,7 @@ export function MoodReportPage({ user }: MoodReportPageProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id, toast]);
+  }, [authUser?.id, toast]);
 
   useEffect(() => {
     fetchMoodReport(selectedPeriod);

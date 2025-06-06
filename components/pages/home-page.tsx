@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { PostCard } from "@/components/post-card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ImagePlus } from 'lucide-react'
+import { ImagePlus, X } from 'lucide-react'
 import useEmblaCarousel from 'embla-carousel-react'
 import apiClient from "@/lib/apiClient"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/contexts/AuthContext"
 
 // Backend'den gelen post verisinin tipini tanımlayalım
 // Bu, swagger.json'daki GetListPostListItemDto'ya dayanmaktadır.
@@ -46,6 +47,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false })
   const { toast } = useToast()
+  const { user } = useAuth() // Get authenticated user from context
 
   // Postları backend'den çeken fonksiyon
   const fetchPosts = useCallback(async () => {
@@ -72,13 +74,19 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
   // Yeni post gönderme fonksiyonu
   const handlePostSubmit = async () => {
     if (!postContent.trim() && !selectedImage) return
+    if (!user) {
+      toast({ 
+        variant: "destructive", 
+        title: "Hata!", 
+        description: "Gönderi paylaşabilmek için giriş yapmalısınız." 
+      })
+      return
+    }
 
     try {
       // Swagger'a göre `CreatePostCommand` `userId` ve `contentText` bekliyor.
-      // `userId`'yi oturum açmış kullanıcıdan almamız gerekiyor, şimdilik sabit bir değer kullanabiliriz.
       const newPostData = {
-        // TODO: Bu ID'yi giriş yapan kullanıcının ID'si ile değiştir.
-        userId: "00000000-0000-0000-0000-000000000000", 
+        userId: user.id, // AuthContext'ten gelen kullanıcı ID'si
         contentText: postContent,
         // TODO: Resim yükleme
         postImageFileId: null, 

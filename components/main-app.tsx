@@ -17,6 +17,7 @@ import { ActivitiesPage } from "@/components/pages/activities-page"
 import { RightSidebar } from "@/components/right-sidebar"
 import { Menu } from "lucide-react"
 import { User } from "@/components/create-group-chat"
+import { AuthProvider } from "@/contexts/AuthContext"
 
 interface ChatInfo {
   id: number
@@ -71,15 +72,13 @@ export function MainApp({ user, onLogout }: MainAppProps) {
       case "chat":
         return <ChatPage chatDetails={chatDetails} onBack={() => setCurrentPage("messages")} />
       case "profile":
-        return <ProfilePage user={user} />
+        return <ProfilePage />
       case "userProfile":
         return <UserProfilePage user={viewingUser} onBack={() => setCurrentPage("home")} />
       case "activities":
         return <ActivitiesPage />
       case "moodreport":
-        // --- DEĞİŞİKLİK BURADA ---
-        // MoodReportPage bileşenine 'user' prop'u aktarılıyor.
-        return <MoodReportPage user={user} />
+        return <MoodReportPage />
       case "options":
         return <OptionsPage onLogout={onLogout} onThemeSettings={() => setCurrentPage("themeSettings")} />
       case "themeSettings":
@@ -92,31 +91,33 @@ export function MainApp({ user, onLogout }: MainAppProps) {
   const showRightSidebar = ["home", "search"].includes(currentPage)
 
   return (
-    <div className="flex h-screen bg-background">
-      {/* Hamburger menu button - always visible */}
-      <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed top-4 left-4 z-50 p-3 bg-card rounded-full shadow-lg hover:shadow-xl transition-shadow border border-border"
-      >
-        <Menu className="w-6 h-6 text-foreground" />
-      </button>
+    <AuthProvider initialUser={user} onLogout={onLogout}>
+      <div className="flex h-screen bg-background">
+        {/* Hamburger menu button - always visible */}
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="fixed top-4 left-4 z-50 p-3 bg-card rounded-full shadow-lg hover:shadow-xl transition-shadow border border-border"
+        >
+          <Menu className="w-6 h-6 text-foreground" />
+        </button>
 
-      {/* Sidebar */}
-      <Sidebar
-        currentPage={currentPage}
-        onPageChange={setCurrentPage}
-        onLogout={onLogout}
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
+        {/* Sidebar */}
+        <Sidebar
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          onLogout={onLogout}
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+        />
 
-      {/* Main content */}
-      <div className="flex-1 flex">
-        <main className={`flex-1 ${showRightSidebar ? "xl:mr-80" : ""}`}>{renderPage()}</main>
+        {/* Main content */}
+        <div className="flex-1 flex">
+          <main className={`flex-1 ${showRightSidebar ? "xl:mr-80" : ""}`}>{renderPage()}</main>
 
-        {/* Right sidebar */}
-        {showRightSidebar && <RightSidebar currentPage={currentPage} onUserClick={handleUserClick} />}
+          {/* Right sidebar */}
+          {showRightSidebar && <RightSidebar currentPage={currentPage} onUserClick={handleUserClick} />}
+        </div>
       </div>
-    </div>
+    </AuthProvider>
   )
 }
