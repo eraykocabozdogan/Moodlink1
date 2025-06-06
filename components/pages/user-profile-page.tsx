@@ -13,14 +13,14 @@ interface UserProfilePageProps {
 export function UserProfilePage({ user, onBack }: UserProfilePageProps) {
   const [isFollowing, setIsFollowing] = useState(false)
   
-  // Örnek gönderiler
+  // Example posts
   const userPosts = [
     {
       id: 1,
       username: user.username,
       handle: `@${user.handle}`,
-      time: "15dk",
-      content: "Bugün harika bir gün! #MoodLink ile paylaşmak istedim.",
+      time: "15m",
+      content: "Today is a great day! Wanted to share with #MoodLink.",
       moodCompatibility: "85%",
     },
     {
@@ -28,7 +28,7 @@ export function UserProfilePage({ user, onBack }: UserProfilePageProps) {
       username: user.username,
       handle: `@${user.handle}`,
       time: "2s",
-      content: "Yeni bir etkinlik planı yapıyorum. Katılmak isteyen var mı?",
+      content: "I'm planning a new activity. Anyone want to join?",
       moodCompatibility: "92%",
     },
   ]
@@ -45,8 +45,8 @@ export function UserProfilePage({ user, onBack }: UserProfilePageProps) {
           <button onClick={onBack} className="p-2 hover:bg-muted rounded-full">
             <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>
-          <h1 className="text-xl font-bold text-foreground">Profil</h1>
-          <div className="w-10"></div> {/* Sağ tarafı dengelemek için boş alan */}
+          <h1 className="text-xl font-bold text-foreground">Profile</h1>
+          <div className="w-10"></div> {/* Empty space to balance the right side */}
         </div>
       </div>
 
@@ -77,10 +77,10 @@ export function UserProfilePage({ user, onBack }: UserProfilePageProps) {
           
           <div className="flex justify-center space-x-6 text-sm text-muted-foreground">
             <span>
-              <strong className="text-foreground">{user.followers}</strong> Takipçi
+              <strong className="text-foreground">{user.followers}</strong> Followers
             </span>
             <span>
-              <strong className="text-foreground">{user.following}</strong> Takip Edilen
+              <strong className="text-foreground">{user.following}</strong> Following
             </span>
           </div>
           
@@ -95,12 +95,12 @@ export function UserProfilePage({ user, onBack }: UserProfilePageProps) {
                   </span>
                 ))
               ) : (
-                <span>Henüz mood verisi yok</span>
+                <span>No mood data yet</span>
               )}
             </p>
             <p className="text-sm text-muted-foreground mt-1">
-              <strong className="text-foreground">Rozetler:</strong>{" "}
-              {user.badges && user.badges.length > 0 ? user.badges.join(" ") : "Henüz rozet yok"}
+              <strong className="text-foreground">Badges:</strong>{" "}
+              {user.badges && user.badges.length > 0 ? user.badges.join(" ") : "No badges yet"}
             </p>
           </div>
           
@@ -109,13 +109,13 @@ export function UserProfilePage({ user, onBack }: UserProfilePageProps) {
               onClick={handleFollowToggle}
               className={isFollowing ? "bg-muted text-foreground border border-border" : "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"}
             >
-              {isFollowing ? "Takip Ediliyor" : "Takip Et"}
+              {isFollowing ? "Following" : "Follow"}
             </Button>
             <Button
               variant="outline"
               className="border-border text-foreground hover:bg-muted"
             >
-              Mesaj Gönder
+              Message
             </Button>
           </div>
         </div>
@@ -124,20 +124,20 @@ export function UserProfilePage({ user, onBack }: UserProfilePageProps) {
       {/* Mood Compatibility */}
       <div className="bg-card border-b border-border p-4">
         <div className="flex items-center justify-between">
-          <h4 className="font-bold text-foreground">Mood Uyumu</h4>
+          <h4 className="font-bold text-foreground">Mood Compatibility</h4>
           <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-full">
             <span className="text-sm font-medium">%{Math.floor(Math.random() * 30) + 70}</span>
           </div>
         </div>
         <p className="text-sm text-muted-foreground mt-2">
-          Bu kullanıcıyla mood uyumunuz yüksek. Benzer etkinliklerden hoşlanıyorsunuz!
+          You have high mood compatibility with this user. You enjoy similar activities!
         </p>
       </div>
 
       {/* Posts */}
       <div className="bg-card">
         <div className="p-4 border-b border-border">
-          <h4 className="font-bold text-foreground">Gönderiler</h4>
+          <h4 className="font-bold text-foreground">Posts</h4>
         </div>
         {userPosts.map((post) => (
           <PostCard key={post.id} post={post} />

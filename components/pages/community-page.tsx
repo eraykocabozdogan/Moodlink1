@@ -133,7 +133,7 @@ export function CommunityPage() {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
           <Input
             type="text"
-            placeholder="Topluluk ara..."
+            placeholder="Search communities..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 h-12 bg-muted border-border focus:bg-card focus:ring-2 focus:ring-primary"
@@ -146,11 +146,11 @@ export function CommunityPage() {
         {showCreateForm && (
           <Card className="border-primary/20 bg-card">
             <CardContent className="p-4">
-              <h3 className="font-bold text-lg mb-3 text-foreground">Yeni Topluluk Oluştur</h3>
+              <h3 className="font-bold text-lg mb-3 text-foreground">Create New Community</h3>
               <div className="flex space-x-3">
                 <Input
                   type="text"
-                  placeholder="Topluluk adı..."
+                  placeholder="Community name..."
                   value={newCommunityName}
                   onChange={(e) => setNewCommunityName(e.target.value)}
                   className="flex-1 bg-background border-border text-foreground"
@@ -159,7 +159,7 @@ export function CommunityPage() {
                   onClick={handleCreateCommunity}
                   className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-primary-foreground"
                 >
-                  Oluştur
+                  Create
                 </Button>
               </div>
             </CardContent>
@@ -171,7 +171,7 @@ export function CommunityPage() {
           <div>
             <h2 className="text-lg font-bold text-foreground mb-4 flex items-center">
               <Users className="w-5 h-5 mr-2 text-primary" />
-              Katıldığın Topluluklar
+              Your Communities
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               {communities
@@ -185,7 +185,7 @@ export function CommunityPage() {
                           <div className="flex items-center justify-between mb-2">
                             <h3 className="font-bold text-foreground truncate">{community.name}</h3>
                             <Badge variant="secondary" className="bg-green-100 text-green-700">
-                              Katıldın
+                              Joined
                             </Badge>
                           </div>
                           <p className="text-muted-foreground text-sm mb-2 line-clamp-2">{community.description}</p>
@@ -236,7 +236,7 @@ export function CommunityPage() {
                           : "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-primary-foreground"
                       }`}
                     >
-                      {joinedCommunities.includes(community.id) ? "Ayrıl" : "Katıl"}
+                      {joinedCommunities.includes(community.id) ? "Leave" : "Join"}
                     </Button>
                   </div>
                 </CardContent>
@@ -248,7 +248,7 @@ export function CommunityPage() {
         {/* Community Posts Feed (Optional) */}
         {joinedCommunities.length > 0 && (
           <div className="mt-8">
-            <h2 className="text-lg font-bold text-foreground mb-4">Topluluk Akışı</h2>
+            <h2 className="text-lg font-bold text-foreground mb-4">Community Feed</h2>
             <div className="space-y-4">
               {communityPosts.map((post) => (
                 <PostCard key={post.id} post={post} />

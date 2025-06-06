@@ -40,7 +40,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
       username: "Eray",
       handle: "@eraykocabozdogan",
       time: "2m",
-      content: "Çankırı is beautiful",
+      content: "Cankiri is beautiful",
       image: "/placeholder.svg?height=200&width=400",
       moodCompatibility: "88%",
     },

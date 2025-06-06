@@ -8,36 +8,36 @@ export function RightSidebar({ currentPage, onUserClick }: RightSidebarProps) {
     { 
       username: "Ahmet Yılmaz", 
       handle: "ahmet_yilmaz", 
-      bio: "Sporcu ve fotoğrafçı",
+      bio: "Athlete and photographer",
       followers: "2.5K",
       following: "450",
       moods: [
-        { name: "Enerjik", percentage: "78%" },
-        { name: "Heyecanlı", percentage: "65%" },
+        { name: "Energetic", percentage: "78%" },
+        { name: "Excited", percentage: "65%" },
       ],
       badges: ["🏆", "📸"]
     },
     { 
       username: "Ayşe Kaya", 
       handle: "ayse_kaya", 
-      bio: "Yazar ve doğa sever",
+      bio: "Writer and nature lover",
       followers: "1.8K",
       following: "302",
       moods: [
-        { name: "Sakin", percentage: "82%" },
-        { name: "İlham Dolu", percentage: "74%" },
+        { name: "Calm", percentage: "82%" },
+        { name: "Inspired", percentage: "74%" },
       ],
       badges: ["✍️", "🌿"]
     },
     {
       username: "Mehmet Demir",
       handle: "mehmet_demir",
-      bio: "Müzisyen ve gezgin",
+      bio: "Musician and traveler",
       followers: "3.1K",
       following: "420",
       moods: [
-        { name: "Yaratıcı", percentage: "85%" },
-        { name: "Neşeli", percentage: "79%" },
+        { name: "Creative", percentage: "85%" },
+        { name: "Cheerful", percentage: "79%" },
       ],
       badges: ["🎵", "✈️"]
     }
@@ -47,7 +47,7 @@ export function RightSidebar({ currentPage, onUserClick }: RightSidebarProps) {
     if (currentPage === "home") {
       return (
         <div className="bg-card rounded-xl p-4 shadow-sm border border-border">
-          <h3 className="font-bold text-lg mb-4 text-foreground">Önerilen Kullanıcılar</h3>
+          <h3 className="font-bold text-lg mb-4 text-foreground">Suggested Users</h3>
           <div className="space-y-4">
             {suggestedUsers.map((user, index) => (
               <div
@@ -64,10 +64,10 @@ export function RightSidebar({ currentPage, onUserClick }: RightSidebarProps) {
                   <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{user.bio}</p>
                   <div className="flex items-center space-x-4 mt-2">
                     <span className="text-xs text-muted-foreground">
-                      <strong className="text-foreground">{user.followers}</strong> Takipçi
+                      <strong className="text-foreground">{user.followers}</strong> Followers
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      <strong className="text-foreground">{user.following}</strong> Takip
+                      <strong className="text-foreground">{user.following}</strong> Following
                     </span>
                   </div>
                 </div>
@@ -81,7 +81,7 @@ export function RightSidebar({ currentPage, onUserClick }: RightSidebarProps) {
     if (currentPage === "search") {
       return (
         <div className="bg-card rounded-xl p-4 shadow-sm border border-border">
-          <h3 className="font-bold text-lg mb-4 text-foreground">Popüler Kullanıcılar</h3>
+          <h3 className="font-bold text-lg mb-4 text-foreground">Popular Users</h3>
           <div className="space-y-4">
             {suggestedUsers.map((user, index) => (
               <div
@@ -98,10 +98,10 @@ export function RightSidebar({ currentPage, onUserClick }: RightSidebarProps) {
                   <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{user.bio}</p>
                   <div className="flex items-center space-x-4 mt-2">
                     <span className="text-xs text-muted-foreground">
-                      <strong className="text-foreground">{user.followers}</strong> Takipçi
+                      <strong className="text-foreground">{user.followers}</strong> Followers
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      <strong className="text-foreground">{user.following}</strong> Takip
+                      <strong className="text-foreground">{user.following}</strong> Following
                     </span>
                   </div>
                 </div>
