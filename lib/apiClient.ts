@@ -3,7 +3,7 @@
 /**
  * Base URL for API requests fetched from environment variables
  */
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moodlinkbackend.onrender.com/api';
 
 /**
  * Default request headers
@@ -21,6 +21,7 @@ export function setAuthToken(token: string | null): void {
     headers = {
       ...headers,
       'Authorization': `Bearer ${token}`,
+      'Accept': 'application/json',
     };
   } else {
     // Remove Authorization header if token is null
@@ -36,25 +37,65 @@ export function setAuthToken(token: string | null): void {
  * @throws Error with status code and message if response is not ok
  */
 async function handleResponse<T>(response: Response): Promise<T> {
+  const responseData = {
+    status: response.status,
+    statusText: response.statusText,
+    url: response.url,
+    headers: Object.fromEntries(response.headers.entries())
+  };
+
+  console.log('API Response:', responseData);
+
   if (!response.ok) {
-    // Try to get error message from response if possible
+    let errorMessage = `HTTP Error ${response.status}: ${response.statusText}`;
+    let errorDetails = {};
+
     try {
-      const errorData = await response.json();
-      throw new Error(`${response.status}: ${errorData.message || response.statusText}`);
-    } catch (e) {
-      // If can't parse error as JSON, throw generic error with status
-      throw new Error(`${response.status}: ${response.statusText}`);
+      const text = await response.text();
+      console.log('Raw error response:', text);
+
+      try {
+        const errorData = JSON.parse(text);
+        errorDetails = errorData;
+        errorMessage = errorData.message || errorData.title || errorData.error || errorMessage;
+      } catch (parseError) {
+        console.warn('Failed to parse error response as JSON:', parseError);
+        errorDetails = { rawText: text };
+      }
+    } catch (textError) {
+      console.error('Failed to read error response:', textError);
     }
+
+    console.error('API Error:', {
+      ...responseData,
+      errorMessage,
+      errorDetails
+    });
+
+    throw new Error(errorMessage);
   }
-  
-  // Check if response is empty
-  const contentType = response.headers.get('content-type');
-  if (contentType && contentType.includes('application/json')) {
-    return await response.json() as T;
+
+  try {
+    const text = await response.text();
+    console.log('Raw success response:', text);
+
+    if (!text) {
+      console.log('Empty response received');
+      return {} as T;
+    }
+
+    try {
+      const data = JSON.parse(text);
+      console.log('Parsed response data:', data);
+      return data as T;
+    } catch (parseError) {
+      console.error('Failed to parse success response as JSON:', parseError);
+      throw new Error('Invalid JSON response from server');
+    }
+  } catch (error) {
+    console.error('Failed to read success response:', error);
+    throw error;
   }
-  
-  // Return empty object for no-content responses
-  return {} as T;
 }
 
 /**
@@ -72,6 +113,11 @@ export async function get<T>(endpoint: string, params?: Record<string, string>):
     url = `${url}?${queryString}`;
   }
   
+  console.log('Making GET request:', {
+    url,
+    headers,
+  });
+  
   const response = await fetch(url, {
     method: 'GET',
     headers,
@@ -87,7 +133,14 @@ export async function get<T>(endpoint: string, params?: Record<string, string>):
  * @returns Promise with parsed response data
  */
 export async function post<T>(endpoint: string, data?: any): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  const url = `${API_BASE_URL}${endpoint}`;
+  console.log('Making POST request:', {
+    url,
+    headers,
+    data
+  });
+
+  const response = await fetch(url, {
     method: 'POST',
     headers,
     body: data ? JSON.stringify(data) : undefined,

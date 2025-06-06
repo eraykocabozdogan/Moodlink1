@@ -38,8 +38,10 @@ export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
   const fetchConversations = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await apiClient.get<{ chats: ChatInfo[] }>('/api/Chats/user-chats');
-      setConversations(response.chats);
+      console.log('Fetching conversations...');
+      const response = await apiClient.get<ChatInfo[]>('/Chats/user-chats');
+      console.log('Conversations response:', response);
+      setConversations(response || []);
     } catch (error) {
       console.error("Failed to fetch conversations:", error);
       toast({
@@ -59,14 +61,16 @@ export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
   const handleCreateGroup = async (groupName: string, members: User[]) => {
     try {
         const participantUserIds = members.map(m => m.id);
-        // TODO: Giriş yapan kullanıcının ID'si de eklenmeli.
-        // const creatorUserId = "mevcut-kullanici-id"; 
+        console.log('Creating group chat:', {
+          name: groupName,
+          type: 2,
+          participantUserIds
+        });
         
-        await apiClient.post('/api/Chats/create', {
+        await apiClient.post('/Chats/create', {
             name: groupName,
             type: 2, // 2: Group Chat
-            participantUserIds,
-            // creatorUserId
+            participantUserIds
         });
 
         toast({ title: "Başarılı", description: "Grup başarıyla oluşturuldu." });

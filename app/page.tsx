@@ -1,65 +1,28 @@
 "use client"
 
-import { useState } from "react"
-import { LoginScreen } from "@/components/login-screen"
-import { SignupScreen } from "@/components/signup-screen"
-import { ForgotPasswordScreen } from "@/components/forgot-password-screen"
-import { MainApp } from "@/components/main-app"
+import { useEffect } from 'react';
+import { useAuth } from '@/hooks/use-auth';
+import { MessagesPage } from '@/components/pages/messages-page';
 
 export default function Home() {
-  const [currentScreen, setCurrentScreen] = useState<"login" | "signup" | "forgot-password" | "app">("login")
-  const [user, setUser] = useState<any>(null)
+  const { user, loading } = useAuth();
 
-  const handleLogin = (userData: any) => {
-    setUser(userData)
-    setCurrentScreen("app")
-  }
-
-  const handleSignup = (userData: any) => {
-    setUser(userData)
-    setCurrentScreen("app")
-  }
-
-  const handleLogout = () => {
-    setUser(null)
-    setCurrentScreen("login")
-  }
-
-  const handleForgotPassword = () => {
-    setCurrentScreen("forgot-password")
-  }
-
-  const handleResetComplete = () => {
-    setCurrentScreen("login")
-  }
-
-  if (currentScreen === "login") {
+  if (loading) {
     return (
-      <LoginScreen 
-        onLogin={handleLogin} 
-        onSwitchToSignup={() => setCurrentScreen("signup")}
-        onForgotPassword={handleForgotPassword}
-      />
-    )
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-purple-500"></div>
+      </div>
+    );
   }
 
-  if (currentScreen === "signup") {
-    return (
-      <SignupScreen 
-        onSignup={handleSignup} 
-        onSwitchToLogin={() => setCurrentScreen("login")} 
+  return (
+    <main className="min-h-screen bg-background">
+      <MessagesPage 
+        onChatSelect={(chat) => {
+          console.log('Selected chat:', chat);
+          // TODO: Implement chat selection
+        }} 
       />
-    )
-  }
-
-  if (currentScreen === "forgot-password") {
-    return (
-      <ForgotPasswordScreen
-        onResetComplete={handleResetComplete}
-        onBackToLogin={() => setCurrentScreen("login")}
-      />
-    )
-  }
-
-  return <MainApp user={user} onLogout={handleLogout} />
+    </main>
+  );
 }
