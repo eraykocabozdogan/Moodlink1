@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Heart } from "lucide-react"
 import { VerificationScreen } from "./verification-screen"
+import apiClient from "@/lib/apiClient"
+import type { EnhancedUserForRegisterDto } from "@/lib/types/api"
 
 interface SignupScreenProps {
   onSignup: (userData: any) => void
@@ -18,11 +20,63 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
   const [birthDate, setBirthDate] = useState("")
   const [password, setPassword] = useState("")
   const [showVerification, setShowVerification] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleSignup = () => {
-    if (fullName && email && password) {
-      // Simulate sending verification email
+  const handleSignup = async () => {
+    if (!fullName || !email || !password) {
+      alert('Lütfen tüm alanları doldurun.')
+      return
+    }
+
+    setIsLoading(true)
+    console.log('Signup attempt started with:', { fullName, email, birthDate })
+
+    try {
+      // Split fullName into firstName and lastName
+      const nameParts = fullName.trim().split(' ')
+      const firstName = nameParts[0] || ''
+      const lastName = nameParts.slice(1).join(' ') || ''
+
+      const registerData: EnhancedUserForRegisterDto = {
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        password: password,
+        userName: email, // Using email as username
+        birthDate: birthDate ? new Date(birthDate).toISOString() : undefined,
+        phoneNumber: undefined // Optional field
+      }
+
+      console.log('Sending register request to API...')
+      const response = await apiClient.register(registerData)
+      console.log('Register API Response received:', response)
+
+      // Registration successful, show verification screen
       setShowVerification(true)
+    } catch (error: any) {
+      console.error('Signup error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        fullError: error
+      })
+
+      let errorMessage = 'Kayıt olurken bir hata oluştu.'
+
+      if (error.response?.status === 400) {
+        errorMessage = 'Geçersiz bilgiler. Lütfen bilgilerinizi kontrol edin.'
+      } else if (error.response?.status === 409) {
+        errorMessage = 'Bu email adresi zaten kullanımda.'
+      } else if (error.response?.status >= 500) {
+        errorMessage = 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.'
+      } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+        errorMessage = 'Bağlantı hatası. İnternet bağlantınızı kontrol edin.'
+      }
+
+      alert(errorMessage)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -101,9 +155,10 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
           />
           <Button
             onClick={handleSignup}
-            className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium"
+            disabled={isLoading}
+            className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Sign Up
+            {isLoading ? 'Kayıt oluşturuluyor...' : 'Sign Up'}
           </Button>
           <Button
             onClick={handleGoogleSignup}

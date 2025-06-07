@@ -42,7 +42,7 @@ export function LoginScreen({ onLogin, onSwitchToSignup, onForgotPassword }: Log
       console.log('Response stringified:', JSON.stringify(response, null, 2))
 
       // Set auth token in apiClient
-      const token = response.accessToken?.token || response.token
+      const token = response.accessToken?.token
       if (token) {
         console.log('Token found in response, setting auth token...')
         apiClient.setAuthToken(token)
@@ -51,10 +51,9 @@ export function LoginScreen({ onLogin, onSwitchToSignup, onForgotPassword }: Log
         localStorage.setItem('token', token)
         console.log('Token saved to localStorage')
 
-        // Call onLogin prop with user data from API response
-        const userData = response.user || { username, id: response.userId || 1 }
-        console.log('Calling onLogin with userData:', userData)
-        onLogin(userData)
+        // Call onLogin prop with simplified user data
+        console.log('Calling onLogin with userData:', { username: username })
+        onLogin({ username: username })
       } else {
         console.error('No token found in response:', response)
         alert('Giriş başarısız: Token alınamadı.')

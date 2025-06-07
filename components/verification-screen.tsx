@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
 import { Heart, Mail } from "lucide-react"
+import apiClient from "@/lib/apiClient"
+import type { VerifyCodeCommand, ValidationPurpose } from "@/lib/types/api"
 
 interface VerificationScreenProps {
   email: string
@@ -35,8 +37,43 @@ export function VerificationScreen({
   const handleVerify = async () => {
     if (code.length === 6) {
       setIsLoading(true)
+      console.log('Verification attempt started with:', { email, code, type })
+
       try {
+        // Prepare verification data
+        const verifyData: VerifyCodeCommand = {
+          email: email,
+          code: code
+        }
+
+        console.log('Sending verify code request to API...')
+        const response = await apiClient.verifyCode(verifyData)
+        console.log('Verify code API Response received:', response)
+
+        // Verification successful, call the onVerify callback
         await onVerify(code)
+      } catch (error: any) {
+        console.error('Verification error details:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          fullError: error
+        })
+
+        let errorMessage = 'Doğrulama kodu geçersiz.'
+
+        if (error.response?.status === 400) {
+          errorMessage = 'Geçersiz doğrulama kodu.'
+        } else if (error.response?.status === 404) {
+          errorMessage = 'Doğrulama kodu bulunamadı veya süresi dolmuş.'
+        } else if (error.response?.status >= 500) {
+          errorMessage = 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.'
+        } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+          errorMessage = 'Bağlantı hatası. İnternet bağlantınızı kontrol edin.'
+        }
+
+        alert(errorMessage)
       } finally {
         setIsLoading(false)
       }

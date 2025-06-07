@@ -44,6 +44,12 @@ export enum NotificationType {
   Badge = 6
 }
 
+export enum ValidationPurpose {
+  EmailValidation = 1,
+  PasswordReset = 2,
+  TwoFactorAuth = 3
+}
+
 // Core Interfaces
 export interface AiTestResponse {
   success: boolean;
