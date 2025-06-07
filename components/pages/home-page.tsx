@@ -5,11 +5,14 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { PostCard } from "@/components/post-card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ImagePlus } from 'lucide-react'
+import { ImagePlus, X } from 'lucide-react'
 import useEmblaCarousel from 'embla-carousel-react'
 import apiClient from "@/lib/apiClient"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/contexts/AuthContext"
+
+// API Base URL for building image URLs
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://moodlinkbackend.onrender.com';
 
 // Backend'den gelen post verisinin tipini tanımlayalım
 // Bu, swagger.json'daki GetListPostListItemDto'ya dayanmaktadır.
@@ -73,15 +76,52 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
     setIsLoading(true)
     setError(null)
     try {
+      console.log(`Fetching following posts for user ${user.id}`)
+      console.log(`API endpoint: /api/Posts/followed-users/${user.id}`)
+      
       const response = await apiClient.get<{ items: Post[] }>(`/api/Posts/followed-users/${user.id}`)
+      
+      if (!response) {
+        console.warn('API response is empty or undefined')
+        setFollowingPosts([])
+        setError("Takip edilen kullanıcıların gönderileri yüklenirken bir sorun oluştu.")
+        return
+      }
+      
+      if (!response.items) {
+        console.warn('API response has no items property', response)
+        setFollowingPosts([])
+        setError("Takip edilen kullanıcıların gönderileri alınamadı.")
+        return
+      }
+      
+      console.log(`Successfully fetched ${response.items.length} posts from followed users`)
       setFollowingPosts(response.items)
+      
+      if (response.items.length === 0) {
+        console.log('No posts found from followed users. You might not be following anyone or they have not posted yet.')
+      }
     } catch (err) {
+      console.error("Error fetching following posts:", err)
+      
+      // Hata detaylarını kaydet
+      if (err instanceof Error) {
+        console.error('Error message:', err.message)
+        if ((err as any).details) {
+          console.error('Error details:', (err as any).details)
+        }
+      }
+      
       setError("Takip edilen kullanıcıların gönderileri yüklenirken bir hata oluştu.")
-      console.error(err)
+      toast({
+        variant: "destructive",
+        title: "Bağlantı Hatası",
+        description: "Takip edilen kullanıcıların gönderileri yüklenirken bir sorun oluştu. Lütfen daha sonra tekrar deneyin.",
+      })
     } finally {
       setIsLoading(false)
     }
-  }, [user])
+  }, [user, toast])
 
   // Sayfa yüklendiğinde ve sekme değiştiğinde ilgili postları çek
   useEffect(() => {
@@ -216,7 +256,20 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
     return currentPosts.map((post) => (
       <PostCard 
           key={post.id} 
-          post={{...post, handle: `@${post.userEmail?.split('@')[0]}`}} // handle ve diğer eksik alanlar için geçici çözüm
+          post={{
+            id: Number(post.id) || Math.floor(Math.random() * 1000), // Convert string ID to number or use random number
+            username: post.userFirstName + ' ' + post.userLastName,
+            handle: `@${post.userEmail?.split('@')[0]}`,
+            time: new Date(post.createdDate).toLocaleString('tr-TR', {
+              hour: '2-digit',
+              minute: '2-digit',
+              day: '2-digit',
+              month: '2-digit',
+            }),
+            content: post.contentText,
+            moodCompatibility: "85%",
+            image: post.postImageFileId ? `${API_BASE_URL}/api/FileAttachments/${post.postImageFileId}` : undefined
+          }} 
           onUserClick={onUserClick} 
       />
     ));

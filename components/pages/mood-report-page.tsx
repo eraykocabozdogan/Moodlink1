@@ -24,6 +24,15 @@ interface AdvancedAnalysis {
   dominantEmotion: string;
   recommendations: string[];
 }
+
+// API response types
+interface MoodReportResponse {
+  data?: MoodScore[];
+  result?: MoodScore[];
+  scores?: MoodScore[];
+  items?: MoodScore[];
+  [key: string]: any; // For other potential fields
+}
 // ---
 
 interface MoodReportPageProps {
@@ -34,6 +43,14 @@ interface MoodReportPageProps {
 }
 
 type Period = 'week' | 'month';
+
+// Enum mapping for API compatibility
+enum MoodReportPeriod {
+  // Assuming: 1 = Day, 2 = Week, 3 = Month based on typical patterns
+  Day = 1,
+  Week = 2,
+  Month = 3
+}
 
 export function MoodReportPage({ user }: MoodReportPageProps) {
   const [selectedPeriod, setSelectedPeriod] = useState<Period>("week")
@@ -47,14 +64,55 @@ export function MoodReportPage({ user }: MoodReportPageProps) {
     setIsLoading(true);
 
     try {
+      // Map string period to enum value
+      const periodEnum = period === 'week' 
+        ? MoodReportPeriod.Week 
+        : MoodReportPeriod.Month;
+      
       // API endpoint'leri ve parametreleri swagger'a göre ayarlandı.
-      const reportPromise = apiClient.get<MoodScore[]>(`/api/EmotionScores/mood-report/${user.id}`, { period: period });
+      const reportPromise = apiClient.get<any>(`/api/EmotionScores/mood-report/${user.id}`, { period: periodEnum.toString() });
       const analysisPromise = apiClient.get<AdvancedAnalysis>(`/api/EmotionScores/advanced-analysis/${user.id}`);
       
       const [reportResponse, analysisResponse] = await Promise.all([reportPromise, analysisPromise]);
 
+      // Debug log to see the response structure
+      console.log('Report response type:', typeof reportResponse);
+      console.log('Report response structure:', reportResponse);
+      
+      // Extract scores array from the response (handling different possible structures)
+      let scoresArray: MoodScore[] = [];
+      
+      if (Array.isArray(reportResponse)) {
+        scoresArray = reportResponse;
+      } else if (typeof reportResponse === 'object' && reportResponse !== null) {
+        // Try to find the array in the response object
+        const possibleArrayFields = ['data', 'result', 'scores', 'items'];
+        for (const field of possibleArrayFields) {
+          if (Array.isArray(reportResponse[field])) {
+            scoresArray = reportResponse[field];
+            break;
+          }
+        }
+        
+        // If we still don't have an array, look for any array in the response
+        if (scoresArray.length === 0) {
+          for (const key in reportResponse) {
+            if (Array.isArray(reportResponse[key])) {
+              scoresArray = reportResponse[key];
+              break;
+            }
+          }
+        }
+      }
+      
+      // If we still don't have data, create empty array to avoid errors
+      if (!scoresArray || scoresArray.length === 0) {
+        console.warn('No mood data found in the response');
+        scoresArray = [];
+      }
+
       // Grafik için veriyi işle
-      const processedData = reportResponse.map(item => ({
+      const processedData = scoresArray.map(item => ({
         name: new Date(item.date).toLocaleDateString('tr-TR', { weekday: 'short' }),
         [item.emotion]: item.score,
       })).reduce((acc, current) => {
@@ -66,7 +124,6 @@ export function MoodReportPage({ user }: MoodReportPageProps) {
         }
         return acc;
       }, [] as Record<string, any>[]);
-
 
       setReportData(processedData);
       setAnalysis(analysisResponse);

@@ -1,41 +1,128 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { PostCard } from "@/components/post-card"
 import { ArrowLeft } from "lucide-react"
+import apiClient from "@/lib/apiClient"
+import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/contexts/AuthContext"
+import { Skeleton } from "@/components/ui/skeleton"
+
+interface User {
+  id: string;
+  // Add other user properties as needed
+}
 
 interface UserProfilePageProps {
-  user: any
-  onBack: () => void
+  user: User;
+  onBack: () => void;
 }
 
 export function UserProfilePage({ user, onBack }: UserProfilePageProps) {
   const [isFollowing, setIsFollowing] = useState(false)
+  const [userPosts, setUserPosts] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const { user: currentUser } = useAuth()
+  const { toast } = useToast()
   
-  // Örnek gönderiler
-  const userPosts = [
-    {
-      id: 1,
-      username: user.username,
-      handle: `@${user.handle}`,
-      time: "15dk",
-      content: "Bugün harika bir gün! #MoodLink ile paylaşmak istedim.",
-      moodCompatibility: "85%",
-    },
-    {
-      id: 2,
-      username: user.username,
-      handle: `@${user.handle}`,
-      time: "2s",
-      content: "Yeni bir etkinlik planı yapıyorum. Katılmak isteyen var mı?",
-      moodCompatibility: "92%",
-    },
-  ]
+  const fetchUserPosts = useCallback(async () => {
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "Unable to load user profile. User information is missing.",
+        variant: "destructive"
+      });
+      setIsLoading(false);
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const response = await apiClient.get<{ items: any[] }>(`/api/Posts/user/${user.id}`);
+      setUserPosts(response.items);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load user posts. Please try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, toast]);
 
-  const handleFollowToggle = () => {
-    setIsFollowing(!isFollowing)
-  }
+  // Kullanıcıyı takip edip etmediğimizi kontrol eden fonksiyon
+  const checkIfFollowing = useCallback(async () => {
+    if (!user?.id || !currentUser?.id) return;
+    
+    try {
+      // Backend'de bir endpoint varsa bunu kullanabiliriz
+      // Örnek: /api/Follows/check/{followedUserId}
+      // Şimdilik bir endpoint olmadığını varsayarak dummy bir işlem yapıyoruz
+      // Gerçek uygulamada burayı güncelleyin
+      setIsFollowing(false);
+    } catch (error) {
+      console.error("Failed to check follow status:", error);
+    }
+  }, [user?.id, currentUser?.id]);
+
+  // Bileşen yüklendiğinde verileri çek
+  useEffect(() => {
+    fetchUserPosts();
+    checkIfFollowing();
+  }, [fetchUserPosts, checkIfFollowing]);
+
+  const handleFollowToggle = async () => {
+    if (!currentUser?.id || !user?.id) {
+      toast({
+        title: "Hata",
+        description: "Kullanıcıyı takip etmek için giriş yapmalısınız.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      if (isFollowing) {
+        // Takibi bırak
+        // Gerçek API çağrısı
+        // await apiClient.delete(`/api/Follows/{followId}`);
+        console.log(`Unfollowing user ${user.id}`);
+        
+        // Dummy işlem
+        setIsFollowing(false);
+        toast({
+          title: "Başarılı",
+          description: `${user.username} kullanıcısını takip etmeyi bıraktınız.`,
+        });
+      } else {
+        // Takip et
+        const followData = {
+          followerId: currentUser.id,
+          followedId: user.id
+        };
+        
+        // Gerçek API çağrısı
+        // Endpoint yapısına göre bu değişebilir
+        await apiClient.post('/api/Follows', followData);
+        console.log(`Following user ${user.id}`, followData);
+        
+        setIsFollowing(true);
+        toast({
+          title: "Başarılı",
+          description: `${user.username} kullanıcısını takip etmeye başladınız.`,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to toggle follow:", error);
+      toast({
+        title: "Hata",
+        description: "Takip işlemi gerçekleştirilemedi. Lütfen daha sonra tekrar deneyin.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -139,9 +226,37 @@ export function UserProfilePage({ user, onBack }: UserProfilePageProps) {
         <div className="p-4 border-b border-border">
           <h4 className="font-bold text-foreground">Gönderiler</h4>
         </div>
-        {userPosts.map((post) => (
-          <PostCard key={post.id} post={post} />
-        ))}
+        {isLoading ? (
+          <div className="p-4">
+            <div className="space-y-4">
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+            </div>
+          </div>
+        ) : userPosts.length > 0 ? (
+          userPosts.map((post) => (
+            <PostCard 
+              key={post.id} 
+              post={{
+                ...post,
+                username: user.username || user.firstName + " " + user.lastName,
+                handle: `@${user.handle || post.userEmail?.split('@')[0]}`,
+                time: new Date(post.createdDate).toLocaleString('tr-TR', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  day: '2-digit',
+                  month: '2-digit',
+                }),
+                content: post.contentText,
+                moodCompatibility: "85%"
+              }} 
+            />
+          ))
+        ) : (
+          <div className="p-4 text-center text-muted-foreground">
+            Bu kullanıcı henüz gönderi paylaşmamış.
+          </div>
+        )}
       </div>
     </div>
   )

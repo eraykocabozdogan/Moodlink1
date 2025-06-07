@@ -196,8 +196,6 @@ export function ProfilePage({ user: externalUser }: ProfilePageProps) {
     setIsLoading(true);
 
     try {
-        // Eğer yeni bir profil resmi seçildiyse, önce onu yükle
-        let profileImageFileId = null;
         if (selectedProfileImageFile) {
           profileImageFileId = await uploadProfilePicture(selectedProfileImageFile);
         }
@@ -213,21 +211,18 @@ export function ProfilePage({ user: externalUser }: ProfilePageProps) {
 
         await apiClient.put('/api/Users/FromAuth', updateData);
 
-        // Başarılı güncelleme sonrası local state'i ve UI'ı güncelle
-        // Profil resmi URL'sini güncellemek için yeniden veri çekme işlemi yapılabilir
-        // veya backend'den dönen yanıtta profil resmi URL'si varsa doğrudan güncellenebilir
-        await fetchData(); // Profil verilerini yeniden çek
+        // Successful update operations
+        await fetchData();
         
-        // Auth context'i de güncelle
         if (updateAuthUser && userProfile) {
-          updateAuthUser({...userProfile, userName: editForm.username, bio: editForm.bio});  
+          updateAuthUser({...userProfile, userName: editForm.username, bio: editForm.bio});
         }
         
         setIsEditing(false);
         setProfileImagePreview(null);
         setSelectedProfileImageFile(null);
         toast({ title: "Başarılı", description: "Profiliniz güncellendi." });
-
+        
     } catch (error) {
         console.error("Failed to update profile:", error);
         toast({

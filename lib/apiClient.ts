@@ -72,6 +72,8 @@ async function handleResponse<T>(response: Response, requestInfo?: { method: str
 
     // Create a detailed error object
     const detailedError = {
+      status: response.status,
+      statusText: response.statusText,
       ...responseData,
       errorMessage,
       errorDetails,
