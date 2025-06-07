@@ -38,6 +38,7 @@ export function LoginScreen({ onLogin, onSwitchToSignup, onForgotPassword }: Log
     setError(null);
     
     try {
+<<<<<<< Updated upstream
       const response = await apiClient.post<LoginResponse>('/api/Auth/Login', {
         email: username, // Using username as email
         password
@@ -55,6 +56,59 @@ export function LoginScreen({ onLogin, onSwitchToSignup, onForgotPassword }: Log
           ? err.message 
           : "Failed to login. Please check your credentials and try again."
       );
+=======
+      const loginData: UserForLoginDto = {
+        email: username,
+        password: password
+      }
+
+      console.log('Sending login request to API...');
+      const response = await apiClient.login(loginData);
+      console.log('!!! BACKEND LOGIN YANITI:', JSON.stringify(response, null, 2));
+
+
+      // Set auth token in apiClient
+      const token = response.accessToken?.token;
+      if (token) {
+        console.log('Token found in response, setting auth token...');
+        apiClient.setAuthToken(token);
+
+        console.log('Login anında apiClient\'daki token:', apiClient.getAuthToken());
+
+        // Save token to localStorage
+        localStorage.setItem('token', token);
+        console.log('Token saved to localStorage');
+
+        // Call onLogin prop with simplified user data
+        console.log('Calling onLogin with userData:', { username: username });
+        onLogin({ username: username });
+      } else {
+        console.error('No token found in response:', response);
+        alert('Giriş başarısız: Token alınamadı.');
+      }
+    } catch (error: any) {
+      console.error('Login error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        fullError: error
+      });
+
+      let errorMessage = 'Giriş yapılırken bir hata oluştu.';
+
+      if (error.response?.status === 401) {
+        errorMessage = 'Email veya şifre hatalı.';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'API endpoint bulunamadı.';
+      } else if (error.response?.status >= 500) {
+        errorMessage = 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.';
+      } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+        errorMessage = 'Bağlantı hatası. İnternet bağlantınızı kontrol edin.';
+      }
+
+      alert(errorMessage);
+>>>>>>> Stashed changes
     } finally {
       setIsLoading(false);
     }

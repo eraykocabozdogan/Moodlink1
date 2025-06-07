@@ -54,10 +54,175 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false })
   const { toast } = useToast()
 
+<<<<<<< Updated upstream
   // Tüm gönderileri çeken fonksiyon
   const fetchAllPosts = useCallback(async () => {
     setIsLoading(true)
     setError(null)
+=======
+  // useCallback hooks for emblaApi
+  const scrollPrev = useCallback(() => {
+    if (emblaApi) emblaApi.scrollPrev()
+  }, [emblaApi])
+
+  const scrollNext = useCallback(() => {
+    if (emblaApi) emblaApi.scrollNext()
+  }, [emblaApi])
+
+  // Fetch posts and user data from API
+  useEffect(() => {
+    const fetchData = async () => {
+      console.log('HomePage yüklendi, apiClient\'daki token durumu:', apiClient.getAuthToken());
+      setLoading(true)
+      setError(null)
+      console.log('Fetching data from API...')
+
+      try {
+        // Fetch user data first
+        const userResponse = await apiClient.getUserFromAuth()
+        console.log('User response:', userResponse)
+
+        // Set current user
+        setCurrentUser(userResponse)
+
+        // Fetch all posts using pagination
+        let allPosts: any[] = []
+        let pageIndex = 0
+        const pageSize = 20
+        let hasMore = true
+
+        while (hasMore) {
+          console.log(`Fetching page ${pageIndex + 1}...`)
+          const postsResponse = await apiClient.getPosts({ PageIndex: pageIndex, PageSize: pageSize })
+
+          console.log('Posts response:', postsResponse)
+          if (pageIndex === 0) {
+            console.log('Posts response stringified:', JSON.stringify(postsResponse, null, 2))
+            console.log('Posts items:', postsResponse.items)
+            console.log('Posts items length:', postsResponse.items?.length)
+          }
+
+          if (postsResponse.items && postsResponse.items.length > 0) {
+            allPosts = [...allPosts, ...postsResponse.items]
+            hasMore = postsResponse.hasNext
+            pageIndex++
+          } else {
+            hasMore = false
+          }
+        }
+
+        console.log(`Fetched ${allPosts.length} posts total from ${pageIndex} pages`)
+
+        // Transform API data to match our Post interface
+        const transformPost = (apiPost: any, index: number) => {
+          const isCurrentUser = userResponse && apiPost.userId === userResponse.id
+
+          // Debug log to see what fields are available
+          if (pageIndex === 0 && index === 0) {
+            console.log('Sample API Post object:', apiPost)
+            console.log('Available fields:', Object.keys(apiPost))
+            console.log('Backend does not provide likesCount, commentsCount, isLikedByCurrentUser fields')
+          }
+
+          // Generate consistent mock data based on post ID
+          const postIdHash = apiPost.id.split('-')[0] // Use first part of UUID for consistency
+          const hashNum = parseInt(postIdHash, 16) || 0
+          const likesCount = Math.abs(hashNum % 50) + 1 // 1-50 likes
+          const commentsCount = Math.abs(hashNum % 10) // 0-9 comments
+          const isLikedByCurrentUser = (hashNum % 3) === 0 // Every 3rd post is liked by current user
+
+          return {
+            id: apiPost.id,
+            username: isCurrentUser ? 'You' : (apiPost.userName || 'User'), // Show "You" for current user's posts
+            handle: isCurrentUser ? '@you' : `@user_${apiPost.userId?.slice(-4) || 'unknown'}`, // Use @you for current user
+            time: 'now', // TODO: Add createdDate to API response
+            content: apiPost.contentText || '',
+            image: apiPost.postImageFileId ? `/api/files/${apiPost.postImageFileId}` : undefined,
+            moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%`, // Mock mood compatibility for now
+            likesCount: likesCount,
+            commentsCount: commentsCount,
+            isLikedByCurrentUser: isLikedByCurrentUser
+          }
+        }
+
+        const transformedPosts = allPosts.map(transformPost)
+
+        // Set the same posts for both tabs for now
+        setForYouPosts(transformedPosts)
+        setFollowingPosts(transformedPosts)
+
+      } catch (error: any) {
+        console.error('Error fetching posts:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          fullError: error
+        })
+
+        let errorMessage = 'Gönderiler yüklenirken bir hata oluştu.'
+
+        if (error.response?.status === 401) {
+          errorMessage = 'Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.'
+        } else if (error.response?.status === 403) {
+          errorMessage = 'Bu içeriği görme yetkiniz yok.'
+        } else if (error.response?.status === 404) {
+          errorMessage = 'Gönderiler bulunamadı.'
+        } else if (error.response?.status >= 500) {
+          errorMessage = 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.'
+        } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+          errorMessage = 'Bağlantı hatası. İnternet bağlantınızı kontrol edin.'
+        }
+
+        setError(errorMessage)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
+
+  // Helper function to format time ago
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+    if (diffInSeconds < 60) return `${diffInSeconds}s`
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`
+    return `${Math.floor(diffInSeconds / 86400)}d`
+  }
+
+  // Effect to sync Embla carousel with activeTab state
+  useEffect(() => {
+    if (emblaApi) {
+      const onSelect = () => {
+        const newIndex = emblaApi.selectedScrollSnap()
+        setActiveTab(newIndex === 0 ? "forYou" : "following")
+      }
+      emblaApi.on("select", onSelect)
+      // Cleanup listener on component unmount
+      return () => {
+        emblaApi.off("select", onSelect)
+      }
+    }
+  }, [emblaApi])
+
+  // Effect to sync activeTab state with Embla carousel
+  useEffect(() => {
+    if (emblaApi) {
+      const targetIndex = activeTab === "forYou" ? 0 : 1
+      if (emblaApi.selectedScrollSnap() !== targetIndex) {
+        emblaApi.scrollTo(targetIndex)
+      }
+    }
+  }, [activeTab, emblaApi])
+
+  // Function to fetch all posts from API with pagination
+  const fetchAllPosts = async () => {
+>>>>>>> Stashed changes
     try {
       const response = await apiClient.get<{ items: Post[] }>('/api/Posts')
       setPosts(response.items)
@@ -167,6 +332,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
 
   // Yeni post gönderme fonksiyonu
   const handlePostSubmit = async () => {
+<<<<<<< Updated upstream
     if (!postContent.trim() && !selectedImage) return
     
     // Kullanıcı giriş yapmamışsa işlemi durdur
@@ -178,6 +344,11 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
       })
       return
     }
+=======
+    if (postContent.trim() || selectedImage) { // Allow post if there's content or an image
+      try {
+        console.log('Creating new post:', { content: postContent, hasImage: !!selectedImage })
+>>>>>>> Stashed changes
 
     try {
       // Eğer resim seçildiyse, önce onu yükle

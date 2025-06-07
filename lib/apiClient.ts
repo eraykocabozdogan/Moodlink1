@@ -50,6 +50,7 @@ async function handleResponse<T>(response: Response, requestInfo?: { method: str
   
   console.log('API Response:', responseData);
 
+<<<<<<< Updated upstream
   if (!response.ok) {
     let errorMessage = `HTTP Error ${response.status}: ${response.statusText}`;
     let errorDetails = {};
@@ -329,3 +330,7 @@ const apiClient = {
 };
 
 export default apiClient;
+=======
+export default apiClient;
+export { ApiClient };
+>>>>>>> Stashed changes
