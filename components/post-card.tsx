@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Heart, MessageCircle, Share, Bookmark } from "lucide-react"
 import Image from "next/image"
+import apiClient from "@/lib/apiClient"
 
 interface PostCardProps {
   post: {
-    id: number
+    id: string
     username: string
     handle?: string
     time: string
@@ -14,24 +15,82 @@ interface PostCardProps {
     image?: string
     moodCompatibility: string
     community?: string
+    likesCount: number
+    commentsCount: number
+    isLikedByCurrentUser: boolean
   }
   onUserClick?: (user: any) => void
 }
 
 export function PostCard({ post, onUserClick }: PostCardProps) {
-  const [liked, setLiked] = useState(false)
-  const [likeCount, setLikeCount] = useState(Math.floor(Math.random() * 50) + 10)
+  const [liked, setLiked] = useState(post.isLikedByCurrentUser)
+  const [likeCount, setLikeCount] = useState(post.likesCount)
   const [saved, setSaved] = useState(false)
   const [showComments, setShowComments] = useState(false)
   const [comment, setComment] = useState("")
-  const [comments, setComments] = useState([
-    { id: 1, username: "Ali", text: "Great post!", time: "2m" },
-    { id: 2, username: "Ayşe", text: "I agree!", time: "5m" },
-  ])
+  const [comments, setComments] = useState<any[]>([])
+  const [commentsLoaded, setCommentsLoaded] = useState(false)
 
-  const handleLike = () => {
-    setLiked(!liked)
-    setLikeCount(liked ? likeCount - 1 : likeCount + 1)
+  // Fetch comments when showComments becomes true
+  useEffect(() => {
+    if (showComments && !commentsLoaded) {
+      fetchComments()
+    }
+  }, [showComments, commentsLoaded])
+
+  const fetchComments = async () => {
+    try {
+      console.log('Fetching comments for post:', post.id)
+      const response = await apiClient.getPostComments(post.id)
+      console.log('Comments response:', response)
+
+      // Transform comments to match our interface
+      const transformedComments = response.comments?.map((comment: any) => ({
+        id: comment.id,
+        username: comment.userName || 'User',
+        text: comment.content || '',
+        time: 'now' // TODO: Format createdDate
+      })) || []
+
+      setComments(transformedComments)
+      setCommentsLoaded(true)
+    } catch (error) {
+      console.error('Error fetching comments:', error)
+      // Keep default comments on error
+      setComments([
+        { id: 1, username: "Ali", text: "Great post!", time: "2m" },
+        { id: 2, username: "Ayşe", text: "I agree!", time: "5m" },
+      ])
+      setCommentsLoaded(true)
+    }
+  }
+
+  const handleLike = async () => {
+    try {
+      if (liked) {
+        // Unlike the post - we need to find the like ID first
+        // For now, just update the UI optimistically
+        setLiked(false)
+        setLikeCount(likeCount - 1)
+        console.log('Unlike functionality not implemented yet')
+      } else {
+        // Like the post
+        const likeData = {
+          userId: "22222222-2222-2222-2222-222222222222", // TODO: Get current user ID
+          postId: post.id
+        }
+
+        await apiClient.createLike(likeData)
+        setLiked(true)
+        setLikeCount(likeCount + 1)
+        console.log('Post liked successfully')
+      }
+    } catch (error) {
+      console.error('Error handling like:', error)
+      // Revert optimistic update on error
+      setLiked(post.isLikedByCurrentUser)
+      setLikeCount(post.likesCount)
+    }
   }
 
   const handleSave = () => {
@@ -51,16 +110,32 @@ export function PostCard({ post, onUserClick }: PostCardProps) {
     }
   }
 
-  const handleComment = () => {
+  const handleComment = async () => {
     if (comment.trim()) {
-      const newComment = {
-        id: Date.now(),
-        username: "You",
-        text: comment,
-        time: "now",
+      try {
+        const commentData = {
+          postId: post.id,
+          userId: "22222222-2222-2222-2222-222222222222", // TODO: Get current user ID
+          content: comment,
+          parentCommentId: undefined
+        }
+
+        const response = await apiClient.createComment(commentData)
+        console.log('Comment created successfully:', response)
+
+        // Add new comment to local state
+        const newComment = {
+          id: response.id,
+          username: "You",
+          text: comment,
+          time: "now",
+        }
+        setComments([newComment, ...comments])
+        setComment("")
+      } catch (error) {
+        console.error('Error creating comment:', error)
+        alert('Yorum eklenirken bir hata oluştu.')
       }
-      setComments([newComment, ...comments])
-      setComment("")
     }
   }
 
@@ -128,7 +203,7 @@ export function PostCard({ post, onUserClick }: PostCardProps) {
                 className="flex items-center space-x-2 hover:text-blue-500 transition-colors"
               >
                 <MessageCircle className="w-4 h-4" />
-                <span>{comments.length}</span>
+                <span>{post.commentsCount}</span>
               </button>
 
               <button

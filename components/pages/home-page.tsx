@@ -11,13 +11,16 @@ import apiClient from "@/lib/apiClient"
 
 // Define a type for the Post structure
 interface Post {
-  id: number;
+  id: string;
   username: string;
   handle: string;
   time: string;
   content: string;
-  image?: string; 
+  image?: string;
   moodCompatibility: string;
+  likesCount: number;
+  commentsCount: number;
+  isLikedByCurrentUser: boolean;
 }
 
 interface HomePageProps {
@@ -54,33 +57,74 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
       console.log('Fetching data from API...')
 
       try {
-        // Fetch user data and posts in parallel
-        const [userResponse, postsResponse] = await Promise.all([
-          apiClient.getUserFromAuth(),
-          apiClient.getPosts({ PageIndex: 0, PageSize: 20 })
-        ])
-
+        // Fetch user data first
+        const userResponse = await apiClient.getUserFromAuth()
         console.log('User response:', userResponse)
-        console.log('Posts response:', postsResponse)
-        console.log('Posts response stringified:', JSON.stringify(postsResponse, null, 2))
-        console.log('Posts items:', postsResponse.items)
-        console.log('Posts items length:', postsResponse.items?.length)
 
         // Set current user
         setCurrentUser(userResponse)
 
-        // Transform API data to match our Post interface
-        const transformPost = (apiPost: any) => ({
-          id: apiPost.id,
-          username: 'User', // TODO: Get actual username from userId
-          handle: `@user_${apiPost.userId?.slice(-4) || 'unknown'}`, // Use last 4 chars of userId as handle
-          time: 'now', // TODO: Add createdDate to API response
-          content: apiPost.contentText || '',
-          image: apiPost.postImageFileId ? `/api/files/${apiPost.postImageFileId}` : undefined,
-          moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%` // Mock mood compatibility for now
-        })
+        // Fetch all posts using pagination
+        let allPosts: any[] = []
+        let pageIndex = 0
+        const pageSize = 20
+        let hasMore = true
 
-        const transformedPosts = postsResponse.items?.map(transformPost) || []
+        while (hasMore) {
+          console.log(`Fetching page ${pageIndex + 1}...`)
+          const postsResponse = await apiClient.getPosts({ PageIndex: pageIndex, PageSize: pageSize })
+
+          console.log('Posts response:', postsResponse)
+          if (pageIndex === 0) {
+            console.log('Posts response stringified:', JSON.stringify(postsResponse, null, 2))
+            console.log('Posts items:', postsResponse.items)
+            console.log('Posts items length:', postsResponse.items?.length)
+          }
+
+          if (postsResponse.items && postsResponse.items.length > 0) {
+            allPosts = [...allPosts, ...postsResponse.items]
+            hasMore = postsResponse.hasNext
+            pageIndex++
+          } else {
+            hasMore = false
+          }
+        }
+
+        console.log(`Fetched ${allPosts.length} posts total from ${pageIndex} pages`)
+
+        // Transform API data to match our Post interface
+        const transformPost = (apiPost: any, index: number) => {
+          const isCurrentUser = userResponse && apiPost.userId === userResponse.id
+
+          // Debug log to see what fields are available
+          if (pageIndex === 0 && index === 0) {
+            console.log('Sample API Post object:', apiPost)
+            console.log('Available fields:', Object.keys(apiPost))
+            console.log('Backend does not provide likesCount, commentsCount, isLikedByCurrentUser fields')
+          }
+
+          // Generate consistent mock data based on post ID
+          const postIdHash = apiPost.id.split('-')[0] // Use first part of UUID for consistency
+          const hashNum = parseInt(postIdHash, 16) || 0
+          const likesCount = Math.abs(hashNum % 50) + 1 // 1-50 likes
+          const commentsCount = Math.abs(hashNum % 10) // 0-9 comments
+          const isLikedByCurrentUser = (hashNum % 3) === 0 // Every 3rd post is liked by current user
+
+          return {
+            id: apiPost.id,
+            username: isCurrentUser ? 'You' : (apiPost.userName || 'User'), // Show "You" for current user's posts
+            handle: isCurrentUser ? '@you' : `@user_${apiPost.userId?.slice(-4) || 'unknown'}`, // Use @you for current user
+            time: 'now', // TODO: Add createdDate to API response
+            content: apiPost.contentText || '',
+            image: apiPost.postImageFileId ? `/api/files/${apiPost.postImageFileId}` : undefined,
+            moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%`, // Mock mood compatibility for now
+            likesCount: likesCount,
+            commentsCount: commentsCount,
+            isLikedByCurrentUser: isLikedByCurrentUser
+          }
+        }
+
+        const transformedPosts = allPosts.map(transformPost)
 
         // Set the same posts for both tabs for now
         setForYouPosts(transformedPosts)
@@ -155,6 +199,78 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
     }
   }, [activeTab, emblaApi])
 
+  // Function to fetch all posts from API with pagination
+  const fetchAllPosts = async () => {
+    try {
+      console.log('Fetching all posts from API...')
+      let allPosts: any[] = []
+      let pageIndex = 0
+      const pageSize = 20
+      let hasMore = true
+
+      while (hasMore) {
+        console.log(`Fetching page ${pageIndex + 1}...`)
+        const postsResponse = await apiClient.getPosts({ PageIndex: pageIndex, PageSize: pageSize })
+
+        if (postsResponse.items && postsResponse.items.length > 0) {
+          allPosts = [...allPosts, ...postsResponse.items]
+          hasMore = postsResponse.hasNext
+          pageIndex++
+        } else {
+          hasMore = false
+        }
+      }
+
+      console.log(`Fetched ${allPosts.length} posts total from ${pageIndex} pages`)
+      return allPosts
+    } catch (error) {
+      console.error('Error fetching all posts:', error)
+      return []
+    }
+  }
+
+  // Function to refresh posts from API
+  const refreshPosts = async () => {
+    try {
+      const allPosts = await fetchAllPosts()
+
+      // Transform API data to match our Post interface
+      const transformPost = (apiPost: any, index: number) => {
+        const isCurrentUser = currentUser && apiPost.userId === currentUser.id
+
+        // Generate consistent mock data based on post ID
+        const postIdHash = apiPost.id.split('-')[0] // Use first part of UUID for consistency
+        const hashNum = parseInt(postIdHash, 16) || 0
+        const likesCount = Math.abs(hashNum % 50) + 1 // 1-50 likes
+        const commentsCount = Math.abs(hashNum % 10) // 0-9 comments
+        const isLikedByCurrentUser = (hashNum % 3) === 0 // Every 3rd post is liked by current user
+
+        return {
+          id: apiPost.id,
+          username: isCurrentUser ? 'You' : (apiPost.userName || 'User'), // Show "You" for current user's posts
+          handle: isCurrentUser ? '@you' : `@user_${apiPost.userId?.slice(-4) || 'unknown'}`, // Use @you for current user
+          time: 'now', // TODO: Add createdDate to API response
+          content: apiPost.contentText || '',
+          image: apiPost.postImageFileId ? `/api/files/${apiPost.postImageFileId}` : undefined,
+          moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%`, // Mock mood compatibility for now
+          likesCount: likesCount,
+          commentsCount: commentsCount,
+          isLikedByCurrentUser: isLikedByCurrentUser
+        }
+      }
+
+      const transformedPosts = allPosts.map(transformPost)
+
+      // Set the same posts for both tabs for now
+      setForYouPosts(transformedPosts)
+      setFollowingPosts(transformedPosts)
+
+      console.log('Posts refreshed successfully, count:', transformedPosts.length)
+    } catch (error) {
+      console.error('Error refreshing posts:', error)
+    }
+  }
+
   const handlePostSubmit = async () => {
     if (postContent.trim() || selectedImage) { // Allow post if there\'s content or an image
       try {
@@ -172,26 +288,12 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
         const response = await apiClient.createPost(createPostData)
         console.log('Post created successfully:', response)
 
-        // Create local post object for immediate UI update
-        const newPost: Post = {
-          id: response.id || Date.now(),
-          username: "You",
-          handle: "@you",
-          time: "now",
-          content: postContent,
-          image: selectedImage ?? undefined, // Add selected image to post, ensure undefined if null
-          moodCompatibility: Math.floor(Math.random() * 30 + 70) + "%",
-        }
-
-        // Add to local state for immediate feedback
-        if (activeTab === "forYou") {
-          setForYouPosts([newPost, ...forYouPosts])
-        } else {
-          setFollowingPosts([newPost, ...followingPosts])
-        }
-
+        // Clear form immediately for better UX
         setPostContent("")
-        setSelectedImage(null) // Clear selected image after posting
+        setSelectedImage(null)
+
+        // Refresh posts from API to get the latest data including the new post
+        await refreshPosts()
 
       } catch (error: any) {
         console.error('Error creating post:', {

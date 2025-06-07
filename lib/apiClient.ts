@@ -902,6 +902,14 @@ class ApiClient {
     });
   }
 
+  async getPostLikes(postId: UUID, params?: PaginationParams): Promise<any> {
+    return this.request<any>({
+      method: 'GET',
+      url: `/api/Posts/${postId}/likes`,
+      params,
+    });
+  }
+
   // Search API
   async searchUsersAndPosts(query: string, params?: PaginationParams): Promise<SearchUsersAndPostsResponse> {
     return this.request<SearchUsersAndPostsResponse>({
