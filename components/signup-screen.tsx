@@ -15,7 +15,9 @@ interface SignupScreenProps {
 }
 
 export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
-  const [fullName, setFullName] = useState("")
+  // State'leri ad ve soyad için ayırdık
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("")
   const [birthDate, setBirthDate] = useState("")
   const [password, setPassword] = useState("")
@@ -23,35 +25,31 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSignup = async () => {
-    if (!fullName || !email || !password) {
-      alert('Lütfen tüm alanları doldurun.')
+    // Validasyonu ad ve soyad için güncelledik
+    if (!firstName || !lastName || !email || !password) {
+      alert('Lütfen tüm zorunlu alanları doldurun.')
       return
     }
 
     setIsLoading(true)
-    console.log('Signup attempt started with:', { fullName, email, birthDate })
+    console.log('Signup attempt started with:', { firstName, lastName, email, birthDate })
 
     try {
-      // Split fullName into firstName and lastName
-      const nameParts = fullName.trim().split(' ')
-      const firstName = nameParts[0] || ''
-      const lastName = nameParts.slice(1).join(' ') || ''
-
       const registerData: EnhancedUserForRegisterDto = {
         firstName: firstName,
         lastName: lastName,
         email: email,
         password: password,
-        userName: email, // Using email as username
+        userName: email, // Kullanıcı adı olarak email kullanılıyor
         birthDate: birthDate ? new Date(birthDate).toISOString() : undefined,
-        phoneNumber: undefined // Optional field
+        phoneNumber: undefined // Opsiyonel alan
       }
 
       console.log('Sending register request to API...')
       const response = await apiClient.register(registerData)
       console.log('Register API Response received:', response)
 
-      // Registration successful, show verification screen
+      // Kayıt başarılı, doğrulama ekranını göster
       setShowVerification(true)
     } catch (error: any) {
       console.error('Signup error details:', {
@@ -65,7 +63,7 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
       let errorMessage = 'Kayıt olurken bir hata oluştu.'
 
       if (error.response?.status === 400) {
-        errorMessage = 'Geçersiz bilgiler. Lütfen bilgilerinizi kontrol edin.'
+        errorMessage = 'Geçersiz bilgiler. Lütfen bilgilerinizi ve şifre kurallarını kontrol edin.'
       } else if (error.response?.status === 409) {
         errorMessage = 'Bu email adresi zaten kullanımda.'
       } else if (error.response?.status >= 500) {
@@ -81,13 +79,13 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
   }
 
   const handleVerification = (code: string) => {
-    // Simulate verification process
     console.log("Verification code:", code)
-    onSignup({ username: fullName, email, id: 1 })
+    // Doğrulama sonrası otomatik login yerine login ekranına yönlendirmek daha doğru bir akış olabilir.
+    // Şimdilik mevcut akışı koruyoruz.
+    onSignup({ username: `${firstName} ${lastName}`, email, id: 1 })
   }
 
   const handleResendCode = () => {
-    // Simulate resending verification code
     console.log("Resending verification code to:", email)
   }
 
@@ -125,13 +123,23 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Input
-            type="text"
-            placeholder="Full Name"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
-          />
+          {/* Ad ve Soyad için iki ayrı input */}
+          <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-2">
+            <Input
+              type="text"
+              placeholder="First Name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
+            />
+            <Input
+              type="text"
+              placeholder="Last Name"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
+            />
+          </div>
           <Input
             type="email"
             placeholder="Email"
@@ -140,7 +148,7 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
             className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
           />
           <Input
-            type="date"
+            type="date" 
             placeholder="Birth Date"
             value={birthDate}
             onChange={(e) => setBirthDate(e.target.value)}

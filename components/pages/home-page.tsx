@@ -52,6 +52,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
   // Fetch posts and user data from API
   useEffect(() => {
     const fetchData = async () => {
+      console.log('HomePage yüklendi, apiClient\'daki token durumu:', apiClient.getAuthToken());
       setLoading(true)
       setError(null)
       console.log('Fetching data from API...')
@@ -272,7 +273,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
   }
 
   const handlePostSubmit = async () => {
-    if (postContent.trim() || selectedImage) { // Allow post if there\'s content or an image
+    if (postContent.trim() || selectedImage) { // Allow post if there's content or an image
       try {
         console.log('Creating new post:', { content: postContent, hasImage: !!selectedImage })
 
