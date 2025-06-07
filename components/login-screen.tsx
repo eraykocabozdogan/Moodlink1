@@ -49,14 +49,14 @@ export function LoginScreen({ onLogin, onSwitchToSignup, onForgotPassword }: Log
             placeholder="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="h-12 border-gray-300 focus:border-white focus:ring-white text-white placeholder:text-gray-300 bg-transparent"
+            className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black placeholder:text-gray-300 bg-transparent"
           />
           <Input
             type="password"
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="h-12 border-gray-300 focus:border-white focus:ring-white text-white placeholder:text-gray-300 bg-transparent"
+            className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black placeholder:text-gray-300 bg-transparent"
           />
           <Button
             onClick={handleLogin}
@@ -71,15 +71,15 @@ export function LoginScreen({ onLogin, onSwitchToSignup, onForgotPassword }: Log
           >
             Login with Google
           </Button>
-          <div className="text-center text-sm text-white space-x-2">
-            <button 
+          <div className="text-center text-sm text-black space-x-2">
+            <button
               onClick={onForgotPassword}
-              className="hover:underline"
+              className="hover:underline hover:text-gray-700"
             >
               Forgot Password?
             </button>
             <span>|</span>
-            <button onClick={onSwitchToSignup} className="hover:underline">
+            <button onClick={onSwitchToSignup} className="hover:underline hover:text-gray-700">
               Create New Account
             </button>
           </div>
