@@ -182,7 +182,7 @@ export interface ApiClientConfig {
 
 // Default configuration
 const DEFAULT_CONFIG: ApiClientConfig = {
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.moodlink.com',
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://moodlinkbackend.onrender.com',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -1113,4 +1113,3 @@ const apiClient = new ApiClient();
 
 export default apiClient;
 export { ApiClient };
-export type { ApiClientConfig };
