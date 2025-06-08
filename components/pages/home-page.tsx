@@ -9,6 +9,17 @@ import useEmblaCarousel from 'embla-carousel-react' // Added embla-carousel-reac
 import { ImagePlus } from 'lucide-react' // Added ImagePlus icon
 import apiClient from "@/lib/apiClient"
 
+// Helper function to generate consistent hash from string
+function hashCode(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return hash;
+}
+
 // Define a type for the Post structure
 interface Post {
   id: string;
@@ -52,7 +63,6 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
   // Fetch posts and user data from API
   useEffect(() => {
     const fetchData = async () => {
-      console.log('HomePage yüklendi, apiClient\'daki token durumu:', apiClient.getAuthToken());
       setLoading(true)
       setError(null)
       console.log('Fetching data from API...')
@@ -93,23 +103,44 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
 
         console.log(`Fetched ${allPosts.length} posts total from ${pageIndex} pages`)
 
-        // Transform API data to match our Post interface
-        const transformPost = (apiPost: any, index: number) => {
+        // Transform API data to match our Post interface with real data
+        const transformPost = async (apiPost: any, index: number) => {
           const isCurrentUser = userResponse && apiPost.userId === userResponse.id
 
           // Debug log to see what fields are available
           if (pageIndex === 0 && index === 0) {
             console.log('Sample API Post object:', apiPost)
             console.log('Available fields:', Object.keys(apiPost))
-            console.log('Backend does not provide likesCount, commentsCount, isLikedByCurrentUser fields')
+            console.log('Fetching real likes and comments data from backend...')
           }
 
-          // Generate consistent mock data based on post ID
-          const postIdHash = apiPost.id.split('-')[0] // Use first part of UUID for consistency
-          const hashNum = parseInt(postIdHash, 16) || 0
-          const likesCount = Math.abs(hashNum % 50) + 1 // 1-50 likes
-          const commentsCount = Math.abs(hashNum % 10) // 0-9 comments
-          const isLikedByCurrentUser = (hashNum % 3) === 0 // Every 3rd post is liked by current user
+          // Debug: Log post image info
+          if (apiPost.postImageFileId) {
+            console.log(`Post ${apiPost.id.slice(0, 8)} image info:`, {
+              postImageFileId: apiPost.postImageFileId,
+              isURL: apiPost.postImageFileId.startsWith('http'),
+              isRelative: apiPost.postImageFileId.startsWith('/'),
+            })
+          }
+
+          // Fetch real likes and comments data from backend
+          let likesCount = 0
+          let commentsCount = 0
+          let isLikedByCurrentUser = false
+
+          try {
+            // Fetch comments for this post (likes endpoint doesn't exist)
+            const commentsResponse = await apiClient.getPostComments(apiPost.id).catch(() => ({ comments: [] }))
+
+            commentsCount = commentsResponse.comments?.length || 0
+            // For now, use mock data for likes since the endpoint doesn't exist
+            likesCount = Math.abs(hashCode(apiPost.id) % 50) + 1
+            isLikedByCurrentUser = (hashCode(apiPost.id) % 3) === 0
+
+            console.log(`Post ${apiPost.id.slice(0, 8)}: ${likesCount} likes, ${commentsCount} comments`)
+          } catch (error) {
+            console.error(`Error fetching data for post ${apiPost.id}:`, error)
+          }
 
           return {
             id: apiPost.id,
@@ -117,7 +148,13 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
             handle: isCurrentUser ? '@you' : `@user_${apiPost.userId?.slice(-4) || 'unknown'}`, // Use @you for current user
             time: 'now', // TODO: Add createdDate to API response
             content: apiPost.contentText || '',
-            image: apiPost.postImageFileId ? `/api/files/${apiPost.postImageFileId}` : undefined,
+            image: apiPost.postImageFileId ?
+              (apiPost.postImageFileId.startsWith('http') ?
+                apiPost.postImageFileId :
+                apiPost.postImageFileId.startsWith('/api/files/') ?
+                  `https://moodlinkbackend.onrender.com${apiPost.postImageFileId}` :
+                  `https://moodlinkbackend.onrender.com/api/FileAttachments/download/${apiPost.postImageFileId}`) :
+              undefined,
             moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%`, // Mock mood compatibility for now
             likesCount: likesCount,
             commentsCount: commentsCount,
@@ -125,7 +162,36 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
           }
         }
 
-        const transformedPosts = allPosts.map(transformPost)
+        console.log(`Transforming ${allPosts.length} posts with real data (first 10 posts only for performance)...`)
+
+        // For performance, only fetch real data for first 10 posts
+        const postsWithRealData = allPosts.slice(0, 10)
+        const postsWithMockData = allPosts.slice(10)
+
+        // Transform first 10 posts with real data
+        const realDataPosts = await Promise.all(postsWithRealData.map(transformPost))
+
+        // Transform remaining posts with mock data for performance
+        const mockDataPosts = postsWithMockData.map((apiPost: any, index: number) => {
+          const isCurrentUser = userResponse && apiPost.userId === userResponse.id
+          const postIdHash = apiPost.id.split('-')[0]
+          const hashNum = parseInt(postIdHash, 16) || 0
+
+          return {
+            id: apiPost.id,
+            username: isCurrentUser ? 'You' : (apiPost.userName || 'User'),
+            handle: isCurrentUser ? '@you' : `@user_${apiPost.userId?.slice(-4) || 'unknown'}`,
+            time: 'now',
+            content: apiPost.contentText || '',
+            image: apiPost.postImageFileId ? `/api/files/${apiPost.postImageFileId}` : undefined,
+            moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%`,
+            likesCount: Math.abs(hashNum % 50) + 1,
+            commentsCount: Math.abs(hashNum % 10),
+            isLikedByCurrentUser: (hashNum % 3) === 0
+          }
+        })
+
+        const transformedPosts = [...realDataPosts, ...mockDataPosts]
 
         // Set the same posts for both tabs for now
         setForYouPosts(transformedPosts)
@@ -235,16 +301,29 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
     try {
       const allPosts = await fetchAllPosts()
 
-      // Transform API data to match our Post interface
-      const transformPost = (apiPost: any, index: number) => {
+      // Transform API data to match our Post interface with real data
+      const transformPost = async (apiPost: any, index: number) => {
         const isCurrentUser = currentUser && apiPost.userId === currentUser.id
 
-        // Generate consistent mock data based on post ID
-        const postIdHash = apiPost.id.split('-')[0] // Use first part of UUID for consistency
-        const hashNum = parseInt(postIdHash, 16) || 0
-        const likesCount = Math.abs(hashNum % 50) + 1 // 1-50 likes
-        const commentsCount = Math.abs(hashNum % 10) // 0-9 comments
-        const isLikedByCurrentUser = (hashNum % 3) === 0 // Every 3rd post is liked by current user
+        // Fetch real likes and comments data from backend
+        let likesCount = 0
+        let commentsCount = 0
+        let isLikedByCurrentUser = false
+
+        try {
+          // Fetch comments for this post (likes endpoint doesn't exist)
+          const commentsResponse = await apiClient.getPostComments(apiPost.id).catch(() => ({ comments: [] }))
+
+          commentsCount = commentsResponse.comments?.length || 0
+          // For now, use mock data for likes since the endpoint doesn't exist
+          const hashNum = hashCode(apiPost.id)
+          likesCount = Math.abs(hashNum % 50) + 1
+          isLikedByCurrentUser = (hashNum % 3) === 0
+
+          console.log(`Refresh - Post ${apiPost.id.slice(0, 8)}: ${likesCount} likes, ${commentsCount} comments`)
+        } catch (error) {
+          console.error(`Error fetching data for post ${apiPost.id}:`, error)
+        }
 
         return {
           id: apiPost.id,
@@ -252,7 +331,13 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
           handle: isCurrentUser ? '@you' : `@user_${apiPost.userId?.slice(-4) || 'unknown'}`, // Use @you for current user
           time: 'now', // TODO: Add createdDate to API response
           content: apiPost.contentText || '',
-          image: apiPost.postImageFileId ? `/api/files/${apiPost.postImageFileId}` : undefined,
+          image: apiPost.postImageFileId ?
+            (apiPost.postImageFileId.startsWith('http') ?
+              apiPost.postImageFileId :
+              apiPost.postImageFileId.startsWith('/api/files/') ?
+                `https://moodlinkbackend.onrender.com${apiPost.postImageFileId}` :
+                `https://moodlinkbackend.onrender.com/api/FileAttachments/download/${apiPost.postImageFileId}`) :
+            undefined,
           moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%`, // Mock mood compatibility for now
           likesCount: likesCount,
           commentsCount: commentsCount,
@@ -260,7 +345,36 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
         }
       }
 
-      const transformedPosts = allPosts.map(transformPost)
+      console.log(`Refreshing ${allPosts.length} posts with real data (first 10 posts only for performance)...`)
+
+      // For performance, only fetch real data for first 10 posts
+      const postsWithRealData = allPosts.slice(0, 10)
+      const postsWithMockData = allPosts.slice(10)
+
+      // Transform first 10 posts with real data
+      const realDataPosts = await Promise.all(postsWithRealData.map(transformPost))
+
+      // Transform remaining posts with mock data for performance
+      const mockDataPosts = postsWithMockData.map((apiPost: any, index: number) => {
+        const isCurrentUser = currentUser && apiPost.userId === currentUser.id
+        const postIdHash = apiPost.id.split('-')[0]
+        const hashNum = parseInt(postIdHash, 16) || 0
+
+        return {
+          id: apiPost.id,
+          username: isCurrentUser ? 'You' : (apiPost.userName || 'User'),
+          handle: isCurrentUser ? '@you' : `@user_${apiPost.userId?.slice(-4) || 'unknown'}`,
+          time: 'now',
+          content: apiPost.contentText || '',
+          image: apiPost.postImageFileId ? `/api/files/${apiPost.postImageFileId}` : undefined,
+          moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%`,
+          likesCount: Math.abs(hashNum % 50) + 1,
+          commentsCount: Math.abs(hashNum % 10),
+          isLikedByCurrentUser: (hashNum % 3) === 0
+        }
+      })
+
+      const transformedPosts = [...realDataPosts, ...mockDataPosts]
 
       // Set the same posts for both tabs for now
       setForYouPosts(transformedPosts)
@@ -273,21 +387,134 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
   }
 
   const handlePostSubmit = async () => {
-    if (postContent.trim() || selectedImage) { // Allow post if there's content or an image
+    if (postContent.trim() || selectedImage) { // Allow post if there\'s content or an image
       try {
         console.log('Creating new post:', { content: postContent, hasImage: !!selectedImage })
+
+        let postImageFileId: string | undefined = undefined
+
+        // Upload image if selected
+        if (selectedImage) {
+          try {
+            console.log('Starting image upload process...')
+
+            // Convert base64 to File object
+            const response = await fetch(selectedImage)
+            const blob = await response.blob()
+
+            console.log('Blob details:', {
+              size: blob.size,
+              type: blob.type
+            })
+
+            // Determine file type from blob or default to jpeg
+            const fileType = blob.type || 'image/jpeg'
+            const fileName = `post-image-${Date.now()}.${fileType.split('/')[1] || 'jpg'}`
+
+            const file = new File([blob], fileName, {
+              type: fileType,
+              lastModified: Date.now()
+            })
+
+            console.log('File object created:', {
+              name: file.name,
+              size: file.size,
+              type: file.type,
+              lastModified: file.lastModified
+            })
+
+            console.log('File created:', {
+              name: file.name,
+              size: file.size,
+              type: file.type
+            })
+
+            // Create FormData for file upload
+            const formData = new FormData()
+            // Try different enum values - let's try all combinations
+            formData.append('StorageType', '1') // Local storage
+            formData.append('OwnerId', currentUser?.id || "00000000-0000-0000-0000-000000000000")
+            formData.append('OwnerType', '0') // Try User instead of Post
+            formData.append('FileType', '1') // Image (enum value)
+
+            // Make sure file is valid before appending
+            if (file && file.size > 0) {
+              // Try both uppercase and lowercase field names
+              formData.append('File', file, file.name)
+              console.log('File appended to FormData successfully')
+
+              // Debug: Log all FormData entries
+              console.log('All FormData entries:')
+              for (const [key, value] of formData.entries()) {
+                console.log(`  ${key}:`, value instanceof File ? `File(${value.name}, ${value.size} bytes, ${value.type})` : value)
+              }
+            } else {
+              console.error('Invalid file object:', file)
+              alert('Geçersiz dosya. Lütfen tekrar deneyin.')
+              return
+            }
+
+            console.log('FormData created with:', {
+              StorageType: '1',
+              OwnerId: currentUser?.id || "00000000-0000-0000-0000-000000000000",
+              OwnerType: '1',
+              FileType: '1',
+              File: file.name
+            })
+
+            console.log('Uploading image...')
+            const uploadResponse = await apiClient.uploadFile(formData)
+            console.log('Image uploaded successfully:', uploadResponse)
+            console.log('Upload response type:', typeof uploadResponse)
+            console.log('Upload response keys:', Object.keys(uploadResponse || {}))
+            console.log('Upload response JSON:', JSON.stringify(uploadResponse, null, 2))
+
+            if (uploadResponse?.id) {
+              postImageFileId = uploadResponse.id
+              console.log('Image file ID set:', postImageFileId)
+              console.log('File ID:', uploadResponse.id)
+            } else {
+              console.warn('No ID returned from upload response:', uploadResponse)
+              console.log('Checking for other possible ID fields...')
+              console.log('uploadResponse.fileId:', uploadResponse?.fileId)
+              console.log('uploadResponse.attachmentId:', uploadResponse?.attachmentId)
+              console.log('uploadResponse.data?.id:', uploadResponse?.data?.id)
+            }
+          } catch (uploadError: any) {
+            console.error('Error uploading image:', uploadError)
+            console.log('Upload error message:', uploadError?.message)
+            console.log('Upload error status:', uploadError?.response?.status)
+            console.log('Upload error statusText:', uploadError?.response?.statusText)
+            console.log('Upload error data:', uploadError?.response?.data)
+            console.log('Upload error response:', uploadError?.response)
+            console.log('Upload error config:', uploadError?.config)
+
+            let errorMessage = 'Bilinmeyen hata'
+            if (uploadError?.response?.status) {
+              errorMessage = `HTTP ${uploadError.response.status}: ${uploadError.response.statusText || 'Server Error'}`
+              if (uploadError.response.data) {
+                errorMessage += ` - ${JSON.stringify(uploadError.response.data)}`
+              }
+            } else if (uploadError?.message) {
+              errorMessage = uploadError.message
+            }
+
+            alert(`Fotoğraf yüklenirken bir hata oluştu: ${errorMessage}`)
+            return
+          }
+        }
 
         // Create post via API
         const createPostData = {
           userId: currentUser?.id || "00000000-0000-0000-0000-000000000000",
           contentText: postContent,
-          imageFileIds: undefined, // TODO: Handle image upload
-          location: undefined,
-          tags: undefined
+          postImageFileId: postImageFileId
         }
 
         const response = await apiClient.createPost(createPostData)
         console.log('Post created successfully:', response)
+        console.log('Create post data sent:', JSON.stringify(createPostData, null, 2))
+        console.log('Post response JSON:', JSON.stringify(response, null, 2))
 
         // Clear form immediately for better UX
         setPostContent("")
@@ -325,6 +552,20 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
       reader.readAsDataURL(file)
       event.target.value = "" // Reset file input value
     }
+  }
+
+  const handlePostUpdate = (postId: string, updates: { likesCount?: number; isLikedByCurrentUser?: boolean; commentsCount?: number }) => {
+    // Update both forYou and following posts
+    setForYouPosts(prevPosts =>
+      prevPosts.map(post =>
+        post.id === postId ? { ...post, ...updates } : post
+      )
+    )
+    setFollowingPosts(prevPosts =>
+      prevPosts.map(post =>
+        post.id === postId ? { ...post, ...updates } : post
+      )
+    )
   }
 
   return (
@@ -439,7 +680,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
             <div className="min-w-0 flex-shrink-0 flex-grow-0 basis-full bg-background">
               {forYouPosts.length > 0 ? (
                 forYouPosts.map((post) => (
-                  <PostCard key={post.id} post={post} onUserClick={onUserClick} />
+                  <PostCard key={post.id} post={post} onUserClick={onUserClick} onPostUpdate={handlePostUpdate} />
                 ))
               ) : (
                 <div className="p-8 text-center text-muted-foreground">
@@ -452,7 +693,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
             <div className="min-w-0 flex-shrink-0 flex-grow-0 basis-full bg-background">
               {followingPosts.length > 0 ? (
                 followingPosts.map((post) => (
-                  <PostCard key={post.id} post={post} onUserClick={onUserClick} />
+                  <PostCard key={post.id} post={post} onUserClick={onUserClick} onPostUpdate={handlePostUpdate} />
                 ))
               ) : (
                 <div className="p-8 text-center text-muted-foreground">

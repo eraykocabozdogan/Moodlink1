@@ -192,10 +192,12 @@ const DEFAULT_CONFIG: ApiClientConfig = {
 class ApiClient {
   private axiosInstance: AxiosInstance;
   private authToken: string | null = null;
+  private baseURL: string;
 
   constructor(config: ApiClientConfig = {}) {
     const finalConfig = { ...DEFAULT_CONFIG, ...config };
-    
+    this.baseURL = finalConfig.baseURL!;
+
     this.axiosInstance = axios.create({
       baseURL: finalConfig.baseURL,
       timeout: finalConfig.timeout,
@@ -1034,6 +1036,62 @@ class ApiClient {
     return this.request<GetByIdUserPreferenceResponse>({
       method: 'GET',
       url: `/api/UserPreferences/${id}`,
+    });
+  }
+
+  // File Attachments API
+  async uploadFile(formData: FormData): Promise<any> {
+    try {
+      console.log('API Client: Starting file upload...')
+      console.log('FormData entries:')
+      for (const [key, value] of formData.entries()) {
+        console.log(`  ${key}:`, value instanceof File ? `File(${value.name}, ${value.size} bytes)` : value)
+      }
+
+      // Create a new axios instance without interceptors for file upload
+      const uploadAxios = axios.create({
+        baseURL: this.baseURL,
+        timeout: 30000, // 30 second timeout for file uploads
+      });
+
+      // Add only auth header, no content-type manipulation
+      const headers: any = {};
+      if (this.authToken) {
+        headers.Authorization = `Bearer ${this.authToken}`;
+      }
+
+      const response = await uploadAxios.post('/api/FileAttachments', formData, {
+        headers
+      });
+
+      console.log('API Client: Upload successful:', response.data)
+      return response.data
+    } catch (error: any) {
+      console.error('API Client: Upload failed:', error)
+      console.log('Error message:', error?.message)
+      console.log('Error status:', error?.response?.status)
+      console.log('Error statusText:', error?.response?.statusText)
+      console.log('Error data JSON:', JSON.stringify(error?.response?.data, null, 2))
+      console.log('Error headers JSON:', JSON.stringify(error?.response?.headers, null, 2))
+      console.log('Request URL:', error?.config?.url)
+      console.log('Request method:', error?.config?.method)
+      console.log('Request headers JSON:', JSON.stringify(error?.config?.headers, null, 2))
+      throw error
+    }
+  }
+
+  async getFileById(id: UUID): Promise<any> {
+    return this.request<any>({
+      method: 'GET',
+      url: `/api/FileAttachments/${id}`,
+    });
+  }
+
+  async downloadFile(id: UUID): Promise<any> {
+    return this.request<any>({
+      method: 'GET',
+      url: `/api/FileAttachments/download/${id}`,
+      responseType: 'blob',
     });
   }
 

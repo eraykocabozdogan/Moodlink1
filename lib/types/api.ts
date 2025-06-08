@@ -868,9 +868,7 @@ export interface GetUserNotificationsResponse {
 export interface CreatePostCommand {
   userId: UUID;
   contentText?: string;
-  imageFileIds?: UUID[];
-  location?: string;
-  tags?: string[];
+  postImageFileId?: UUID;
 }
 
 export interface CreatedPostResponse {
@@ -971,6 +969,51 @@ export interface SearchUsersAndPostsResponse {
   posts: PostListItemDto[];
   totalUsersCount: number;
   totalPostsCount: number;
+}
+
+// File Attachment Enums
+export enum StorageType {
+  Local = 1,
+  Cloud = 2,
+  Database = 3
+}
+
+export enum OwnerType {
+  User = 0,
+  Post = 1,
+  Activity = 2,
+  Chat = 3,
+  Badge = 5,
+  Message = 6
+}
+
+export enum FileType {
+  Image = 1,
+  Video = 2,
+  Audio = 3,
+  Document = 4
+}
+
+// File Attachment Interfaces
+export interface UploadFileCommand {
+  StorageType: StorageType;
+  OwnerId: UUID;
+  OwnerType: OwnerType;
+  FileType: FileType;
+  File: File;
+}
+
+export interface FileAttachmentResponse {
+  id: UUID;
+  fileName?: string;
+  fileUrl?: string;
+  fileSize?: number;
+  contentType?: string;
+  storageType: StorageType;
+  ownerId: UUID;
+  ownerType: OwnerType;
+  fileType: FileType;
+  uploadedDate: DateTime;
 }
 
 // User Interfaces

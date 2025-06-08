@@ -20,16 +20,39 @@ interface PostCardProps {
     isLikedByCurrentUser: boolean
   }
   onUserClick?: (user: any) => void
+  onPostUpdate?: (postId: string, updates: { likesCount?: number; isLikedByCurrentUser?: boolean; commentsCount?: number }) => void
 }
 
-export function PostCard({ post, onUserClick }: PostCardProps) {
+export function PostCard({ post, onUserClick, onPostUpdate }: PostCardProps) {
   const [liked, setLiked] = useState(post.isLikedByCurrentUser)
   const [likeCount, setLikeCount] = useState(post.likesCount)
+  const [commentsCount, setCommentsCount] = useState(post.commentsCount)
   const [saved, setSaved] = useState(false)
   const [showComments, setShowComments] = useState(false)
   const [comment, setComment] = useState("")
   const [comments, setComments] = useState<any[]>([])
   const [commentsLoaded, setCommentsLoaded] = useState(false)
+  const [currentUser, setCurrentUser] = useState<any>(null)
+
+  // Update local state when post prop changes (important for like persistence)
+  useEffect(() => {
+    setLiked(post.isLikedByCurrentUser)
+    setLikeCount(post.likesCount)
+    setCommentsCount(post.commentsCount)
+  }, [post.isLikedByCurrentUser, post.likesCount, post.commentsCount])
+
+  // Get current user on component mount
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      try {
+        const user = await apiClient.getUserFromAuth()
+        setCurrentUser(user)
+      } catch (error) {
+        console.error('Error getting current user:', error)
+      }
+    }
+    getCurrentUser()
+  }, [])
 
   // Fetch comments when showComments becomes true
   useEffect(() => {
@@ -66,24 +89,47 @@ export function PostCard({ post, onUserClick }: PostCardProps) {
   }
 
   const handleLike = async () => {
+    if (!currentUser) {
+      console.error('No current user found')
+      return
+    }
+
     try {
       if (liked) {
-        // Unlike the post - we need to find the like ID first
-        // For now, just update the UI optimistically
+        // Unlike the post - for now just update local state since we can't fetch existing likes
         setLiked(false)
         setLikeCount(likeCount - 1)
-        console.log('Unlike functionality not implemented yet')
+        console.log('Post unliked (local state only)')
+
+        // Notify parent component of the update
+        onPostUpdate?.(post.id, {
+          likesCount: likeCount - 1,
+          isLikedByCurrentUser: false
+        })
       } else {
         // Like the post
-        const likeData = {
-          userId: "22222222-2222-2222-2222-222222222222", // TODO: Get current user ID
-          postId: post.id
-        }
+        try {
+          const likeData = {
+            userId: currentUser.id,
+            postId: post.id
+          }
 
-        await apiClient.createLike(likeData)
-        setLiked(true)
-        setLikeCount(likeCount + 1)
-        console.log('Post liked successfully')
+          await apiClient.createLike(likeData)
+          setLiked(true)
+          setLikeCount(likeCount + 1)
+          console.log('Post liked successfully')
+
+          // Notify parent component of the update
+          onPostUpdate?.(post.id, {
+            likesCount: likeCount + 1,
+            isLikedByCurrentUser: true
+          })
+        } catch (error) {
+          console.error('Error liking post:', error)
+          // Revert optimistic update on error
+          setLiked(false)
+          setLikeCount(likeCount)
+        }
       }
     } catch (error) {
       console.error('Error handling like:', error)
@@ -111,11 +157,11 @@ export function PostCard({ post, onUserClick }: PostCardProps) {
   }
 
   const handleComment = async () => {
-    if (comment.trim()) {
+    if (comment.trim() && currentUser) {
       try {
         const commentData = {
           postId: post.id,
-          userId: "22222222-2222-2222-2222-222222222222", // TODO: Get current user ID
+          userId: currentUser.id,
           content: comment,
           parentCommentId: undefined
         }
@@ -131,7 +177,13 @@ export function PostCard({ post, onUserClick }: PostCardProps) {
           time: "now",
         }
         setComments([newComment, ...comments])
+        setCommentsCount(commentsCount + 1) // Update comments count
         setComment("")
+
+        // Notify parent component of the comment count update
+        onPostUpdate?.(post.id, {
+          commentsCount: commentsCount + 1
+        })
       } catch (error) {
         console.error('Error creating comment:', error)
         alert('Yorum eklenirken bir hata oluştu.')
@@ -176,11 +228,31 @@ export function PostCard({ post, onUserClick }: PostCardProps) {
           {post.image && (
             <div className="mb-3 rounded-xl overflow-hidden">
               <Image
-                src={post.image || "/placeholder.svg"}
+                src={
+                  post.image.startsWith('/api/files/')
+                    ? `https://moodlinkbackend.onrender.com/api/FileAttachments/download/${post.image.split('/').pop()}`
+                    : post.image || "/placeholder.svg"
+                }
                 alt="Post image"
                 width={400}
                 height={200}
                 className="w-full h-48 object-cover"
+                onError={(e) => {
+                  console.error('Image failed to load:', post.image)
+                  console.error('Attempted URL:', e.currentTarget.src)
+
+                  // Try alternative endpoints
+                  const fileId = post.image.split('/').pop()
+                  const alternatives = [
+                    `https://moodlinkbackend.onrender.com/uploads/${fileId}`,
+                    `https://moodlinkbackend.onrender.com/files/${fileId}`,
+                    `https://moodlinkbackend.onrender.com/api/FileAttachments/${fileId}`
+                  ]
+                  console.log('Alternative URLs to try:', alternatives)
+                }}
+                onLoad={() => {
+                  console.log('Image loaded successfully:', post.image)
+                }}
               />
             </div>
           )}
@@ -203,7 +275,7 @@ export function PostCard({ post, onUserClick }: PostCardProps) {
                 className="flex items-center space-x-2 hover:text-blue-500 transition-colors"
               >
                 <MessageCircle className="w-4 h-4" />
-                <span>{post.commentsCount}</span>
+                <span>{commentsCount}</span>
               </button>
 
               <button
