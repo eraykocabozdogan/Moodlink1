@@ -2,14 +2,18 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ArrowLeft, Send, Users, Info } from "lucide-react"
 import { User } from "@/components/create-group-chat"
+import { useAuth } from "@/hooks/use-auth"
+import apiClient from "@/lib/apiClient"
+import { UUID, ChatMessageDto } from "@/lib/types/api"
 
 interface ChatInfo {
   id: number
+  chatId?: UUID  // Backend chat ID
   type: "user" | "group"
   title: string
   handle?: string
@@ -24,16 +28,21 @@ interface ChatPageProps {
 }
 
 interface Message {
-  id: number
+  id: string | number
   text: string
   time: string
   sent: boolean
   sender?: string
+  senderUserId?: UUID
+  messageId?: UUID  // Backend message ID
 }
 
 export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
   const [message, setMessage] = useState("")
   const [showGroupInfo, setShowGroupInfo] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [sendingMessage, setSendingMessage] = useState(false)
+  const { user } = useAuth()
 
   // Initial messages
   const initialMessages: { [key: string]: Message[] } = {
@@ -47,80 +56,149 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
     ],
   }
 
-  const [messages, setMessages] = useState<Message[]>(() => {
-    if (!chatDetails) return [];
-    
-    // For existing individual chats, use the chat title as key
-    if (chatDetails.type === "user" && initialMessages[chatDetails.title]) {
-      return initialMessages[chatDetails.title];
-    }
-    
-    // For new group chats, start with an empty array or a welcome message
-    if (chatDetails.type === "group") {
-      return [
-        {
-          id: 1,
-          text: `${chatDetails.title} group chat created.`,
-          time: chatDetails.time || new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
-          sent: false,
-          sender: "System"
+  const [messages, setMessages] = useState<Message[]>([])
+
+  // Load messages from backend when chat details change
+  useEffect(() => {
+    const loadMessages = async () => {
+      if (!chatDetails?.chatId || !user) return
+
+      setLoading(true)
+      try {
+        const response = await apiClient.getChatMessages(chatDetails.chatId, {
+          PageIndex: 0,
+          PageSize: 50
+        })
+        const backendMessages: Message[] = response.messages.map((msg: ChatMessageDto) => {
+          const isSent = msg.senderUserId === user.id
+          console.log('Message mapping:', {
+            msgSenderUserId: msg.senderUserId,
+            currentUserId: user.id,
+            areEqual: msg.senderUserId === user.id,
+            isSent: isSent,
+            content: msg.content
+          })
+          return {
+            id: msg.id,
+            messageId: msg.id,
+            text: msg.content || '',
+            time: new Date(msg.sentDate).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+            sent: isSent,
+            sender: msg.senderUserName,
+            senderUserId: msg.senderUserId
+          }
+        })
+
+        // Mesajları tarih sırasına göre sırala (en eski en üstte, en yeni en altta)
+        const sortedMessages = backendMessages.sort((a, b) => {
+          const msgA = response.messages.find(m => m.id === a.id)
+          const msgB = response.messages.find(m => m.id === b.id)
+          const timeA = new Date(msgA?.sentDate || 0).getTime()
+          const timeB = new Date(msgB?.sentDate || 0).getTime()
+          return timeA - timeB
+        })
+
+        console.log('Processed and sorted messages:', sortedMessages)
+        setMessages(sortedMessages)
+      } catch (error) {
+        console.error('Failed to load messages:', error)
+        // Fallback to mock data for development
+        if (chatDetails.type === "user" && initialMessages[chatDetails.title]) {
+          setMessages(initialMessages[chatDetails.title])
+        } else if (chatDetails.type === "group") {
+          setMessages([
+            {
+              id: 1,
+              text: `${chatDetails.title} group chat created.`,
+              time: chatDetails.time || new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+              sent: false,
+              sender: "System"
+            }
+          ])
         }
-      ];
+      } finally {
+        setLoading(false)
+      }
     }
-    
-    return [];
-  });
 
-  const handleSend = () => {
-    if (message.trim()) {
-      const newMessage: Message = {
-        id: Date.now(),
-        text: message,
-        time: new Date().toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        sent: true,
+    loadMessages()
+  }, [chatDetails?.chatId, user])
+
+  const handleSend = async () => {
+    if (!message.trim() || !user || !chatDetails?.chatId || sendingMessage) return
+
+    setSendingMessage(true)
+    const messageText = message
+    setMessage("") // Clear input immediately for better UX
+
+    // Add optimistic message to UI
+    const optimisticMessage: Message = {
+      id: `temp-${Date.now()}`,
+      text: messageText,
+      time: new Date().toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      sent: true,
+      senderUserId: user.id,
+    }
+
+    console.log('Creating optimistic message:', {
+      userId: user.id,
+      sent: true,
+      content: messageText
+    })
+
+    setMessages(prev => [...prev, optimisticMessage])
+
+    try {
+      // Send message to backend
+      const messageData = {
+        chatId: chatDetails.chatId,
+        senderUserId: user.id,
+        content: messageText,
       }
+      console.log('Sending message:', messageData)
 
-      setMessages([...messages, newMessage])
-      setMessage("")
+      // Geçici olarak farklı format deneyelim
+      const response = await apiClient.sendMessage(messageData)
+      console.log('Send message response:', response)
 
-      // Otomatik yanıt simülasyonu (opsiyonel)
-      if (chatDetails?.type === "user") {
-        setTimeout(() => {
-          const autoReply: Message = {
-            id: Date.now() + 1,
-            text: "Thanks for your message! 😊",
-            time: new Date().toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-            sent: false,
-          }
-          setMessages((prev) => [...prev, autoReply])
-        }, 2000)
-      } else if (chatDetails?.type === "group" && chatDetails.members && chatDetails.members.length > 0) {
-        // Simulate responses from group members
-        setTimeout(() => {
-          const randomMember = chatDetails.members![Math.floor(Math.random() * chatDetails.members!.length)];
-          const autoReply: Message = {
-            id: Date.now() + 1,
-            text: "Reply to group message! 👍",
-            time: new Date().toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-            sent: false,
-            sender: randomMember.username
-          }
-          setMessages((prev) => [...prev, autoReply])
-        }, 2000)
-      }
+      // Replace optimistic message with real message
+      setMessages(prev => prev.map(msg =>
+        msg.id === optimisticMessage.id
+          ? {
+              ...msg,
+              id: response.id,
+              messageId: response.id,
+              time: new Date(response.sentDate).toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            }
+          : msg
+      ))
+
+    } catch (error: any) {
+      console.error('Failed to send message:', error)
+      console.error('Error details:', {
+        message: error?.message,
+        status: error?.response?.status,
+        statusText: error?.response?.statusText,
+        data: error?.response?.data
+      })
+      console.error('Full error response data:', JSON.stringify(error?.response?.data, null, 2))
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id))
+      // Restore message in input
+      setMessage(messageText)
+      // You could show an error toast here
+    } finally {
+      setSendingMessage(false)
     }
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
       handleSend()
@@ -174,7 +252,12 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
       <div className="flex flex-1 overflow-hidden">
         {/* Messages */}
         <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-          {messages.length === 0 ? (
+          {loading ? (
+            <div className="text-center text-muted-foreground mt-8">
+              <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+              <p>Loading messages...</p>
+            </div>
+          ) : messages.length === 0 ? (
             <div className="text-center text-muted-foreground mt-8">
               <p>No messages yet. Send the first message! 👋</p>
             </div>
@@ -229,16 +312,20 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
             placeholder="Type a message..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             className="flex-1 bg-background border-border text-foreground"
             maxLength={500}
           />
           <Button
             onClick={handleSend}
-            disabled={!message.trim()}
+            disabled={!message.trim() || sendingMessage || !user}
             className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:opacity-50"
           >
-            <Send className="w-4 h-4" />
+            {sendingMessage ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
           </Button>
         </div>
         <div className="flex justify-between items-center mt-2">

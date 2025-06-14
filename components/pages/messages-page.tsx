@@ -1,12 +1,17 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Users, Plus } from "lucide-react"
+import { Users, Plus, MessageCircle } from "lucide-react"
 import { CreateGroupChat, User } from "@/components/create-group-chat"
+import { NewChatModal } from "@/components/new-chat-modal"
+import { useAuth } from "@/hooks/use-auth"
+import apiClient from "@/lib/apiClient"
+import { UUID } from "@/lib/types/api"
 
 interface ChatInfo {
   id: number
+  chatId?: UUID  // Backend chat ID
   type: "user" | "group"
   title: string
   handle?: string
@@ -22,7 +27,13 @@ interface MessagesPageProps {
 
 export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
   const [showCreateGroupChat, setShowCreateGroupChat] = useState(false)
-  
+  const [showNewChat, setShowNewChat] = useState(false)
+  const [conversations, setConversations] = useState<ChatInfo[]>([])
+  const [loading, setLoading] = useState(true)
+  const { user } = useAuth()
+
+  console.log('MessagesPage rendered, user:', user)
+
   // Sample user list for group creation
   const availableUsers: User[] = [
     { id: 1, username: "Doğan", handle: "@dgns" },
@@ -33,33 +44,85 @@ export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
     { id: 6, username: "Ayşe", handle: "@ayse" },
   ]
 
-  const [conversations, setConversations] = useState<ChatInfo[]>([
-    {
-      id: 1,
-      type: "user",
-      title: "Doğan",
-      handle: "@dgns",
-      lastMessage: "Heyy!",
-      time: "23:46",
-    },
-    {
-      id: 2,
-      type: "user",
-      title: "Eray2",
-      handle: "@erayy",
-      lastMessage: "Hey dude! Wanna see...",
-      time: "Yesterday",
-    },
-  ])
+  // Load user chats from backend
+  useEffect(() => {
+    console.log('Messages useEffect called')
+    const loadChats = async () => {
+      console.log('loadChats called, user:', user)
+
+      if (!user) {
+        console.log('No user found, setting loading to false')
+        setLoading(false)
+        return
+      }
+
+      try {
+        console.log('Loading user chats...')
+        const response = await apiClient.getUserChats({
+          PageIndex: 0,
+          PageSize: 50
+        })
+        console.log('getUserChats response:', response)
+        const backendChats: ChatInfo[] = (response.chats || []).map((chat: any) => {
+          console.log('Processing chat:', chat)
+          return {
+            id: chat.id,
+            chatId: chat.id,
+            type: chat.type === "Group" ? "group" : "user",
+            title: chat.name || "Unknown Chat",
+            lastMessage: chat.lastMessage?.content || "No messages yet",
+            time: chat.lastMessage?.sentDate ? new Date(chat.lastMessage.sentDate).toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }) : "Now",
+            members: [] // We don't have participants in UserChatDto
+          }
+        })
+        setConversations(backendChats)
+      } catch (error) {
+        console.error('Failed to load chats:', error)
+        // Fallback to mock data for development
+        setConversations([
+          {
+            id: 1,
+            type: "user",
+            title: "Doğan",
+            handle: "@dgns",
+            lastMessage: "Heyy!",
+            time: "23:46",
+          },
+          {
+            id: 2,
+            type: "user",
+            title: "Eray2",
+            handle: "@erayy",
+            lastMessage: "Hey dude! Wanna see...",
+            time: "Yesterday",
+          },
+        ])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadChats()
+  }, [user])
 
   return (
     <div className="max-w-2xl mx-auto">
       {/* Header */}
       <div className="sticky top-0 bg-card/80 backdrop-blur-sm border-b border-border p-4">
         <div className="flex justify-between items-center">
-          <div className="w-24"></div>
+          <Button
+            onClick={() => setShowNewChat(true)}
+            className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white"
+            size="sm"
+          >
+            <MessageCircle className="w-4 h-4 mr-2" />
+            New Chat
+          </Button>
           <h1 className="text-xl font-bold text-foreground">Direct Messages</h1>
-          <Button 
+          <Button
             onClick={() => setShowCreateGroupChat(true)}
             className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
             size="sm"
@@ -71,7 +134,17 @@ export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
       </div>
 
       <div className="bg-card">
-        {conversations.map((conversation) => (
+        {loading ? (
+          <div className="text-center text-muted-foreground p-8">
+            <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+            <p>Loading conversations...</p>
+          </div>
+        ) : conversations.length === 0 ? (
+          <div className="text-center text-muted-foreground p-8">
+            <p>No conversations yet. Start a new chat! 💬</p>
+          </div>
+        ) : (
+          conversations.map((conversation) => (
           <div
             key={conversation.id}
             onClick={() => onChatSelect(conversation)}
@@ -123,12 +196,26 @@ export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
               </div>
             </div>
           </div>
-        ))}
+          ))
+        )}
       </div>
+
+      {/* New Chat Modal */}
+      {showNewChat && (
+        <NewChatModal
+          onClose={() => setShowNewChat(false)}
+          onChatCreated={(newChatInfo) => {
+            setConversations([newChatInfo, ...conversations]);
+            setShowNewChat(false);
+            // Automatically open the new chat
+            onChatSelect(newChatInfo);
+          }}
+        />
+      )}
 
       {/* Group Chat Creation Modal */}
       {showCreateGroupChat && (
-        <CreateGroupChat 
+        <CreateGroupChat
           onClose={() => setShowCreateGroupChat(false)}
           availableUsers={availableUsers}
           onCreateGroup={(groupName, members) => {

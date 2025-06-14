@@ -109,6 +109,10 @@ import {
   DeletedMessageResponse,
   GetByIdMessageResponse,
   GetChatMessagesResponse,
+  SendMessageCommand,
+  SendMessageResponse,
+  SendDirectMessageCommand,
+  SendDirectMessageResponse,
   
   // Notification Types
   CreateNotificationCommand,
@@ -802,6 +806,22 @@ class ApiClient {
     });
   }
 
+  async sendMessage(data: SendMessageCommand): Promise<SendMessageResponse> {
+    return this.request<SendMessageResponse>({
+      method: 'POST',
+      url: '/api/Messages/send',
+      data,
+    });
+  }
+
+  async sendDirectMessage(data: SendDirectMessageCommand): Promise<SendDirectMessageResponse> {
+    return this.request<SendDirectMessageResponse>({
+      method: 'POST',
+      url: '/api/Messages/send-direct',
+      data,
+    });
+  }
+
   // Notifications API
   async createNotification(data: CreateNotificationCommand): Promise<CreatedNotificationResponse> {
     return this.request<CreatedNotificationResponse>({
@@ -938,7 +958,7 @@ class ApiClient {
     return this.request<SearchUsersAndPostsResponse>({
       method: 'GET',
       url: '/api/Search',
-      params: { ...params, query },
+      params: { ...params, searchTerm: query },
     });
   }
 

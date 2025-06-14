@@ -487,9 +487,30 @@ export interface GetListChatListItemDtoGetListResponse {
   hasNext: boolean;
 }
 
+export interface UserChatDto {
+  id: UUID;
+  name?: string;
+  type?: string;
+  groupImageUrl?: string;
+  participantCount: number;
+  lastMessage?: LastMessageDto;
+  joinedDate: DateTime;
+}
+
+export interface LastMessageDto {
+  id: UUID;
+  content?: string;
+  senderName?: string;
+  sentDate: DateTime;
+}
+
 export interface GetUserChatsResponse {
-  chats: ChatListItemDto[];
+  chats?: UserChatDto[];
   totalCount: number;
+  pageIndex: number;
+  pageSize: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
 }
 
 // Chat Participant Interfaces
@@ -790,6 +811,49 @@ export interface GetChatMessagesResponse {
   hasMore: boolean;
 }
 
+// Send Message Interfaces
+export interface SendMessageCommand {
+  chatId: UUID;
+  senderUserId: UUID;
+  content?: string;
+  attachmentFileId?: UUID;
+}
+
+export interface SendMessageResponse {
+  id: UUID;
+  chatId: UUID;
+  senderUserId: UUID;
+  content?: string;
+  sentDate: DateTime;
+  attachmentFileUrl?: string;
+}
+
+// Direct Message Interfaces
+export interface SendDirectMessageCommand {
+  senderUserId: UUID;
+  receiverUserId: UUID;
+  content?: string;
+  attachmentFileId?: UUID;
+}
+
+export interface SendDirectMessageResponse {
+  id: UUID;
+  chatId: UUID;
+  senderUserId: UUID;
+  senderUserName?: string;
+  senderFirstName?: string;
+  senderLastName?: string;
+  receiverUserId: UUID;
+  receiverUserName?: string;
+  receiverFirstName?: string;
+  receiverLastName?: string;
+  content?: string;
+  sentDate: DateTime;
+  attachmentFileUrl?: string;
+  attachmentFileName?: string;
+  isNewChat: boolean;
+}
+
 // Notification Interfaces
 export interface CreateNotificationCommand {
   userId: UUID;
@@ -957,19 +1021,34 @@ export interface GetFeedPostsResponse {
 }
 
 // Search Interfaces
+export interface SearchUserDto {
+  id: UUID;
+  userName?: string;
+  firstName?: string;
+  lastName?: string;
+  bio?: string;
+  profilePictureUrl?: string;
+}
+
+export interface SearchPostDto {
+  id: UUID;
+  userId: UUID;
+  userName?: string;
+  userFirstName?: string;
+  userLastName?: string;
+  contentText?: string;
+  createdDate: DateTime;
+  analysisStatus?: string;
+  postImageUrl?: string;
+  likeCount: number;
+  commentCount: number;
+}
+
 export interface SearchUsersAndPostsResponse {
-  users: Array<{
-    id: UUID;
-    userName?: string;
-    firstName?: string;
-    lastName?: string;
-    profileImageUrl?: string;
-    followersCount: number;
-    isFollowedByCurrentUser: boolean;
-  }>;
-  posts: PostListItemDto[];
-  totalUsersCount: number;
-  totalPostsCount: number;
+  users?: SearchUserDto[];
+  posts?: SearchPostDto[];
+  totalUserCount: number;
+  totalPostCount: number;
 }
 
 // File Attachment Enums
