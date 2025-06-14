@@ -22,6 +22,12 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
   const [birthDate, setBirthDate] = useState("")
   const [password, setPassword] = useState("")
   const [showVerification, setShowVerification] = useState(false)
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && firstName && lastName && email && password) {
+      handleSignup()
+    }
+  }
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSignup = async () => {
@@ -177,6 +183,7 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
               placeholder="First Name"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
+              onKeyPress={handleKeyPress}
               className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
             />
             <Input
@@ -184,6 +191,7 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
               placeholder="Last Name"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
+              onKeyPress={handleKeyPress}
               className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
             />
           </div>
@@ -192,13 +200,15 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            onKeyPress={handleKeyPress}
             className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
           />
           <Input
-            type="date" 
+            type="date"
             placeholder="Birth Date"
             value={birthDate}
             onChange={(e) => setBirthDate(e.target.value)}
+            onKeyPress={handleKeyPress}
             className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
           />
           <Input
@@ -206,6 +216,7 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onKeyPress={handleKeyPress}
             className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
           />
           <Button

@@ -3126,6 +3126,59 @@
         ]
       }
     },
+    "/api/Follows/unfollow": {
+      "delete": {
+        "tags": [
+          "Follows"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteFollowByUserIdsCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteFollowByUserIdsCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteFollowByUserIdsCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletedFollowByUserIdsResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletedFollowByUserIdsResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletedFollowByUserIdsResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/Likes": {
       "post": {
         "tags": [
@@ -3356,6 +3409,60 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/GetByIdLikeResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/Likes/user/{userId}/post/{postId}": {
+      "delete": {
+        "tags": [
+          "Likes"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletedLikeByUserAndPostResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletedLikeByUserAndPostResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletedLikeByUserAndPostResponse"
                 }
               }
             }
@@ -7270,6 +7377,20 @@
         },
         "additionalProperties": false
       },
+      "DeleteFollowByUserIdsCommand": {
+        "type": "object",
+        "properties": {
+          "followerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "followedId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false
+      },
       "DeleteOperationClaimCommand": {
         "type": "object",
         "properties": {
@@ -7384,10 +7505,46 @@
         },
         "additionalProperties": false
       },
+      "DeletedFollowByUserIdsResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "followerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "followedId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false
+      },
       "DeletedFollowResponse": {
         "type": "object",
         "properties": {
           "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DeletedLikeByUserAndPostResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "postId": {
             "type": "string",
             "format": "uuid"
           }
@@ -9110,6 +9267,10 @@
             "type": "string",
             "nullable": true
           },
+          "fullName": {
+            "type": "string",
+            "nullable": true
+          },
           "commentsCount": {
             "type": "integer",
             "format": "int32"
@@ -9117,6 +9278,9 @@
           "likesCount": {
             "type": "integer",
             "format": "int32"
+          },
+          "isLikedByUser": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

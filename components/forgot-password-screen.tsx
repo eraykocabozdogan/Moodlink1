@@ -21,6 +21,16 @@ export function ForgotPasswordScreen({ onResetComplete, onBackToLogin }: ForgotP
   const [isLoading, setIsLoading] = useState(false)
   const [verificationCode, setVerificationCode] = useState("")
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      if (currentStep === "email" && email && !isLoading) {
+        handleSendCode()
+      } else if (currentStep === "newPassword" && newPassword && confirmPassword && newPassword === confirmPassword && !isLoading) {
+        handlePasswordReset()
+      }
+    }
+  }
+
   const handleSendCode = async () => {
     if (!email) {
       alert('Lütfen email adresinizi girin.')
@@ -180,6 +190,7 @@ export function ForgotPasswordScreen({ onResetComplete, onBackToLogin }: ForgotP
               placeholder="New Password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
+              onKeyPress={handleKeyPress}
               className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
             />
             <Input
@@ -187,6 +198,7 @@ export function ForgotPasswordScreen({ onResetComplete, onBackToLogin }: ForgotP
               placeholder="Confirm Password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              onKeyPress={handleKeyPress}
               className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
             />
             <Button
@@ -240,6 +252,7 @@ export function ForgotPasswordScreen({ onResetComplete, onBackToLogin }: ForgotP
             placeholder="Your email address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            onKeyPress={handleKeyPress}
             className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
           />
           <Button

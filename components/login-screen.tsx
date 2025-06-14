@@ -19,6 +19,12 @@ export function LoginScreen({ onLogin, onSwitchToSignup, onForgotPassword }: Log
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !isLoading && username && password) {
+      handleLogin()
+    }
+  }
+
   const handleLogin = async () => {
     if (!username || !password) {
       alert('Lütfen email ve şifre alanlarını doldurun.')
@@ -124,8 +130,8 @@ Teknik Detay: PostgreSQL bağlantı hatası`
             </h1>
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-white">Login to MoodLink</h2>
-            <p className="text-sm text-white mt-1">For your Mood</p>
+            <h2 className="text-xl font-semibold text-blue-600">Login to MoodLink</h2>
+            <p className="text-sm text-blue-500 mt-1">For your Mood</p>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -134,6 +140,7 @@ Teknik Detay: PostgreSQL bağlantı hatası`
             placeholder="Email"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            onKeyPress={handleKeyPress}
             className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black placeholder:text-gray-300 bg-transparent"
           />
           <Input
@@ -141,6 +148,7 @@ Teknik Detay: PostgreSQL bağlantı hatası`
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onKeyPress={handleKeyPress}
             className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black placeholder:text-gray-300 bg-transparent"
           />
           <Button
@@ -170,14 +178,6 @@ Teknik Detay: PostgreSQL bağlantı hatası`
             </button>
           </div>
 
-          {/* Development info */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-xs text-yellow-800 mb-1">
-                <strong>Dev Info:</strong> Backend veritabanı sorunu varsa Google Login kullanın.
-              </p>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
