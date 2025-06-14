@@ -28,16 +28,7 @@ export function useAuth() {
         const token = localStorage.getItem('authToken')
         console.log('Token from localStorage:', token ? 'exists' : 'not found')
         if (!token) {
-          console.log('No token found, creating mock user for testing')
-          // Geçici mock user for testing (backend'den gelen gerçek ID ile)
-          const mockUser: User = {
-            id: "fddf0bae-469e-46d6-8de9-7b87c079e48d",
-            firstName: "Test",
-            lastName: "User",
-            userName: "testuser",
-            email: "test@example.com"
-          }
-          setUser(mockUser)
+          console.log('No token found, user not authenticated')
           setLoading(false)
           return
         }

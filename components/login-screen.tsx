@@ -60,12 +60,19 @@ export function LoginScreen({ onLogin, onSwitchToSignup, onForgotPassword }: Log
         apiClient.setAuthToken(token)
 
         // Save token to localStorage
-        localStorage.setItem('token', token)
+        localStorage.setItem('authToken', token)
         console.log('Token saved to localStorage')
 
-        // Call onLogin prop with simplified user data
-        console.log('Calling onLogin with userData:', { username: username })
-        onLogin({ username: username })
+        // Fetch real user data from backend
+        try {
+          const userData = await apiClient.getUserFromAuth()
+          console.log('Real user data fetched:', userData)
+          onLogin(userData)
+        } catch (error) {
+          console.error('Failed to fetch user data:', error)
+          // Fallback to basic user data
+          onLogin({ username: username })
+        }
       } else {
         console.error('No token found in response:', response)
         alert('Login failed: Could not retrieve token.')

@@ -14,7 +14,7 @@ export default function Home() {
   // Check for existing token on component mount
   useEffect(() => {
     const validateToken = async () => {
-      const token = localStorage.getItem('token')
+      const token = localStorage.getItem('authToken')
 
       if (token) {
         // Set token in API client
@@ -49,7 +49,7 @@ export default function Home() {
           }
 
           // Clear invalid token and redirect to login
-          localStorage.removeItem('token')
+          localStorage.removeItem('authToken')
           apiClient.clearAuthToken()
           setCurrentScreen('login')
         }
