@@ -32,7 +32,14 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
     }
 
     setIsLoading(true)
-    console.log('Signup attempt started with:', { firstName, lastName, email, birthDate })
+    console.log('=== SIGNUP ATTEMPT ===')
+    console.log('First Name:', firstName)
+    console.log('Last Name:', lastName)
+    console.log('Email:', email)
+    console.log('Birth Date:', birthDate)
+    console.log('Password Length:', password.length)
+    console.log('API Base URL:', process.env.NEXT_PUBLIC_API_BASE_URL || 'https://moodlinkbackend.onrender.com')
+    console.log('Current Port:', window.location.port)
 
     try {
       const registerData: EnhancedUserForRegisterDto = {
@@ -45,20 +52,52 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
         phoneNumber: undefined // Opsiyonel alan
       }
 
-      console.log('Sending register request to API...')
+      console.log('=== REGISTER REQUEST DATA ===')
+      console.log('First Name:', registerData.firstName)
+      console.log('Last Name:', registerData.lastName)
+      console.log('Email:', registerData.email)
+      console.log('User Name:', registerData.userName)
+      console.log('Birth Date:', registerData.birthDate)
+      console.log('Phone Number:', registerData.phoneNumber)
+      console.log('Password Length:', registerData.password?.length)
       const response = await apiClient.register(registerData)
       console.log('Register API Response received:', response)
 
-      // Kayıt başarılı, doğrulama ekranını göster
+      // Kayıt başarılı, email doğrulama kodu gönder
+      try {
+        console.log('Sending email validation code to:', email)
+        const emailValidationResponse = await apiClient.sendEmailValidation({ email: email })
+        console.log('Email validation code sent successfully:', emailValidationResponse)
+
+        // Email gönderim başarılı mesajı göster
+        if (emailValidationResponse?.isSuccess) {
+          console.log('Email validation code will expire at:', emailValidationResponse.expireDate)
+        }
+      } catch (emailError: any) {
+        console.error('Failed to send email validation code:', emailError)
+        // Email gönderimi başarısız olsa bile doğrulama ekranını göster
+        // Kullanıcı "Resend Code" butonunu kullanabilir
+        alert('Kayıt başarılı! Ancak email doğrulama kodu gönderilemedi. Doğrulama ekranında "Resend Code" butonunu kullanabilirsiniz.')
+      }
+
+      // Doğrulama ekranını göster
       setShowVerification(true)
     } catch (error: any) {
-      console.error('Signup error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        fullError: error
-      })
+      console.error('=== SIGNUP ERROR ===')
+      console.error('Error Message:', error.message)
+      console.error('Status Code:', error.response?.status)
+      console.error('Status Text:', error.response?.statusText)
+      console.error('Response Data:', JSON.stringify(error.response?.data, null, 2))
+      console.error('Request URL:', error.config?.url)
+      console.error('Request Method:', error.config?.method)
+      if (error.config?.data) {
+        try {
+          const requestData = JSON.parse(error.config.data)
+          console.error('Request Data:', JSON.stringify(requestData, null, 2))
+        } catch {
+          console.error('Request Data (raw):', error.config.data)
+        }
+      }
 
       let errorMessage = 'Kayıt olurken bir hata oluştu.'
 
@@ -85,8 +124,16 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
     onSignup({ username: `${firstName} ${lastName}`, email, id: 1 })
   }
 
-  const handleResendCode = () => {
-    console.log("Resending verification code to:", email)
+  const handleResendCode = async () => {
+    try {
+      console.log("Resending verification code to:", email)
+      await apiClient.sendEmailValidation({ email: email })
+      console.log("Verification code resent successfully")
+      alert("Doğrulama kodu tekrar gönderildi. Lütfen email kutunuzu kontrol edin.")
+    } catch (error: any) {
+      console.error("Failed to resend verification code:", error)
+      alert("Doğrulama kodu gönderilemedi. Lütfen daha sonra tekrar deneyin.")
+    }
   }
 
   const handleGoogleSignup = () => {

@@ -26,7 +26,9 @@ export function LoginScreen({ onLogin, onSwitchToSignup, onForgotPassword }: Log
     }
 
     setIsLoading(true)
-    console.log('Login attempt started with:', { email: username })
+    console.log('=== LOGIN ATTEMPT ===')
+    console.log('Email:', username)
+    console.log('Password Length:', password.length)
 
     try {
       const loginData: UserForLoginDto = {
@@ -34,12 +36,16 @@ export function LoginScreen({ onLogin, onSwitchToSignup, onForgotPassword }: Log
         password: password
       }
 
-      console.log('Sending login request to API...')
+      console.log('=== LOGIN REQUEST ===')
+      console.log('Email:', loginData.email)
+      console.log('Password Length:', loginData.password?.length)
+
       const response = await apiClient.login(loginData)
-      console.log('API Response received:', response)
+
+      console.log('=== LOGIN RESPONSE ===')
+      console.log('Response:', JSON.stringify(response, null, 2))
       console.log('Response type:', typeof response)
       console.log('Response keys:', Object.keys(response || {}))
-      console.log('Response stringified:', JSON.stringify(response, null, 2))
 
       // Set auth token in apiClient
       const token = response.accessToken?.token
@@ -59,13 +65,13 @@ export function LoginScreen({ onLogin, onSwitchToSignup, onForgotPassword }: Log
         alert('Giriş başarısız: Token alınamadı.')
       }
     } catch (error: any) {
-      console.error('Login error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        fullError: error
-      })
+      console.error('=== LOGIN ERROR ===')
+      console.error('Error Message:', error.message)
+      console.error('Status Code:', error.response?.status)
+      console.error('Status Text:', error.response?.statusText)
+      console.error('Response Data:', JSON.stringify(error.response?.data, null, 2))
+      console.error('Request URL:', error.config?.url)
+      console.error('Request Method:', error.config?.method)
 
       let errorMessage = 'Giriş yapılırken bir hata oluştu.'
 
@@ -74,7 +80,23 @@ export function LoginScreen({ onLogin, onSwitchToSignup, onForgotPassword }: Log
       } else if (error.response?.status === 404) {
         errorMessage = 'API endpoint bulunamadı.'
       } else if (error.response?.status >= 500) {
-        errorMessage = 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.'
+        // Check for database connection issues
+        const responseData = error.response?.data
+        if (responseData?.detail?.includes('database operations') ||
+            responseData?.detail?.includes('NpgsqlRetryingExecutionStrategy')) {
+          errorMessage = `🔧 Backend Veritabanı Sorunu
+
+Backend sunucusu çalışıyor ancak veritabanı bağlantısı kopuk.
+
+Geçici Çözümler:
+1. "Login with Google" butonunu kullanın (test amaçlı)
+2. Backend ekibine veritabanı sorununu bildirin
+3. Birkaç dakika sonra tekrar deneyin
+
+Teknik Detay: PostgreSQL bağlantı hatası`
+        } else {
+          errorMessage = 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.'
+        }
       } else if (error.code === 'NETWORK_ERROR' || !error.response) {
         errorMessage = 'Bağlantı hatası. İnternet bağlantınızı kontrol edin.'
       }
@@ -147,6 +169,15 @@ export function LoginScreen({ onLogin, onSwitchToSignup, onForgotPassword }: Log
               Create New Account
             </button>
           </div>
+
+          {/* Development info */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-xs text-yellow-800 mb-1">
+                <strong>Dev Info:</strong> Backend veritabanı sorunu varsa Google Login kullanın.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

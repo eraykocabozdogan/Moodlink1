@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Heart, KeyRound } from "lucide-react"
 import { VerificationScreen } from "./verification-screen"
+import apiClient from "@/lib/apiClient"
 
 interface ForgotPasswordScreenProps {
   onResetComplete: () => void
@@ -17,30 +18,122 @@ export function ForgotPasswordScreen({ onResetComplete, onBackToLogin }: ForgotP
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [currentStep, setCurrentStep] = useState<"email" | "verification" | "newPassword">("email")
+  const [isLoading, setIsLoading] = useState(false)
+  const [verificationCode, setVerificationCode] = useState("")
 
-  const handleSendCode = () => {
-    if (email) {
-      // Simulate sending verification email
+  const handleSendCode = async () => {
+    if (!email) {
+      alert('Lütfen email adresinizi girin.')
+      return
+    }
+
+    setIsLoading(true)
+    console.log('=== PASSWORD RESET REQUEST ===')
+    console.log('Email:', email)
+
+    try {
+      console.log('Sending password reset code to:', email)
+      const response = await apiClient.sendPasswordResetCode({ email: email })
+      console.log('Password reset code sent successfully:', response)
+
+      // Email gönderim başarılı, doğrulama ekranına geç
       setCurrentStep("verification")
+      alert('Şifre sıfırlama kodu email adresinize gönderildi.')
+    } catch (error: any) {
+      console.error('=== PASSWORD RESET ERROR ===')
+      console.error('Error Message:', error.message)
+      console.error('Status Code:', error.response?.status)
+      console.error('Response Data:', JSON.stringify(error.response?.data, null, 2))
+
+      let errorMessage = 'Şifre sıfırlama kodu gönderilemedi.'
+
+      if (error.response?.status === 404) {
+        errorMessage = 'Bu email adresi ile kayıtlı kullanıcı bulunamadı.'
+      } else if (error.response?.status >= 500) {
+        errorMessage = 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.'
+      } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+        errorMessage = 'Bağlantı hatası. İnternet bağlantınızı kontrol edin.'
+      }
+
+      alert(errorMessage)
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const handleVerification = (code: string) => {
-    // Simulate verification process
+    // Store the verification code for password reset
     console.log("Verification code:", code)
+    setVerificationCode(code)
     setCurrentStep("newPassword")
   }
 
-  const handleResendCode = () => {
-    // Simulate resending verification code
-    console.log("Resending verification code to:", email)
+  const handleResendCode = async () => {
+    try {
+      console.log("Resending password reset code to:", email)
+      await apiClient.sendPasswordResetCode({ email: email })
+      console.log("Password reset code resent successfully")
+      alert("Şifre sıfırlama kodu tekrar gönderildi. Lütfen email kutunuzu kontrol edin.")
+    } catch (error: any) {
+      console.error("Failed to resend password reset code:", error)
+      alert("Şifre sıfırlama kodu gönderilemedi. Lütfen daha sonra tekrar deneyin.")
+    }
   }
 
-  const handlePasswordReset = () => {
-    if (newPassword && newPassword === confirmPassword) {
-      // Simulate password reset
-      console.log("Password reset successful")
+  const handlePasswordReset = async () => {
+    if (!newPassword || !confirmPassword) {
+      alert('Lütfen tüm alanları doldurun.')
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      alert('Şifreler eşleşmiyor.')
+      return
+    }
+
+    if (!verificationCode) {
+      alert('Doğrulama kodu bulunamadı. Lütfen tekrar deneyin.')
+      return
+    }
+
+    setIsLoading(true)
+    console.log('=== PASSWORD RESET ===')
+    console.log('Email:', email)
+    console.log('Verification Code:', verificationCode)
+    console.log('New Password Length:', newPassword.length)
+
+    try {
+      const resetData = {
+        email: email,
+        code: verificationCode,
+        newPassword: newPassword
+      }
+
+      console.log('Sending reset password request to API...')
+      const response = await apiClient.resetPassword(resetData)
+      console.log('Reset password API Response:', response)
+
+      alert('Şifreniz başarıyla güncellendi!')
       onResetComplete()
+    } catch (error: any) {
+      console.error('=== PASSWORD RESET ERROR ===')
+      console.error('Error Message:', error.message)
+      console.error('Status Code:', error.response?.status)
+      console.error('Response Data:', JSON.stringify(error.response?.data, null, 2))
+
+      let errorMessage = 'Şifre güncellenirken bir hata oluştu.'
+
+      if (error.response?.status === 400) {
+        errorMessage = 'Geçersiz şifre formatı. Lütfen daha güçlü bir şifre seçin.'
+      } else if (error.response?.status === 404) {
+        errorMessage = 'Doğrulama kodu bulunamadı veya süresi dolmuş.'
+      } else if (error.response?.status >= 500) {
+        errorMessage = 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.'
+      }
+
+      alert(errorMessage)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -98,10 +191,10 @@ export function ForgotPasswordScreen({ onResetComplete, onBackToLogin }: ForgotP
             />
             <Button
               onClick={handlePasswordReset}
-              disabled={!newPassword || newPassword !== confirmPassword}
-              className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium"
+              disabled={!newPassword || newPassword !== confirmPassword || isLoading}
+              className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium disabled:opacity-50"
             >
-              Update Password
+              {isLoading ? 'Güncelleniyor...' : 'Update Password'}
             </Button>
             <div className="text-center">
               <button 
@@ -151,10 +244,10 @@ export function ForgotPasswordScreen({ onResetComplete, onBackToLogin }: ForgotP
           />
           <Button
             onClick={handleSendCode}
-            disabled={!email}
-            className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium"
+            disabled={!email || isLoading}
+            className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium disabled:opacity-50"
           >
-            Send Verification Code
+            {isLoading ? 'Gönderiliyor...' : 'Send Verification Code'}
           </Button>
           <div className="text-center">
             <button 

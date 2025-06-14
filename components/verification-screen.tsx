@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
 import { Heart, Mail } from "lucide-react"
 import apiClient from "@/lib/apiClient"
-import type { VerifyCodeCommand, ValidationPurpose } from "@/lib/types/api"
+import type { VerifyCodeCommand } from "@/lib/types/api"
+import { ValidationPurpose } from "@/lib/types/api"
 
 interface VerificationScreenProps {
   email: string
@@ -37,40 +38,82 @@ export function VerificationScreen({
   const handleVerify = async () => {
     if (code.length === 6) {
       setIsLoading(true)
-      console.log('Verification attempt started with:', { email, code, type })
+      console.log('=== VERIFICATION ATTEMPT ===')
+      console.log('Email:', email)
+      console.log('Code:', code)
+      console.log('Type:', type)
+      console.log('Email Length:', email.length)
+      console.log('Code Length:', code.length)
 
       try {
-        // Prepare verification data
+        // Prepare verification data - ensure all required fields are present
+        // TEMPORARY FIX: Backend bug analysis:
+        // - SendEmailValidation saves with validationType=2 (PasswordReset)
+        // - SendPasswordResetCode saves with validationType=1 (EmailValidation)
+        // So we need to use the correct type based on the actual backend behavior
         const verifyData: VerifyCodeCommand = {
-          email: email,
-          code: code
+          email: email.trim(),
+          code: code.trim(),
+          validationType: type === "signup" ? ValidationPurpose.PasswordReset : ValidationPurpose.EmailValidation
         }
 
-        console.log('Sending verify code request to API...')
+        console.log('=== VERIFY CODE REQUEST ===')
+        console.log('Email:', verifyData.email)
+        console.log('Code:', verifyData.code)
+        console.log('Validation Type:', verifyData.validationType)
+        console.log('Validation Type Name:', verifyData.validationType === 1 ? 'EmailValidation' : 'PasswordReset')
+        console.log('TEMP FIX: Using', type === "signup" ? 'PasswordReset(2)' : 'EmailValidation(1)', 'due to backend bug')
         const response = await apiClient.verifyCode(verifyData)
         console.log('Verify code API Response received:', response)
 
         // Verification successful, call the onVerify callback
-        await onVerify(code)
+        onVerify(code)
       } catch (error: any) {
-        console.error('Verification error details:', {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          fullError: error
-        })
+        console.error('=== VERIFICATION ERROR ===')
+        console.error('Error Message:', error.message)
+        console.error('Status Code:', error.response?.status)
+        console.error('Status Text:', error.response?.statusText)
+        console.error('Response Data:', JSON.stringify(error.response?.data, null, 2))
+        console.error('Request Email:', email.trim())
+        console.error('Request Code:', code.trim())
+        console.error('Request Validation Type:', type === "signup" ? ValidationPurpose.PasswordReset : ValidationPurpose.EmailValidation, '(TEMP FIX: signup=2, password-reset=1)')
 
         let errorMessage = 'Doğrulama kodu geçersiz.'
 
+        // More detailed error handling
         if (error.response?.status === 400) {
-          errorMessage = 'Geçersiz doğrulama kodu.'
+          const responseData = error.response?.data
+          if (responseData?.message) {
+            errorMessage = responseData.message
+          } else {
+            errorMessage = 'Geçersiz doğrulama kodu. Lütfen kodu kontrol edin.'
+          }
         } else if (error.response?.status === 404) {
-          errorMessage = 'Doğrulama kodu bulunamadı veya süresi dolmuş.'
+          errorMessage = 'Doğrulama kodu bulunamadı veya süresi dolmuş. Yeni kod talep edin.'
+        } else if (error.response?.status === 422) {
+          errorMessage = 'Doğrulama kodu formatı geçersiz.'
         } else if (error.response?.status >= 500) {
-          errorMessage = 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.'
+          // Check if it's the specific validation error
+          const responseData = error.response?.data
+          if (responseData?.detail?.includes('Geçersiz veya süresi dolmuş doğrulama kodu')) {
+            errorMessage = `Doğrulama kodu geçersiz veya süresi dolmuş.
+
+⚠️ Backend Sorunu: Email gönderiliyor ancak kod veritabanında bulunamıyor.
+
+Lütfen:
+1. "Resend Code" butonunu deneyin
+2. Yeni bir kod talep edin
+3. Eğer sorun devam ederse backend ekibine bildirin
+
+Teknik Detay: ${type === "signup" ? "EmailValidation" : "PasswordReset"} kodu backend'de kayıt edilmiyor.`
+          } else {
+            errorMessage = 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.'
+          }
         } else if (error.code === 'NETWORK_ERROR' || !error.response) {
           errorMessage = 'Bağlantı hatası. İnternet bağlantınızı kontrol edin.'
+        } else {
+          // Fallback for other errors
+          errorMessage = `Doğrulama hatası: ${error.message || 'Bilinmeyen hata'}`
         }
 
         alert(errorMessage)
@@ -82,7 +125,7 @@ export function VerificationScreen({
 
   const handleResendCode = async () => {
     setResendCooldown(60) // 60 second cooldown
-    await onResendCode()
+    onResendCode()
   }
 
   const getTitle = () => {
@@ -161,11 +204,12 @@ export function VerificationScreen({
               variant="outline"
               className="h-10 border-gray-200 hover:bg-gray-50 text-purple-600 hover:text-purple-700"
             >
-              {resendCooldown > 0 
-                ? `Resend (${resendCooldown}s)` 
+              {resendCooldown > 0
+                ? `Resend (${resendCooldown}s)`
                 : "Resend Code"
               }
             </Button>
+
           </div>
 
           <div className="text-center">

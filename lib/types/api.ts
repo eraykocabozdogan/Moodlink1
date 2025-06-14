@@ -348,6 +348,7 @@ export interface SendPasswordResetCodeCommand {
 export interface VerifyCodeCommand {
   email?: string;
   code?: string;
+  validationType?: ValidationPurpose;
 }
 
 export interface ResetPasswordCommand {
