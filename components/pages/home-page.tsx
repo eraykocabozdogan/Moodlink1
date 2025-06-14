@@ -83,18 +83,43 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
 
         while (hasMore) {
           console.log(`Fetching page ${pageIndex + 1}...`)
-          const postsResponse = await apiClient.getPosts({ PageIndex: pageIndex, PageSize: pageSize })
+
+          // Try both endpoints to see which one works
+          let postsResponse
+          try {
+            console.log('Trying getPosts endpoint...')
+            postsResponse = await apiClient.getPosts({ PageIndex: pageIndex, PageSize: pageSize })
+            console.log('getPosts successful')
+          } catch (getPostsError) {
+            console.log('getPosts failed, trying getFeedPosts...', getPostsError)
+            try {
+              postsResponse = await apiClient.getFeedPosts({ PageIndex: pageIndex, PageSize: pageSize })
+              console.log('getFeedPosts successful')
+            } catch (getFeedPostsError) {
+              console.error('Both endpoints failed:', { getPostsError, getFeedPostsError })
+              throw getFeedPostsError
+            }
+          }
 
           console.log('Posts response:', postsResponse)
+          console.log('Posts response type:', typeof postsResponse)
+          console.log('Posts response keys:', Object.keys(postsResponse || {}))
+
           if (pageIndex === 0) {
             console.log('Posts response stringified:', JSON.stringify(postsResponse, null, 2))
             console.log('Posts items:', postsResponse.items)
             console.log('Posts items length:', postsResponse.items?.length)
+            console.log('Posts posts:', postsResponse.posts)
+            console.log('Posts posts length:', postsResponse.posts?.length)
           }
 
-          if (postsResponse.items && postsResponse.items.length > 0) {
-            allPosts = [...allPosts, ...postsResponse.items]
-            hasMore = postsResponse.hasNext
+          // Check both possible response formats
+          const posts = postsResponse.posts || postsResponse.items || []
+          const hasMoreData = postsResponse.hasMore || postsResponse.hasNext || false
+
+          if (posts && posts.length > 0) {
+            allPosts = [...allPosts, ...posts]
+            hasMore = hasMoreData
             pageIndex++
           } else {
             hasMore = false
@@ -123,24 +148,12 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
             })
           }
 
-          // Fetch real likes and comments data from backend
-          let likesCount = 0
-          let commentsCount = 0
-          let isLikedByCurrentUser = false
+          // Use real data from API response
+          let likesCount = apiPost.likesCount || 0
+          let commentsCount = apiPost.commentsCount || 0
+          let isLikedByCurrentUser = apiPost.isLikedByCurrentUser || false
 
-          try {
-            // Fetch comments for this post (likes endpoint doesn't exist)
-            const commentsResponse = await apiClient.getPostComments(apiPost.id).catch(() => ({ comments: [] }))
-
-            commentsCount = commentsResponse.comments?.length || 0
-            // For now, use mock data for likes since the endpoint doesn't exist
-            likesCount = Math.abs(hashCode(apiPost.id) % 50) + 1
-            isLikedByCurrentUser = (hashCode(apiPost.id) % 3) === 0
-
-            console.log(`Post ${apiPost.id.slice(0, 8)}: ${likesCount} likes, ${commentsCount} comments`)
-          } catch (error) {
-            console.error(`Error fetching data for post ${apiPost.id}:`, error)
-          }
+          console.log(`Post ${apiPost.id.slice(0, 8)}: ${likesCount} likes, ${commentsCount} comments, liked: ${isLikedByCurrentUser}`)
 
           return {
             id: apiPost.id,
@@ -185,9 +198,9 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
             content: apiPost.contentText || '',
             image: apiPost.postImageFileId ? `/api/files/${apiPost.postImageFileId}` : undefined,
             moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%`,
-            likesCount: Math.abs(hashNum % 50) + 1,
-            commentsCount: Math.abs(hashNum % 10),
-            isLikedByCurrentUser: (hashNum % 3) === 0
+            likesCount: apiPost.likesCount || 0,
+            commentsCount: apiPost.commentsCount || 0,
+            isLikedByCurrentUser: apiPost.isLikedByCurrentUser || false
           }
         })
 
@@ -206,18 +219,20 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
           fullError: error
         })
 
-        let errorMessage = 'Gönderiler yüklenirken bir hata oluştu.'
+        let errorMessage = 'Error loading posts.'
 
         if (error.response?.status === 401) {
-          errorMessage = 'Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.'
+          errorMessage = 'Session expired. Please login again.'
         } else if (error.response?.status === 403) {
-          errorMessage = 'Bu içeriği görme yetkiniz yok.'
+          errorMessage = 'You do not have permission to view this content.'
         } else if (error.response?.status === 404) {
-          errorMessage = 'Gönderiler bulunamadı.'
+          errorMessage = 'Posts not found.'
         } else if (error.response?.status >= 500) {
-          errorMessage = 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.'
-        } else if (error.code === 'NETWORK_ERROR' || !error.response) {
-          errorMessage = 'Bağlantı hatası. İnternet bağlantınızı kontrol edin.'
+          errorMessage = 'Server error. Please try again later.'
+        } else if (error.isNetworkError || error.isCorsError || error.code === 'ERR_NETWORK' ||
+                   error.message === 'Network Error' || error.message.includes('CORS') ||
+                   error.message.includes('access control') || !error.response) {
+          errorMessage = 'Network error. Please check your internet connection.'
         }
 
         setError(errorMessage)
@@ -277,11 +292,23 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
 
       while (hasMore) {
         console.log(`Fetching page ${pageIndex + 1}...`)
-        const postsResponse = await apiClient.getPosts({ PageIndex: pageIndex, PageSize: pageSize })
 
-        if (postsResponse.items && postsResponse.items.length > 0) {
-          allPosts = [...allPosts, ...postsResponse.items]
-          hasMore = postsResponse.hasNext
+        // Try both endpoints to see which one works
+        let postsResponse
+        try {
+          postsResponse = await apiClient.getPosts({ PageIndex: pageIndex, PageSize: pageSize })
+        } catch (getPostsError) {
+          console.log('getPosts failed in refresh, trying getFeedPosts...')
+          postsResponse = await apiClient.getFeedPosts({ PageIndex: pageIndex, PageSize: pageSize })
+        }
+
+        // Check both possible response formats
+        const posts = postsResponse.posts || postsResponse.items || []
+        const hasMoreData = postsResponse.hasMore || postsResponse.hasNext || false
+
+        if (posts && posts.length > 0) {
+          allPosts = [...allPosts, ...posts]
+          hasMore = hasMoreData
           pageIndex++
         } else {
           hasMore = false
@@ -305,25 +332,12 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
       const transformPost = async (apiPost: any, index: number) => {
         const isCurrentUser = currentUser && apiPost.userId === currentUser.id
 
-        // Fetch real likes and comments data from backend
-        let likesCount = 0
-        let commentsCount = 0
-        let isLikedByCurrentUser = false
+        // Use real data from API response
+        let likesCount = apiPost.likesCount || 0
+        let commentsCount = apiPost.commentsCount || 0
+        let isLikedByCurrentUser = apiPost.isLikedByCurrentUser || false
 
-        try {
-          // Fetch comments for this post (likes endpoint doesn't exist)
-          const commentsResponse = await apiClient.getPostComments(apiPost.id).catch(() => ({ comments: [] }))
-
-          commentsCount = commentsResponse.comments?.length || 0
-          // For now, use mock data for likes since the endpoint doesn't exist
-          const hashNum = hashCode(apiPost.id)
-          likesCount = Math.abs(hashNum % 50) + 1
-          isLikedByCurrentUser = (hashNum % 3) === 0
-
-          console.log(`Refresh - Post ${apiPost.id.slice(0, 8)}: ${likesCount} likes, ${commentsCount} comments`)
-        } catch (error) {
-          console.error(`Error fetching data for post ${apiPost.id}:`, error)
-        }
+        console.log(`Refresh - Post ${apiPost.id.slice(0, 8)}: ${likesCount} likes, ${commentsCount} comments, liked: ${isLikedByCurrentUser}`)
 
         return {
           id: apiPost.id,
@@ -368,9 +382,9 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
           content: apiPost.contentText || '',
           image: apiPost.postImageFileId ? `/api/files/${apiPost.postImageFileId}` : undefined,
           moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%`,
-          likesCount: Math.abs(hashNum % 50) + 1,
-          commentsCount: Math.abs(hashNum % 10),
-          isLikedByCurrentUser: (hashNum % 3) === 0
+          likesCount: apiPost.likesCount || 0,
+          commentsCount: apiPost.commentsCount || 0,
+          isLikedByCurrentUser: apiPost.isLikedByCurrentUser || false
         }
       })
 
@@ -450,7 +464,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
               }
             } else {
               console.error('Invalid file object:', file)
-              alert('Geçersiz dosya. Lütfen tekrar deneyin.')
+              alert('Invalid file. Please try again.')
               return
             }
 
@@ -489,7 +503,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
             console.log('Upload error response:', uploadError?.response)
             console.log('Upload error config:', uploadError?.config)
 
-            let errorMessage = 'Bilinmeyen hata'
+            let errorMessage = 'Unknown error'
             if (uploadError?.response?.status) {
               errorMessage = `HTTP ${uploadError.response.status}: ${uploadError.response.statusText || 'Server Error'}`
               if (uploadError.response.data) {
@@ -499,21 +513,27 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
               errorMessage = uploadError.message
             }
 
-            alert(`Fotoğraf yüklenirken bir hata oluştu: ${errorMessage}`)
+            alert(`Error uploading photo: ${errorMessage}`)
             return
           }
         }
 
         // Create post via API
+        console.log('=== CREATE POST DEBUG ===')
+        console.log('Current user object:', currentUser)
+        console.log('Current user ID:', currentUser?.id)
+        console.log('Current user ID type:', typeof currentUser?.id)
+
         const createPostData = {
           userId: currentUser?.id || "00000000-0000-0000-0000-000000000000",
           contentText: postContent,
           postImageFileId: postImageFileId
         }
 
+        console.log('Create post data:', createPostData)
         const response = await apiClient.createPost(createPostData)
         console.log('Post created successfully:', response)
-        console.log('Create post data sent:', JSON.stringify(createPostData, null, 2))
+        console.log('Created post userId:', response?.userId)
         console.log('Post response JSON:', JSON.stringify(response, null, 2))
 
         // Clear form immediately for better UX
@@ -523,6 +543,9 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
         // Refresh posts from API to get the latest data including the new post
         await refreshPosts()
 
+        // Trigger a global refresh event for other components
+        window.dispatchEvent(new CustomEvent('postsUpdated'))
+
       } catch (error: any) {
         console.error('Error creating post:', {
           message: error.message,
@@ -531,7 +554,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
           statusText: error.response?.statusText,
           fullError: error
         })
-        alert('Gönderi paylaşılırken bir hata oluştu.')
+        alert('Error sharing post.')
       }
     }
   }
@@ -655,7 +678,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
       {loading && (
         <div className="flex justify-center items-center py-8">
           <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
-          <span className="ml-3 text-muted-foreground">Gönderiler yükleniyor...</span>
+          <span className="ml-3 text-muted-foreground">Loading posts...</span>
         </div>
       )}
 
@@ -663,11 +686,22 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
         <div className="p-4 text-center">
           <p className="text-destructive">{error}</p>
           <Button
-            onClick={() => window.location.reload()}
+            onClick={async () => {
+              setError(null)
+              setLoading(true)
+              try {
+                await refreshPosts()
+              } catch (err) {
+                console.error('Error refreshing posts:', err)
+                setError('Error loading posts.')
+              } finally {
+                setLoading(false)
+              }
+            }}
             variant="outline"
             className="mt-2"
           >
-            Tekrar Dene
+            Try Again
           </Button>
         </div>
       )}
@@ -684,8 +718,8 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
                 ))
               ) : (
                 <div className="p-8 text-center text-muted-foreground">
-                  <p>Henüz gönderi yok.</p>
-                  <p className="text-sm mt-1">İlk gönderiyi sen paylaş!</p>
+                  <p>No posts yet.</p>
+                  <p className="text-sm mt-1">Be the first to share!</p>
                 </div>
               )}
             </div>
@@ -697,8 +731,8 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
                 ))
               ) : (
                 <div className="p-8 text-center text-muted-foreground">
-                  <p>Takip ettiğin kişilerden henüz gönderi yok.</p>
-                  <p className="text-sm mt-1">Daha fazla kişi takip etmeyi dene!</p>
+                  <p>No posts from people you follow yet.</p>
+                  <p className="text-sm mt-1">Try following more people!</p>
                 </div>
               )}
             </div>

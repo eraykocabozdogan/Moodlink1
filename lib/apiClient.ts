@@ -219,10 +219,20 @@ class ApiClient {
     this.axiosInstance.interceptors.response.use(
       (response) => response,
       (error) => {
+        // Handle different types of errors
         if (error.response?.status === 401) {
           // Handle unauthorized access
+          console.log('Unauthorized access, clearing token');
           this.clearAuthToken();
           // You can add redirect to login logic here
+        } else if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+          // Handle network errors (including CORS)
+          console.error('Network error occurred:', error.message);
+          error.isNetworkError = true;
+        } else if (error.code === 'ERR_CORS' || error.message.includes('CORS')) {
+          // Handle CORS errors specifically
+          console.error('CORS error occurred:', error.message);
+          error.isCorsError = true;
         }
         return Promise.reject(error);
       }
@@ -247,7 +257,18 @@ class ApiClient {
     try {
       const response: AxiosResponse<T> = await this.axiosInstance.request(config);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
+      // Enhanced error handling
+      if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+        console.error('Network error - possibly CORS or server unavailable:', error.message);
+        error.isNetworkError = true;
+      }
+
+      if (error.message?.includes('CORS') || error.message?.includes('access control')) {
+        console.error('CORS error detected:', error.message);
+        error.isCorsError = true;
+      }
+
       throw error;
     }
   }

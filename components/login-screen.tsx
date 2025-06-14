@@ -27,7 +27,7 @@ export function LoginScreen({ onLogin, onSwitchToSignup, onForgotPassword }: Log
 
   const handleLogin = async () => {
     if (!username || !password) {
-      alert('Lütfen email ve şifre alanlarını doldurun.')
+      alert('Please fill in email and password fields.')
       return
     }
 
@@ -68,7 +68,7 @@ export function LoginScreen({ onLogin, onSwitchToSignup, onForgotPassword }: Log
         onLogin({ username: username })
       } else {
         console.error('No token found in response:', response)
-        alert('Giriş başarısız: Token alınamadı.')
+        alert('Login failed: Could not retrieve token.')
       }
     } catch (error: any) {
       console.error('=== LOGIN ERROR ===')
@@ -79,32 +79,35 @@ export function LoginScreen({ onLogin, onSwitchToSignup, onForgotPassword }: Log
       console.error('Request URL:', error.config?.url)
       console.error('Request Method:', error.config?.method)
 
-      let errorMessage = 'Giriş yapılırken bir hata oluştu.'
+      let errorMessage = 'An error occurred during login.'
 
       if (error.response?.status === 401) {
-        errorMessage = 'Email veya şifre hatalı.'
+        errorMessage = 'Invalid email or password.'
       } else if (error.response?.status === 404) {
-        errorMessage = 'API endpoint bulunamadı.'
+        errorMessage = 'API endpoint not found.'
       } else if (error.response?.status >= 500) {
         // Check for database connection issues
         const responseData = error.response?.data
         if (responseData?.detail?.includes('database operations') ||
             responseData?.detail?.includes('NpgsqlRetryingExecutionStrategy')) {
-          errorMessage = `🔧 Backend Veritabanı Sorunu
+          errorMessage = `🔧 Backend Database Issue
 
-Backend sunucusu çalışıyor ancak veritabanı bağlantısı kopuk.
+Backend server is running but database connection is broken.
 
-Geçici Çözümler:
-1. "Login with Google" butonunu kullanın (test amaçlı)
-2. Backend ekibine veritabanı sorununu bildirin
-3. Birkaç dakika sonra tekrar deneyin
+Temporary Solutions:
+1. Use "Login with Google" button (for testing)
+2. Report database issue to backend team
+3. Try again in a few minutes
 
-Teknik Detay: PostgreSQL bağlantı hatası`
+Technical Detail: PostgreSQL connection error`
         } else {
-          errorMessage = 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.'
+          errorMessage = 'Server error. Please try again later.'
         }
-      } else if (error.code === 'NETWORK_ERROR' || !error.response) {
-        errorMessage = 'Bağlantı hatası. İnternet bağlantınızı kontrol edin.'
+      } else if (error.isNetworkError || error.isCorsError || error.code === 'ERR_NETWORK' ||
+                 error.message === 'Network Error' || error.message.includes('CORS') ||
+                 error.message.includes('access control') || !error.response) {
+        errorMessage = 'Network error. Please check your internet connection and try again.'
+        console.error('Network/CORS error detected during login')
       }
 
       alert(errorMessage)
@@ -156,7 +159,7 @@ Teknik Detay: PostgreSQL bağlantı hatası`
             disabled={isLoading}
             className="w-full h-12 bg-blue-500 hover:bg-blue-600 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Giriş yapılıyor...' : 'Login'}
+            {isLoading ? 'Logging in...' : 'Login'}
           </Button>
           <Button
             onClick={handleGoogleLogin}

@@ -23,10 +23,32 @@ interface PostCardProps {
   onPostUpdate?: (postId: string, updates: { likesCount?: number; isLikedByCurrentUser?: boolean; commentsCount?: number }) => void
 }
 
+// Helper functions for localStorage persistence
+const getStoredPostData = (postId: string) => {
+  try {
+    const stored = localStorage.getItem(`post_${postId}`)
+    return stored ? JSON.parse(stored) : null
+  } catch {
+    return null
+  }
+}
+
+const setStoredPostData = (postId: string, data: { liked?: boolean; likeCount?: number; commentsCount?: number }) => {
+  try {
+    const existing = getStoredPostData(postId) || {}
+    const updated = { ...existing, ...data }
+    localStorage.setItem(`post_${postId}`, JSON.stringify(updated))
+  } catch (error) {
+    console.error('Error storing post data:', error)
+  }
+}
+
 export function PostCard({ post, onUserClick, onPostUpdate }: PostCardProps) {
-  const [liked, setLiked] = useState(post.isLikedByCurrentUser)
-  const [likeCount, setLikeCount] = useState(post.likesCount)
-  const [commentsCount, setCommentsCount] = useState(post.commentsCount)
+  // Initialize state with stored data if available
+  const storedData = getStoredPostData(post.id)
+  const [liked, setLiked] = useState(storedData?.liked ?? post.isLikedByCurrentUser)
+  const [likeCount, setLikeCount] = useState(storedData?.likeCount ?? post.likesCount)
+  const [commentsCount, setCommentsCount] = useState(storedData?.commentsCount ?? post.commentsCount)
   const [saved, setSaved] = useState(false)
   const [showComments, setShowComments] = useState(false)
   const [comment, setComment] = useState("")
@@ -34,12 +56,21 @@ export function PostCard({ post, onUserClick, onPostUpdate }: PostCardProps) {
   const [commentsLoaded, setCommentsLoaded] = useState(false)
   const [currentUser, setCurrentUser] = useState<any>(null)
 
-  // Update local state when post prop changes (important for like persistence)
+  // Update local state when post prop changes, but preserve stored data
   useEffect(() => {
-    setLiked(post.isLikedByCurrentUser)
-    setLikeCount(post.likesCount)
-    setCommentsCount(post.commentsCount)
-  }, [post.isLikedByCurrentUser, post.likesCount, post.commentsCount])
+    const storedData = getStoredPostData(post.id)
+    if (storedData) {
+      // Use stored data if available
+      setLiked(storedData.liked ?? post.isLikedByCurrentUser)
+      setLikeCount(storedData.likeCount ?? post.likesCount)
+      setCommentsCount(storedData.commentsCount ?? post.commentsCount)
+    } else {
+      // Use post data if no stored data
+      setLiked(post.isLikedByCurrentUser)
+      setLikeCount(post.likesCount)
+      setCommentsCount(post.commentsCount)
+    }
+  }, [post.id, post.isLikedByCurrentUser, post.likesCount, post.commentsCount])
 
   // Get current user on component mount
   useEffect(() => {
@@ -90,49 +121,108 @@ export function PostCard({ post, onUserClick, onPostUpdate }: PostCardProps) {
 
   const handleLike = async () => {
     if (!currentUser) {
-      console.error('No current user found')
+      console.error('No current user found for like action')
       return
     }
 
+    console.log('=== LIKE ACTION DEBUG ===')
+    console.log('Post ID:', post.id)
+    console.log('Current user ID:', currentUser.id)
+    console.log('Current liked state:', liked)
+    console.log('Current like count:', likeCount)
+
     try {
       if (liked) {
-        // Unlike the post - for now just update local state since we can't fetch existing likes
-        setLiked(false)
-        setLikeCount(likeCount - 1)
-        console.log('Post unliked (local state only)')
+        // Unlike the post - find and delete the like
+        console.log('Attempting to unlike post...')
+        try {
+          const likesResponse = await apiClient.getPostLikes(post.id)
+          console.log('Post likes response:', likesResponse)
+          console.log('Likes array:', likesResponse.likes)
 
-        // Notify parent component of the update
-        onPostUpdate?.(post.id, {
-          likesCount: likeCount - 1,
-          isLikedByCurrentUser: false
-        })
+          // Find the current user's like
+          const userLike = likesResponse.likes?.find((like: any) => like.userId === currentUser.id)
+          console.log('User like found:', userLike)
+
+          if (userLike) {
+            console.log('Deleting like with ID:', userLike.id)
+            await apiClient.deleteLike(userLike.id)
+            setLiked(false)
+            setLikeCount(likeCount - 1)
+            console.log('Post unliked successfully')
+
+            // Store in localStorage for persistence
+            setStoredPostData(post.id, { liked: false, likeCount: likeCount - 1 })
+
+            // Notify parent component of the update
+            onPostUpdate?.(post.id, {
+              likesCount: likeCount - 1,
+              isLikedByCurrentUser: false
+            })
+          } else {
+            console.log('User like not found in response, updating local state only')
+            setLiked(false)
+            setLikeCount(likeCount - 1)
+
+            // Store in localStorage for persistence
+            setStoredPostData(post.id, { liked: false, likeCount: likeCount - 1 })
+
+            onPostUpdate?.(post.id, {
+              likesCount: likeCount - 1,
+              isLikedByCurrentUser: false
+            })
+          }
+        } catch (error: any) {
+          console.error('Error unliking post:', error)
+          console.error('Unlike error details:', error.response?.data || error.message)
+          // Still update local state for better UX
+          setLiked(false)
+          setLikeCount(likeCount - 1)
+
+          // Store in localStorage for persistence even on error
+          setStoredPostData(post.id, { liked: false, likeCount: likeCount - 1 })
+
+          onPostUpdate?.(post.id, {
+            likesCount: likeCount - 1,
+            isLikedByCurrentUser: false
+          })
+        }
       } else {
         // Like the post
+        console.log('Attempting to like post...')
         try {
           const likeData = {
             userId: currentUser.id,
             postId: post.id
           }
+          console.log('Like data:', likeData)
 
-          await apiClient.createLike(likeData)
+          const response = await apiClient.createLike(likeData)
+          console.log('Create like response:', response)
+
           setLiked(true)
           setLikeCount(likeCount + 1)
           console.log('Post liked successfully')
+
+          // Store in localStorage for persistence
+          setStoredPostData(post.id, { liked: true, likeCount: likeCount + 1 })
 
           // Notify parent component of the update
           onPostUpdate?.(post.id, {
             likesCount: likeCount + 1,
             isLikedByCurrentUser: true
           })
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error liking post:', error)
+          console.error('Like error details:', error.response?.data || error.message)
           // Revert optimistic update on error
           setLiked(false)
           setLikeCount(likeCount)
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error handling like:', error)
+      console.error('General like error details:', error.response?.data || error.message)
       // Revert optimistic update on error
       setLiked(post.isLikedByCurrentUser)
       setLikeCount(post.likesCount)
@@ -157,37 +247,62 @@ export function PostCard({ post, onUserClick, onPostUpdate }: PostCardProps) {
   }
 
   const handleComment = async () => {
-    if (comment.trim() && currentUser) {
-      try {
-        const commentData = {
-          postId: post.id,
-          userId: currentUser.id,
-          content: comment,
-          parentCommentId: undefined
-        }
+    if (!comment.trim()) {
+      console.log('Comment is empty, not submitting')
+      return
+    }
 
-        const response = await apiClient.createComment(commentData)
-        console.log('Comment created successfully:', response)
+    if (!currentUser) {
+      console.error('No current user found for comment action')
+      return
+    }
 
-        // Add new comment to local state
-        const newComment = {
-          id: response.id,
-          username: "You",
-          text: comment,
-          time: "now",
-        }
-        setComments([newComment, ...comments])
-        setCommentsCount(commentsCount + 1) // Update comments count
-        setComment("")
+    console.log('=== COMMENT ACTION DEBUG ===')
+    console.log('Post ID:', post.id)
+    console.log('Current user ID:', currentUser.id)
+    console.log('Comment content:', comment)
+    console.log('Current comments count:', commentsCount)
 
-        // Notify parent component of the comment count update
-        onPostUpdate?.(post.id, {
-          commentsCount: commentsCount + 1
-        })
-      } catch (error) {
-        console.error('Error creating comment:', error)
-        alert('Yorum eklenirken bir hata oluştu.')
+    try {
+      const commentData = {
+        postId: post.id,
+        userId: currentUser.id,
+        content: comment,
+        parentCommentId: undefined
       }
+      console.log('Comment data:', commentData)
+
+      const response = await apiClient.createComment(commentData)
+      console.log('Comment created successfully:', response)
+      console.log('Comment response JSON:', JSON.stringify(response, null, 2))
+
+      // Add new comment to local state
+      const newComment = {
+        id: response.id,
+        username: "You",
+        text: comment,
+        time: "now",
+      }
+      console.log('Adding new comment to local state:', newComment)
+
+      setComments([newComment, ...comments])
+      setCommentsCount(commentsCount + 1) // Update comments count
+      setComment("")
+
+      // Store in localStorage for persistence
+      setStoredPostData(post.id, { commentsCount: commentsCount + 1 })
+
+      // Notify parent component of the comment count update
+      onPostUpdate?.(post.id, {
+        commentsCount: commentsCount + 1
+      })
+
+      console.log('Comment added successfully, new count:', commentsCount + 1)
+    } catch (error: any) {
+      console.error('Error creating comment:', error)
+      console.error('Comment error details:', error.response?.data || error.message)
+      console.error('Comment error status:', error.response?.status)
+      alert('Error adding comment.')
     }
   }
 

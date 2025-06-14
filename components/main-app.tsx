@@ -71,7 +71,7 @@ export function MainApp({ user, onLogout }: MainAppProps) {
       case "chat":
         return <ChatPage chatDetails={chatDetails} onBack={() => setCurrentPage("messages")} />
       case "profile":
-        return <ProfilePage user={user} />
+        return <ProfilePage />
       case "userProfile":
         return <UserProfilePage user={viewingUser} onBack={() => setCurrentPage("home")} />
       case "activities":
