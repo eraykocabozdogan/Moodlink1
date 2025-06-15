@@ -36,6 +36,21 @@ export function NotificationsPage({ onPostClick }: NotificationsPageProps) {
         })
         const rawNotifications = notificationsResponse.items || []
 
+        // Remove duplicate notifications by ID
+        const uniqueNotifications = rawNotifications.filter((notification, index, array) =>
+          array.findIndex(n => n.id === notification.id) === index
+        )
+
+        console.log(`Removed ${rawNotifications.length - uniqueNotifications.length} duplicate notifications`)
+        console.log(`Processing ${uniqueNotifications.length} unique notifications`)
+
+        // Sort notifications by creation date (newest first)
+        uniqueNotifications.sort((a, b) => {
+          const dateA = new Date(a.createdDate).getTime()
+          const dateB = new Date(b.createdDate).getTime()
+          return dateB - dateA // Newest first
+        })
+
         // Load user's posts to match with notifications
         let userPosts: any[] = []
         try {
@@ -50,7 +65,7 @@ export function NotificationsPage({ onPostClick }: NotificationsPageProps) {
         }
 
         // Enhance notifications with post content
-        const enhancedNotifications: EnhancedNotification[] = rawNotifications.map(notification => {
+        const enhancedNotifications: EnhancedNotification[] = uniqueNotifications.map(notification => {
           const enhanced: EnhancedNotification = { ...notification }
 
           // Check if this is a post-related notification

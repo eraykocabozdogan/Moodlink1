@@ -33,6 +33,7 @@ interface Post {
   likesCount: number;
   commentsCount: number;
   isLikedByCurrentUser: boolean;
+  createdDate?: string;
 }
 
 interface HomePageProps {
@@ -85,32 +86,69 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
         const pageSize = 20
         let hasMore = true
 
-        while (hasMore) {
-          // Try both endpoints to see which one works
-          let postsResponse
-          try {
-            postsResponse = await apiClient.getPosts({ PageIndex: pageIndex, PageSize: pageSize })
-          } catch (getPostsError) {
+        // Get all users first, then get their posts with createdDate
+        console.log('🔄 Getting all users to fetch their posts with createdDate...')
+
+        try {
+          // Get all users
+          const usersResponse = await apiClient.getUsers({ PageIndex: 0, PageSize: 100 })
+          const users = usersResponse.items || []
+          console.log(`📋 Found ${users.length} users`)
+
+          // Get posts from each user (these have createdDate!)
+          for (const user of users) {
             try {
-              postsResponse = await apiClient.getFeedPosts({ PageIndex: pageIndex, PageSize: pageSize })
-            } catch (getFeedPostsError) {
-              console.error('Both endpoints failed:', { getPostsError, getFeedPostsError })
-              throw getFeedPostsError
+              console.log(`🔄 Getting posts for user ${user.userName || user.id.slice(0, 8)}...`)
+              const userPostsResponse = await apiClient.getUserPosts(user.id, { PageIndex: 0, PageSize: 20 })
+              const userPosts = userPostsResponse.items || []
+              allPosts.push(...userPosts)
+              console.log(`✅ Got ${userPosts.length} posts from user ${user.userName || user.id.slice(0, 8)}`)
+
+              // Debug: Check if createdDate exists in these posts
+              if (userPosts.length > 0) {
+                console.log(`📅 Sample post from ${user.userName}:`, {
+                  id: userPosts[0].id?.slice(0, 8),
+                  createdDate: userPosts[0].createdDate,
+                  hasCreatedDate: !!userPosts[0].createdDate,
+                  fields: Object.keys(userPosts[0])
+                })
+              }
+            } catch (error) {
+              console.log(`⚠️ Failed to get posts for user ${user.id.slice(0, 8)}:`, error)
             }
           }
 
+          console.log(`📋 Total posts collected: ${allPosts.length}`)
+          hasMore = false // We got all posts from all users
 
+        } catch (error) {
+          console.error('❌ Failed to get users, falling back to old method:', error)
 
-          // Check both possible response formats
-          const posts = postsResponse.posts || postsResponse.items || []
-          const hasMoreData = postsResponse.hasMore || postsResponse.hasNext || false
+          // Fallback to old method
+          while (hasMore) {
+            let postsResponse
+            try {
+              postsResponse = await apiClient.getPosts({ PageIndex: pageIndex, PageSize: pageSize })
+            } catch (getPostsError) {
+              try {
+                postsResponse = await apiClient.getFeedPosts({ PageIndex: pageIndex, PageSize: pageSize })
+              } catch (getFeedPostsError) {
+                console.error('Both endpoints failed:', { getPostsError, getFeedPostsError })
+                throw getFeedPostsError
+              }
+            }
 
-          if (posts && posts.length > 0) {
-            allPosts = [...allPosts, ...posts]
-            hasMore = hasMoreData
-            pageIndex++
-          } else {
-            hasMore = false
+            // Check both possible response formats
+            const posts = (postsResponse as any).posts || (postsResponse as any).items || []
+            const hasMoreData = (postsResponse as any).hasMore || (postsResponse as any).hasNext || false
+
+            if (posts && posts.length > 0) {
+              allPosts = [...allPosts, ...posts]
+              hasMore = hasMoreData
+              pageIndex++
+            } else {
+              hasMore = false
+            }
           }
         }
 
@@ -184,7 +222,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
             id: apiPost.id,
             username: username,
             handle: handle,
-            time: 'now', // TODO: Add createdDate to API response
+            time: apiPost.createdDate ? formatTimeAgo(apiPost.createdDate) : 'now',
             content: apiPost.contentText || '',
             image: apiPost.postImageFileId ? apiClient.getImageUrl(apiPost.postImageFileId) : undefined,
             moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%`, // Mock mood compatibility for now
@@ -204,7 +242,8 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
               firstName: null,
               lastName: null,
               fullName: null
-            }
+            },
+            createdDate: apiPost.createdDate
           }
         }
 
@@ -213,7 +252,13 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
         // Transform ALL posts with real data (might be slower but correct)
         const transformedPosts = await Promise.all(allPosts.map(transformPost))
 
+        // Sort posts by creation date (newest first)
+        transformedPosts.sort((a, b) => {
+          if (!a.createdDate || !b.createdDate) return 0
+          return new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
+        })
 
+        console.log(`Sorted ${transformedPosts.length} posts by creation date (newest first)`)
 
         // Set the same posts for both tabs for now
         setForYouPosts(transformedPosts)
@@ -352,13 +397,14 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
           id: apiPost.id,
           username: isCurrentUser ? 'You' : (apiPost.userName || 'User'), // Show "You" for current user's posts
           handle: isCurrentUser ? '@you' : `@user_${apiPost.userId?.slice(-4) || 'unknown'}`, // Use @you for current user
-          time: 'now', // TODO: Add createdDate to API response
+          time: apiPost.createdDate ? formatTimeAgo(apiPost.createdDate) : 'now',
           content: apiPost.contentText || '',
           image: apiPost.postImageFileId ? apiClient.getImageUrl(apiPost.postImageFileId) : undefined,
           moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%`, // Mock mood compatibility for now
           likesCount: likesCount,
           commentsCount: commentsCount,
-          isLikedByCurrentUser: isLikedByCurrentUser
+          isLikedByCurrentUser: isLikedByCurrentUser,
+          createdDate: apiPost.createdDate
         }
       }
 
@@ -381,17 +427,26 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
           id: apiPost.id,
           username: isCurrentUser ? 'You' : (apiPost.userName || 'User'),
           handle: isCurrentUser ? '@you' : `@user_${apiPost.userId?.slice(-4) || 'unknown'}`,
-          time: 'now',
+          time: apiPost.createdDate ? formatTimeAgo(apiPost.createdDate) : 'now',
           content: apiPost.contentText || '',
           image: apiPost.postImageFileId ? apiClient.getImageUrl(apiPost.postImageFileId) : undefined,
           moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%`,
           likesCount: apiPost.likesCount || 0,
           commentsCount: apiPost.commentsCount || 0,
-          isLikedByCurrentUser: apiPost.isLikedByCurrentUser || false
+          isLikedByCurrentUser: apiPost.isLikedByCurrentUser || false,
+          createdDate: apiPost.createdDate
         }
       })
 
       const transformedPosts = [...realDataPosts, ...mockDataPosts]
+
+      // Sort posts by creation date (newest first)
+      transformedPosts.sort((a, b) => {
+        if (!a.createdDate || !b.createdDate) return 0
+        return new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
+      })
+
+      console.log(`Refresh: Sorted ${transformedPosts.length} posts by creation date (newest first)`)
 
       // Set the same posts for both tabs for now
       setForYouPosts(transformedPosts)
