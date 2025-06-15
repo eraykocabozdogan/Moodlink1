@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { Heart, MessageCircle, Share } from "lucide-react"
 import Image from "next/image"
-import { PostImage } from "@/components/ui/post-image"
 import apiClient from "@/lib/apiClient"
 
 interface PostCardProps {
@@ -385,14 +384,40 @@ export function PostCard({ post, currentUser: propCurrentUser, onUserClick, onPo
 
           {/* Image */}
           {post.image && (
-            <PostImage
-              src={post.image}
-              alt="Post image"
-              className="mb-3"
-              width={400}
-              height={200}
-              aspectRatio="auto"
-            />
+            <div className="mb-3 rounded-xl overflow-hidden">
+              <Image
+                src={
+                  post.image.startsWith('/api/files/')
+                    ? `https://moodlinkbackend.onrender.com/api/FileAttachments/download/${post.image.split('/').pop()}`
+                    : post.image || "/placeholder.svg"
+                }
+                alt="Post image"
+                width={400}
+                height={200}
+                className="w-full h-48 object-cover"
+                onError={(e) => {
+                  // Show placeholder instead of hiding
+                  const parent = e.currentTarget.parentElement
+                  if (parent) {
+                    parent.innerHTML = `
+                      <div class="w-full h-48 bg-muted rounded-lg flex items-center justify-center">
+                        <div class="text-center text-muted-foreground">
+                          <div class="text-4xl mb-2">📷</div>
+                          <p class="text-sm">Image not available</p>
+                        </div>
+                      </div>
+                    `
+                  }
+                  console.log('❌ Image failed to load:', post.image)
+                }}
+                onLoad={() => {
+                  console.log('✅ Image loaded successfully:', post.image)
+                }}
+                onLoadStart={() => {
+                  console.log('🔄 Image loading started:', post.image)
+                }}
+              />
+            </div>
           )}
 
           {/* Actions */}
