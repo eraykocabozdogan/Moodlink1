@@ -463,58 +463,58 @@ export function MoodReportPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[24rem] flex items-end justify-between space-x-2 bg-muted/30 rounded-lg p-4">
+            <div className="h-[50rem] flex items-end justify-between space-x-2 bg-muted/30 rounded-lg p-4">
               {moodData.map((item, index) => (
                 <div key={index} className="flex flex-col items-center space-y-2 flex-1">
                   <div className="flex flex-col items-center space-y-1">
                     <div
                       className="w-6 bg-gradient-to-t from-green-400 to-green-600 rounded-t"
-                      style={{ height: `${Math.max(3, (item.moods.happiness / 10) * 120)}px` }}
+                      style={{ height: `${Math.max(8, (item.moods.happiness / 10) * 120)}px` }}
                       title={`Happiness: ${item.moods.happiness.toFixed(1)}/10`}
                     ></div>
                     <div
                       className="w-6 bg-gradient-to-t from-blue-400 to-blue-600 rounded-t"
-                      style={{ height: `${Math.max(3, (item.moods.sadness / 10) * 120)}px` }}
+                      style={{ height: `${Math.max(8, (item.moods.sadness / 10) * 120)}px` }}
                       title={`Sadness: ${item.moods.sadness.toFixed(1)}/10`}
                     ></div>
                     <div
                       className="w-6 bg-gradient-to-t from-red-400 to-red-600 rounded-t"
-                      style={{ height: `${Math.max(3, (item.moods.anger / 10) * 120)}px` }}
+                      style={{ height: `${Math.max(8, (item.moods.anger / 10) * 120)}px` }}
                       title={`Anger: ${item.moods.anger.toFixed(1)}/10`}
                     ></div>
                     <div
                       className="w-6 bg-gradient-to-t from-yellow-400 to-yellow-600 rounded-t"
-                      style={{ height: `${Math.max(3, (item.moods.anxiety / 10) * 120)}px` }}
+                      style={{ height: `${Math.max(8, (item.moods.anxiety / 10) * 120)}px` }}
                       title={`Anxiety: ${item.moods.anxiety.toFixed(1)}/10`}
                     ></div>
                     <div
                       className="w-6 bg-gradient-to-t from-orange-400 to-orange-600 rounded-t"
-                      style={{ height: `${Math.max(3, (item.moods.stress / 10) * 120)}px` }}
+                      style={{ height: `${Math.max(8, (item.moods.stress / 10) * 120)}px` }}
                       title={`Stress: ${item.moods.stress.toFixed(1)}/10`}
                     ></div>
                     <div
                       className="w-6 bg-gradient-to-t from-purple-400 to-purple-600 rounded-t"
-                      style={{ height: `${Math.max(3, (item.moods.peace / 10) * 120)}px` }}
+                      style={{ height: `${Math.max(8, (item.moods.peace / 10) * 120)}px` }}
                       title={`Peace: ${item.moods.peace.toFixed(1)}/10`}
                     ></div>
                     <div
                       className="w-6 bg-gradient-to-t from-cyan-400 to-cyan-600 rounded-t"
-                      style={{ height: `${Math.max(3, (item.moods.energy / 10) * 120)}px` }}
+                      style={{ height: `${Math.max(8, (item.moods.energy / 10) * 120)}px` }}
                       title={`Energy: ${item.moods.energy.toFixed(1)}/10`}
                     ></div>
                     <div
                       className="w-6 bg-gradient-to-t from-pink-400 to-pink-600 rounded-t"
-                      style={{ height: `${Math.max(3, (item.moods.excitement / 10) * 120)}px` }}
+                      style={{ height: `${Math.max(8, (item.moods.excitement / 10) * 120)}px` }}
                       title={`Excitement: ${item.moods.excitement.toFixed(1)}/10`}
                     ></div>
                     <div
                       className="w-6 bg-gradient-to-t from-gray-400 to-gray-600 rounded-t"
-                      style={{ height: `${Math.max(3, (item.moods.loneliness / 10) * 120)}px` }}
+                      style={{ height: `${Math.max(8, (item.moods.loneliness / 10) * 120)}px` }}
                       title={`Loneliness: ${item.moods.loneliness.toFixed(1)}/10`}
                     ></div>
                     <div
                       className="w-6 bg-gradient-to-t from-indigo-400 to-indigo-600 rounded-t"
-                      style={{ height: `${Math.max(3, (item.moods.humor / 10) * 120)}px` }}
+                      style={{ height: `${Math.max(8, (item.moods.humor / 10) * 120)}px` }}
                       title={`Humor: ${item.moods.humor.toFixed(1)}/10`}
                     ></div>
                   </div>
