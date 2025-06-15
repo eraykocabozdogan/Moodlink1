@@ -1117,6 +1117,9 @@ export interface UpdateUserCommand {
   firstName?: string;
   lastName?: string;
   userName?: string;
+  email?: string;
+  password?: string;
+  dateOfBirth?: DateTime;
   birthDate?: DateTime;
   phoneNumber?: string;
   profileImageFileId?: UUID;
