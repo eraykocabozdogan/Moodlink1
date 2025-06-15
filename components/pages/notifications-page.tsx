@@ -37,11 +37,18 @@ export function NotificationsPage({ onPostClick }: NotificationsPageProps) {
         const rawNotifications = notificationsResponse.items || []
 
         // Remove duplicate notifications by ID
-        const uniqueNotifications = rawNotifications.filter((notification, index, array) =>
+        const uniqueByIdNotifications = rawNotifications.filter((notification, index, array) =>
           array.findIndex(n => n.id === notification.id) === index
         )
 
-        console.log(`Removed ${rawNotifications.length - uniqueNotifications.length} duplicate notifications`)
+        // Also remove duplicates by content and type (for similar notifications)
+        const uniqueNotifications = uniqueByIdNotifications.filter((notification, index, array) => {
+          const key = `${notification.type}-${notification.content}`
+          return array.findIndex(n => `${n.type}-${n.content}` === key) === index
+        })
+
+        const totalDuplicatesRemoved = rawNotifications.length - uniqueNotifications.length
+        console.log(`Removed ${totalDuplicatesRemoved} duplicate notifications (${uniqueByIdNotifications.length - uniqueNotifications.length} by content)`)
         console.log(`Processing ${uniqueNotifications.length} unique notifications`)
 
         // Sort notifications by creation date (newest first)
