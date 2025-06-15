@@ -899,13 +899,19 @@ class ApiClient {
     });
   }
 
-  async markNotificationAsRead(id: UUID): Promise<UpdatedNotificationResponse> {
+  async markNotificationAsRead(notification: any): Promise<UpdatedNotificationResponse> {
+    // Use the full notification object to provide all required fields
     return this.request<UpdatedNotificationResponse>({
       method: 'PUT',
       url: '/api/Notifications',
       data: {
-        id: id,
-        isRead: true
+        id: notification.id,
+        userId: notification.userId,
+        type: notification.type,
+        content: notification.content,
+        relatedEntityId: notification.relatedEntityId,
+        relatedEntityType: notification.relatedEntityType,
+        isRead: true // Only change this field
       }
     });
   }

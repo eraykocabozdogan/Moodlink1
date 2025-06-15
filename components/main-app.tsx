@@ -120,12 +120,18 @@ export function MainApp({ user, onLogout }: MainAppProps) {
       case "search":
         return <SearchPage onUserClick={handleUserClick} />
       case "notifications":
-        return <NotificationsPage onPostClick={(postId) => {
-          // Navigate to home page
-          console.log('Notification clicked, navigating to home page for post:', postId)
-          handlePageChange("home")
-          // TODO: When backend fixes relatedEntityId, we can scroll to specific post
-        }} />
+        return <NotificationsPage
+          onPostClick={(postId) => {
+            // Navigate to home page
+            console.log('Notification clicked, navigating to home page for post:', postId)
+            handlePageChange("home")
+            // TODO: When backend fixes relatedEntityId, we can scroll to specific post
+          }}
+          onNavigate={(page, data) => {
+            console.log('Notification navigation:', page, data)
+            handlePageChange(page)
+          }}
+        />
       case "messages":
         return (
           <MessagesPage

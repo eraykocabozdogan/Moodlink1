@@ -12,9 +12,10 @@ interface EnhancedNotification extends NotificationListItemDto {
 
 interface NotificationsPageProps {
   onPostClick?: (postId: string) => void
+  onNavigate?: (page: string, data?: any) => void // For navigation
 }
 
-export function NotificationsPage({ onPostClick }: NotificationsPageProps) {
+export function NotificationsPage({ onPostClick, onNavigate }: NotificationsPageProps) {
   const [notifications, setNotifications] = useState<EnhancedNotification[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -113,16 +114,28 @@ export function NotificationsPage({ onPostClick }: NotificationsPageProps) {
   const handleNotificationClick = async (notification: EnhancedNotification) => {
     console.log('Notification clicked:', notification)
 
-    // Just log the click, don't navigate anywhere
-    console.log('Notification clicked, no navigation')
+    // Mark notification as read if it's unread
+    if (!notification.isRead) {
+      try {
+        console.log(`🔄 Marking notification ${notification.id.slice(0, 8)} as read...`)
+        await apiClient.markNotificationAsRead(notification)
 
-    // TODO: Mark notification as read (temporarily disabled due to API issues)
-    // if (!notification.isRead) {
-    //   await apiClient.markNotificationAsRead(notification.id)
-    //   setNotifications(prev =>
-    //     prev.map(n => n.id === notification.id ? { ...n, isRead: true } : n)
-    //   )
-    // }
+        // Update local state to reflect the change
+        setNotifications(prev =>
+          prev.map(n => n.id === notification.id ? { ...n, isRead: true } : n)
+        )
+
+        console.log(`✅ Notification ${notification.id.slice(0, 8)} marked as read`)
+      } catch (error) {
+        console.error('❌ Failed to mark notification as read:', error)
+        // Don't show error to user, just log it
+      }
+    } else {
+      console.log('Notification already read, no action needed')
+    }
+
+    // Don't navigate anywhere, just mark as read
+    console.log('Notification marked as read, staying on notifications page')
   }
 
   // Helper function to format notification text
