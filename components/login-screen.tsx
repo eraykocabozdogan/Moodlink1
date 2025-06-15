@@ -88,15 +88,36 @@ export function LoginScreen({ onLogin, onSwitchToSignup, onForgotPassword }: Log
 
       let errorMessage = 'An error occurred during login.'
 
+      // Check response data for specific error messages
+      const responseData = error.response?.data
+      const errorDetail = responseData?.detail || responseData?.message || ''
+
       if (error.response?.status === 401) {
         errorMessage = 'Invalid email or password.'
       } else if (error.response?.status === 404) {
         errorMessage = 'API endpoint not found.'
-      } else if (error.response?.status >= 500) {
+      } else if (error.response?.status === 500) {
+        // Check if it's actually an authentication error disguised as 500
+        if (errorDetail.toLowerCase().includes('invalid') ||
+            errorDetail.toLowerCase().includes('password') ||
+            errorDetail.toLowerCase().includes('credentials') ||
+            errorDetail.toLowerCase().includes('authentication') ||
+            errorDetail.toLowerCase().includes('unauthorized') ||
+            errorDetail.toLowerCase().includes('login') ||
+            errorDetail.toLowerCase().includes('user not found')) {
+          errorMessage = 'Invalid email or password.'
+        }
+        // Check for validation errors disguised as 500
+        else if (errorDetail.toLowerCase().includes('validation failed')) {
+          if (errorDetail.includes('Email') || errorDetail.includes('Password')) {
+            errorMessage = 'Please enter valid email and password.'
+          } else {
+            errorMessage = 'Invalid login data. Please check your inputs.'
+          }
+        }
         // Check for database connection issues
-        const responseData = error.response?.data
-        if (responseData?.detail?.includes('database operations') ||
-            responseData?.detail?.includes('NpgsqlRetryingExecutionStrategy')) {
+        else if (errorDetail.includes('database operations') ||
+                 errorDetail.includes('NpgsqlRetryingExecutionStrategy')) {
           errorMessage = `🔧 Backend Database Issue
 
 Backend server is running but database connection is broken.
@@ -110,6 +131,9 @@ Technical Detail: PostgreSQL connection error`
         } else {
           errorMessage = 'Server error. Please try again later.'
         }
+      } else if (error.response?.status >= 400 && error.response?.status < 500) {
+        // Other client errors - likely authentication related
+        errorMessage = 'Invalid email or password.'
       } else if (error.isNetworkError || error.isCorsError || error.code === 'ERR_NETWORK' ||
                  error.message === 'Network Error' || error.message.includes('CORS') ||
                  error.message.includes('access control') || !error.response) {

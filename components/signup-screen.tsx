@@ -107,12 +107,50 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
 
       let errorMessage = 'Kayıt olurken bir hata oluştu.'
 
+      // Check response data for specific error messages
+      const responseData = error.response?.data
+      const errorDetail = responseData?.detail || responseData?.message || ''
+
       if (error.response?.status === 400) {
         errorMessage = 'Geçersiz bilgiler. Lütfen bilgilerinizi ve şifre kurallarını kontrol edin.'
       } else if (error.response?.status === 409) {
         errorMessage = 'Bu email adresi zaten kullanımda.'
-      } else if (error.response?.status >= 500) {
-        errorMessage = 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.'
+      } else if (error.response?.status === 500) {
+        // Check if it's actually a validation error disguised as 500
+        if (errorDetail.toLowerCase().includes('validation failed')) {
+          // Parse validation errors from the detail message
+          const validationErrors = []
+
+          if (errorDetail.includes('Password')) {
+            if (errorDetail.includes('at least 6 characters')) {
+              validationErrors.push('• Şifre en az 6 karakter olmalı')
+            }
+            if (errorDetail.includes('uppercase letter') || errorDetail.includes('lowercase letter') ||
+                errorDetail.includes('number') || errorDetail.includes('special character')) {
+              validationErrors.push('• Şifre büyük harf, küçük harf, rakam ve özel karakter içermeli')
+            }
+          }
+
+          if (errorDetail.includes('Email')) {
+            validationErrors.push('• Geçerli bir email adresi girin')
+          }
+
+          if (errorDetail.includes('FirstName') || errorDetail.includes('LastName')) {
+            validationErrors.push('• Ad ve soyad alanları zorunlu')
+          }
+
+          if (errorDetail.includes('UserName')) {
+            validationErrors.push('• Kullanıcı adı zorunlu')
+          }
+
+          if (validationErrors.length > 0) {
+            errorMessage = 'Lütfen aşağıdaki hataları düzeltin:\n\n' + validationErrors.join('\n')
+          } else {
+            errorMessage = 'Lütfen bilgilerinizi kontrol edin:\n\n• Şifre: min 6 karakter, büyük/küçük harf, rakam, özel karakter\n• Tüm alanlar zorunlu'
+          }
+        } else {
+          errorMessage = 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.'
+        }
       } else if (error.code === 'NETWORK_ERROR' || !error.response) {
         errorMessage = 'Bağlantı hatası. İnternet bağlantınızı kontrol edin.'
       }

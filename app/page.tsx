@@ -73,12 +73,33 @@ export default function Home() {
   }
 
   const handleLogout = () => {
-    // Clear token from localStorage and API client
-    localStorage.removeItem('token')
+    console.log('Logging out user...')
+
+    // Clear ALL user-related data from localStorage
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('token') // Legacy token key
+    localStorage.removeItem('user') // User data if stored
+    localStorage.removeItem('userData') // Alternative user data key
+    localStorage.removeItem('currentUser') // Another possible key
+
+    // Clear any other app-specific data
+    const keysToRemove = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key && (key.startsWith('user') || key.startsWith('auth') || key.startsWith('token'))) {
+        keysToRemove.push(key)
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key))
+
+    // Clear API client token
     apiClient.clearAuthToken()
 
+    // Reset app state
     setUser(null)
     setCurrentScreen("login")
+
+    console.log('Logout completed - all user data cleared')
   }
 
   const handleForgotPassword = () => {

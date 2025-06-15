@@ -67,12 +67,12 @@ export function NewChatModal({ onClose, onChatCreated }: NewChatModalProps) {
 
     setCreating(true)
     try {
-      console.log('Sending direct message to:', targetUser)
-      // Send a direct message to create/start a chat
+      console.log('Creating chat with:', targetUser)
+      // Send a direct message to create/start a chat (without automatic message)
       const response = await apiClient.sendDirectMessage({
         senderUserId: user.id,
         receiverUserId: targetUser.id,
-        content: "👋 Hello! Let's start chatting!"
+        content: "" // Empty content - no automatic message
       })
       console.log('sendDirectMessage response:', response)
 
@@ -83,7 +83,7 @@ export function NewChatModal({ onClose, onChatCreated }: NewChatModalProps) {
         type: "user" as const,
         title: targetUser.userName || `${targetUser.firstName} ${targetUser.lastName}`.trim() || 'Unknown User',
         handle: targetUser.userName ? `@${targetUser.userName}` : undefined,
-        lastMessage: response.content || "Chat started",
+        lastMessage: "Chat created", // No automatic message
         time: new Date(response.sentDate).toLocaleTimeString("en-US", {
           hour: "2-digit",
           minute: "2-digit",

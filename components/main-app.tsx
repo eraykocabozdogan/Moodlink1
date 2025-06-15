@@ -17,6 +17,7 @@ import { ActivitiesPage } from "@/components/pages/activities-page"
 import { RightSidebar } from "@/components/right-sidebar"
 import { Menu } from "lucide-react"
 import { User } from "@/components/create-group-chat"
+import { useAuth } from "@/hooks/use-auth"
 
 interface ChatInfo {
   id: number
@@ -40,6 +41,9 @@ export function MainApp({ user, onLogout }: MainAppProps) {
   const [selectedPostId, setSelectedPostId] = useState<number | null>(null)
   const [viewingUser, setViewingUser] = useState<any>(null)
 
+  // Use auth hook for enhanced logout
+  const { logout: authLogout } = useAuth()
+
   const handlePostClick = (postId: number) => {
     setSelectedPostId(postId)
     setCurrentPage("home") 
@@ -50,6 +54,17 @@ export function MainApp({ user, onLogout }: MainAppProps) {
     setCurrentPage("userProfile")
   }
 
+  // Enhanced logout function
+  const handleLogout = () => {
+    console.log('MainApp logout triggered')
+
+    // Use auth hook logout (clears localStorage)
+    authLogout()
+
+    // Call parent logout (changes screen)
+    onLogout()
+  }
+
   const renderPage = () => {
     switch (currentPage) {
       case "home":
@@ -57,7 +72,12 @@ export function MainApp({ user, onLogout }: MainAppProps) {
       case "search":
         return <SearchPage onUserClick={handleUserClick} />
       case "notifications":
-        return <NotificationsPage />
+        return <NotificationsPage onPostClick={(postId) => {
+          // Navigate to home page
+          console.log('Notification clicked, navigating to home page for post:', postId)
+          setCurrentPage("home")
+          // TODO: When backend fixes relatedEntityId, we can scroll to specific post
+        }} />
       case "messages":
         return (
           <MessagesPage
@@ -79,7 +99,7 @@ export function MainApp({ user, onLogout }: MainAppProps) {
       case "moodreport":
         return <MoodReportPage />
       case "options":
-        return <OptionsPage onLogout={onLogout} onThemeSettings={() => setCurrentPage("themeSettings")} />
+        return <OptionsPage onLogout={handleLogout} onThemeSettings={() => setCurrentPage("themeSettings")} />
       case "themeSettings":
         return <ThemeSettingsPage onBack={() => setCurrentPage("options")} />
       default:
@@ -103,7 +123,7 @@ export function MainApp({ user, onLogout }: MainAppProps) {
       <Sidebar
         currentPage={currentPage}
         onPageChange={setCurrentPage}
-        onLogout={onLogout}
+        onLogout={handleLogout}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />

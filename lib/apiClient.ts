@@ -861,24 +861,22 @@ class ApiClient {
     });
   }
 
-  async getUserNotifications(): Promise<GetUserNotificationsResponse> {
-    return this.request<GetUserNotificationsResponse>({
+  async getUserNotifications(params?: PaginationParams): Promise<GetListNotificationListItemDtoGetListResponse> {
+    return this.request<GetListNotificationListItemDtoGetListResponse>({
       method: 'GET',
-      url: '/api/Notifications/user',
+      url: '/api/Notifications',
+      params,
     });
   }
 
   async markNotificationAsRead(id: UUID): Promise<UpdatedNotificationResponse> {
     return this.request<UpdatedNotificationResponse>({
       method: 'PUT',
-      url: `/api/Notifications/${id}/read`,
-    });
-  }
-
-  async markAllNotificationsAsRead(): Promise<any> {
-    return this.request<any>({
-      method: 'PUT',
-      url: '/api/Notifications/mark-all-read',
+      url: '/api/Notifications',
+      data: {
+        id: id,
+        isRead: true
+      }
     });
   }
 
@@ -921,8 +919,8 @@ class ApiClient {
     });
   }
 
-  async getUserPosts(userId: UUID, params?: PaginationParams): Promise<GetUserPostsResponse> {
-    return this.request<GetUserPostsResponse>({
+  async getUserPosts(userId: UUID, params?: PaginationParams): Promise<GetListPostListItemDtoGetListResponse> {
+    return this.request<GetListPostListItemDtoGetListResponse>({
       method: 'GET',
       url: `/api/Posts/user/${userId}`,
       params,

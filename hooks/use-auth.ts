@@ -55,10 +55,36 @@ export function useAuth() {
   }
 
   const logout = () => {
+    console.log('useAuth logout called - clearing all user data')
+
+    // Clear ALL user-related data from localStorage
     localStorage.removeItem('authToken')
+    localStorage.removeItem('token') // Legacy token key
+    localStorage.removeItem('user') // User data if stored
+    localStorage.removeItem('userData') // Alternative user data key
+    localStorage.removeItem('currentUser') // Another possible key
+
+    // Clear any other app-specific data that might contain user info
+    const keysToRemove = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key && (key.startsWith('user') || key.startsWith('auth') || key.startsWith('token'))) {
+        keysToRemove.push(key)
+      }
+    }
+    keysToRemove.forEach(key => {
+      console.log('Removing localStorage key:', key)
+      localStorage.removeItem(key)
+    })
+
+    // Clear API client
     apiClient.clearAuthToken()
+
+    // Reset state
     setUser(null)
     setError(null)
+
+    console.log('useAuth logout completed')
   }
 
   return {
