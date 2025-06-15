@@ -14,6 +14,7 @@ import apiClient from "@/lib/apiClient"
 import {
   GetByIdUserResponse,
   GetUserPostsResponse,
+  UpdateUserCommand,
   UpdateUserFromAuthCommand,
   FileAttachmentResponse,
   StorageType,
@@ -229,17 +230,40 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
       }
 
       // Update user profile
-      const updateData: UpdateUserFromAuthCommand = {
+      const updateData: UpdateUserCommand = {
+        id: user.id,
         firstName: editForm.firstName,
         lastName: editForm.lastName,
         userName: editForm.userName,
+        email: user.email,
+        password: "", // Empty for profile update
+        dateOfBirth: user.dateOfBirth || user.birthDate,
         bio: editForm.bio,
         profileImageFileId: profileImageFileId,
       }
 
       console.log('Updating user profile:', updateData)
-      const updatedUser = await apiClient.updateUserFromAuth(updateData)
-      console.log('Profile updated:', updatedUser)
+
+      let updatedUser;
+      try {
+        // Try the main endpoint first
+        updatedUser = await apiClient.updateUser(updateData)
+        console.log('Profile updated via /api/Users:', updatedUser)
+      } catch (mainError) {
+        console.log('Main endpoint failed, trying FromAuth endpoint:', mainError)
+
+        // Fallback to FromAuth endpoint
+        const fromAuthData = {
+          firstName: editForm.firstName,
+          lastName: editForm.lastName,
+          userName: editForm.userName,
+          bio: editForm.bio,
+          profileImageFileId: profileImageFileId,
+        }
+
+        updatedUser = await apiClient.updateUserFromAuth(fromAuthData)
+        console.log('Profile updated via /api/Users/FromAuth:', updatedUser)
+      }
 
       // Update local state
       setUser({
@@ -258,7 +282,18 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
 
     } catch (err: any) {
       console.error('Error saving profile:', err)
-      setError('Error saving profile')
+      console.error('Error details:', err.response?.data || err.message)
+
+      let errorMessage = 'Error saving profile'
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message
+      } else if (err.response?.data?.errors) {
+        errorMessage = err.response.data.errors.join(', ')
+      } else if (err.message) {
+        errorMessage = err.message
+      }
+
+      setError(errorMessage)
     } finally {
       setSaving(false)
     }
