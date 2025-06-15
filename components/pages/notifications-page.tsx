@@ -36,6 +36,13 @@ export function NotificationsPage({ onPostClick }: NotificationsPageProps) {
         })
         const rawNotifications = notificationsResponse.items || []
 
+        // Remove duplicate notifications by ID
+        const uniqueNotifications = rawNotifications.filter((notification, index, array) =>
+          array.findIndex(n => n.id === notification.id) === index
+        )
+
+        console.log(`Removed ${rawNotifications.length - uniqueNotifications.length} duplicate notifications`)
+
         // Load user's posts to match with notifications
         let userPosts: any[] = []
         try {
@@ -50,7 +57,8 @@ export function NotificationsPage({ onPostClick }: NotificationsPageProps) {
         }
 
         // Enhance notifications with post content
-        const enhancedNotifications: EnhancedNotification[] = rawNotifications.map(notification => {
+        const enhancedNotifications: EnhancedNotification[] = await Promise.all(
+          uniqueNotifications.map(async (notification) => {
           const enhanced: EnhancedNotification = { ...notification }
 
           // Check if this is a post-related notification
@@ -58,23 +66,72 @@ export function NotificationsPage({ onPostClick }: NotificationsPageProps) {
                                notification.content?.includes('gönderinizi') ||
                                notification.content?.includes('post')
 
-          if (isPostRelated && userPosts.length > 0) {
-            // Try to find the related post
-            // Since relatedEntityId is null, we'll use heuristics
-            // For now, we'll just take the most recent post as an example
-            const recentPost = userPosts[0] // Most recent post
-            if (recentPost) {
-              enhanced.postContent = recentPost.contentText || ''
-              enhanced.postPreview = recentPost.contentText
-                ? (recentPost.contentText.length > 50
-                   ? recentPost.contentText.substring(0, 50) + '...'
-                   : recentPost.contentText)
+          if (isPostRelated) {
+            // Try to find the related post by relatedEntityId first
+            let relatedPost = null
+
+            if (notification.relatedEntityId) {
+              // First check in user's posts
+              relatedPost = userPosts.find(post => post.id === notification.relatedEntityId)
+              // If not found in user posts, try to fetch it directly from API
+              if (!relatedPost) {
+                try {
+                  const postResponse = await apiClient.getPostById(notification.relatedEntityId)
+                  relatedPost = postResponse
+                  console.log(`✅ Fetched post from API for notification`)
+                } catch (error) {
+                  // Post might be deleted or inaccessible, will use fallback
+                }
+              }
+            }
+
+            // If no specific post found, try to match by notification content
+            if (!relatedPost && notification.content && userPosts.length > 0) {
+              // Look for post content mentioned in notification
+              const contentMatch = notification.content.match(/"([^"]+)"/)
+              if (contentMatch && contentMatch[1]) {
+                const mentionedContent = contentMatch[1]
+                relatedPost = userPosts.find(post =>
+                  post.contentText && post.contentText.includes(mentionedContent)
+                )
+              }
+            }
+
+            // Fallback: use most recent post only for follow notifications
+            if (!relatedPost && notification.type === 3 && userPosts.length > 0) { // Follow notification
+              relatedPost = userPosts[0] // Most recent post for follow notifications
+            }
+
+            if (relatedPost) {
+              enhanced.postContent = relatedPost.contentText || ''
+              enhanced.postPreview = relatedPost.contentText
+                ? (relatedPost.contentText.length > 50
+                   ? relatedPost.contentText.substring(0, 50) + '...'
+                   : relatedPost.contentText)
                 : 'Post content not available'
+            } else {
+              // Graceful fallback: extract any quoted content from notification text
+              const quotedMatch = notification.content?.match(/"([^"]+)"/)
+              if (quotedMatch && quotedMatch[1]) {
+                enhanced.postPreview = quotedMatch[1]
+                enhanced.postContent = quotedMatch[1]
+              } else {
+                // Generic fallback based on notification type
+                if (notification.type === 1) { // Like
+                  enhanced.postPreview = "Beğenilen gönderi (içerik mevcut değil)"
+                } else if (notification.type === 2) { // Comment
+                  enhanced.postPreview = "Yorumlanan gönderi (içerik mevcut değil)"
+                } else {
+                  enhanced.postPreview = "İlgili gönderi (içerik mevcut değil)"
+                }
+                enhanced.postContent = enhanced.postPreview
+              }
             }
           }
 
           return enhanced
-        })
+          })
+        )
 
         setNotifications(enhancedNotifications)
       } catch (error: any) {
@@ -105,20 +162,43 @@ export function NotificationsPage({ onPostClick }: NotificationsPageProps) {
 
   // Helper function to format notification text
   const formatNotificationText = (notification: NotificationListItemDto) => {
-    return notification.content || 'New notification'
+    if (!notification.content) return 'New notification'
+
+    // Clean up notification text - remove quoted content since we show it separately
+    let cleanText = notification.content
+
+    // Remove quoted content (we show it in the preview box)
+    cleanText = cleanText.replace(/"[^"]*"/g, '').trim()
+
+    // Remove extra spaces and clean up
+    cleanText = cleanText.replace(/\s+/g, ' ').trim()
+
+    // If text is too short after cleaning, use original
+    if (cleanText.length < 10) {
+      cleanText = notification.content
+    }
+
+    return cleanText || 'New notification'
   }
 
-  // Helper function to format time
+  // Helper function to format time ago
   const formatTime = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+    try {
+      const date = new Date(dateString)
+      const now = new Date()
+      const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
 
-    if (diffInSeconds < 60) return `${diffInSeconds}s`
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`
-    return `${Math.floor(diffInSeconds / 86400)}d`
+      if (diffInSeconds < 60) return `${diffInSeconds}s`
+      if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`
+      if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`
+      return `${Math.floor(diffInSeconds / 86400)}d`
+    } catch (error) {
+      console.error('Date formatting error:', error)
+      return 'now'
+    }
   }
+
+
 
   if (loading) {
     return (
