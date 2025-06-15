@@ -20,7 +20,7 @@ export default function RootLayout({
   return (
     <html lang="tr">
       <body className={`${inter.className} bg-background`}>
-        <ThemeProvider defaultTheme="default" storageKey="moodlink-theme">
+        <ThemeProvider defaultTheme="white" storageKey="moodlink-theme">
           {children}
         </ThemeProvider>
       </body>

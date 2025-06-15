@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { ThemeBackground } from "@/components/ui/theme-background"
 import { Heart } from "lucide-react"
 import { VerificationScreen } from "./verification-screen"
 import apiClient from "@/lib/apiClient"
@@ -197,9 +198,10 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
-        <CardHeader className="text-center space-y-4 pb-8">
+    <ThemeBackground>
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-2xl border-0 bg-card/90 backdrop-blur-sm">
+          <CardHeader className="text-center space-y-4 pb-8">
           <div className="flex items-center justify-center space-x-2">
             <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
               <Heart className="w-6 h-6 text-white" />
@@ -212,8 +214,8 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
             <h2 className="text-xl font-semibold text-gray-800">Create Account</h2>
             <p className="text-sm text-gray-600 mt-1">For your Mood</p>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          </CardHeader>
+          <CardContent className="space-y-4">
           {/* Ad ve Soyad için iki ayrı input */}
           <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-2">
             <Input
@@ -277,8 +279,9 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
               Login
             </button>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>
+      </div>
+    </ThemeBackground>
   )
 }

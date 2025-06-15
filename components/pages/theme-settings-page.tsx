@@ -2,6 +2,7 @@
 
 import { ArrowLeft } from "lucide-react"
 import { useTheme } from "@/components/theme-provider"
+import { useEffect, useState } from "react"
 
 interface ThemeSettingsPageProps {
   onBack: () => void
@@ -9,56 +10,75 @@ interface ThemeSettingsPageProps {
 
 export function ThemeSettingsPage({ onBack }: ThemeSettingsPageProps) {
   const { theme, setTheme } = useTheme()
+  const [autoSelectedTheme, setAutoSelectedTheme] = useState<string>("")
+
+  // Get the auto-selected theme from localStorage
+  useEffect(() => {
+    const selectedTheme = localStorage.getItem('auto-selected-theme')
+    if (selectedTheme) {
+      setAutoSelectedTheme(selectedTheme)
+    }
+  }, [theme])
 
   const themes = [
     {
-      id: "gece" as const,
+      id: "auto" as const,
+      name: "Auto",
+      percentage: autoSelectedTheme ? `→ ${autoSelectedTheme}` : "Smart",
+      colors: "from-purple-400 via-blue-400 to-green-400",
+      description: autoSelectedTheme
+        ? `Currently using ${autoSelectedTheme} theme based on your mood data`
+        : "Adapts based on your mood data",
+      preview: "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=400&h=200&fit=crop&crop=center&auto=format&q=80"
+    },
+    {
+      id: "night" as const,
       name: "Night",
-      percentage: "48%",
+      percentage: "Dark",
       colors: "from-gray-700 to-gray-900",
-      description: "Dark gray tones",
+      description: "For introspective moments",
+      preview: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=400&h=200&fit=crop&crop=center&auto=format&q=80"
     },
     {
       id: "white" as const,
       name: "White",
-      percentage: "28%",
+      percentage: "Clean",
       colors: "from-gray-100 to-white border border-gray-300",
       description: "Clean and minimal",
+      preview: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=200&fit=crop&crop=center&auto=format&q=80"
     },
     {
-      id: "love" as const,
-      name: "Love",
-      percentage: "60%",
-      colors: "from-pink-400 to-red-400",
-      description: "Romantic pink tones",
+      id: "nature" as const,
+      name: "Nature",
+      percentage: "Harmony",
+      colors: "from-green-300 to-emerald-400",
+      description: "For balanced, peaceful moods",
+      preview: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=200&fit=crop&crop=center&auto=format&q=80"
     },
     {
-      id: "dogasever" as const,
-      name: "Nature Lover",
-      percentage: "35%",
-      colors: "from-green-200 to-green-300",
-      description: "Relaxing light green tones",
-    },
-    {
-      id: "gokyuzu" as const,
-      name: "Sky",
-      percentage: "32%",
-      colors: "from-blue-200 to-blue-300",
-      description: "Refreshing light blue tones",
-    },
-    {
-      id: "lavanta" as const,
-      name: "Lavender",
-      percentage: "25%",
-      colors: "from-purple-200 to-purple-300",
-      description: "Calming purple tones",
-    },
-    {
-      id: "gunbatimi" as const,
+      id: "sunset" as const,
       name: "Sunset",
-      percentage: "27%",
-      colors: "from-amber-200 to-orange-300",
-      description: "Warm and relaxing tones",
+      percentage: "Energy",
+      colors: "from-orange-300 to-amber-400",
+      description: "For energetic, happy moments",
+      preview: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=200&fit=crop&crop=center&auto=format&q=80"
+    },
+
+    {
+      id: "nirvana" as const,
+      name: "Nirvana",
+      percentage: "Peace",
+      colors: "from-purple-300 to-violet-400",
+      description: "For deep calm and meditation",
+      preview: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=200&fit=crop&crop=center&auto=format&q=80"
+    },
+    {
+      id: "ocean" as const,
+      name: "Ocean",
+      percentage: "Dynamic",
+      colors: "from-cyan-300 to-blue-400",
+      description: "For dynamic, flowing energy",
+      preview: "https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=400&h=200&fit=crop&crop=center&auto=format&q=80"
     },
   ]
 
@@ -77,34 +97,42 @@ export function ThemeSettingsPage({ onBack }: ThemeSettingsPageProps) {
 
       <div className="p-4">
         <p className="text-muted-foreground mb-6">Available Themes:</p>
-        <div className="space-y-4">
+        <div className="space-y-6">
           {themes.map((themeOption) => (
             <div
               key={themeOption.id}
               onClick={() => setTheme(themeOption.id)}
-              className={`bg-card text-card-foreground rounded-xl p-4 shadow-sm border-2 transition-all cursor-pointer ${
+              className={`bg-card text-card-foreground rounded-xl overflow-hidden shadow-sm border-2 transition-all cursor-pointer ${
                 theme === themeOption.id
                   ? "border-primary shadow-lg"
                   : "border-border hover:shadow-md hover:border-border/80"
               }`}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className={`w-8 h-8 bg-gradient-to-r ${themeOption.colors} rounded-full`}></div>
-                  <div>
-                    <span className="font-medium text-foreground">{themeOption.name}</span>
-                    <p className="text-sm text-muted-foreground">{themeOption.description}</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                    {themeOption.percentage}
-                  </span>
+              {/* Preview Image */}
+              <div className="h-32 bg-cover bg-center relative" style={{ backgroundImage: themeOption.preview ? `url(${themeOption.preview})` : 'none' }}>
+                <div className={`absolute inset-0 bg-gradient-to-r ${themeOption.colors} opacity-60`}></div>
+                <div className="absolute top-2 right-2">
                   {theme === themeOption.id && (
-                    <div className="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center">
-                      <div className="w-2 h-2 bg-white rounded-full"></div>
+                    <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-lg">
+                      <div className="w-3 h-3 bg-primary rounded-full"></div>
                     </div>
                   )}
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-6 h-6 bg-gradient-to-r ${themeOption.colors} rounded-full`}></div>
+                    <div>
+                      <span className="font-medium text-foreground">{themeOption.name}</span>
+                      <p className="text-sm text-muted-foreground">{themeOption.description}</p>
+                    </div>
+                  </div>
+                  <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+                    {themeOption.percentage}
+                  </span>
                 </div>
               </div>
             </div>

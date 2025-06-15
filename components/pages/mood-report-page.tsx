@@ -322,6 +322,13 @@ export function MoodReportPage() {
 
   const averageMoods = calculateAverageMoods()
 
+  // Save mood data to localStorage for auto theme selection
+  useEffect(() => {
+    if (moodData.length > 0) {
+      localStorage.setItem('recent-mood-data', JSON.stringify(moodData))
+    }
+  }, [moodData])
+
   // Enhanced insights with icons
   const enhancedInsights = insights.map((insight, index) => {
     const icons = [TrendingUp, TrendingDown, Heart, Brain]

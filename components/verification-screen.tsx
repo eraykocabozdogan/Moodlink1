@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
+import { ThemeBackground } from "@/components/ui/theme-background"
 import { Heart, Mail } from "lucide-react"
 import apiClient from "@/lib/apiClient"
 import type { VerifyCodeCommand } from "@/lib/types/api"
@@ -139,9 +140,10 @@ Teknik Detay: ${type === "signup" ? "EmailValidation" : "PasswordReset"} kodu ba
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
-        <CardHeader className="text-center space-y-4 pb-8">
+    <ThemeBackground>
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-2xl border-0 bg-card/90 backdrop-blur-sm">
+          <CardHeader className="text-center space-y-4 pb-8">
           <div className="flex items-center justify-center space-x-2">
             <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
               <Heart className="w-6 h-6 text-white" />
@@ -163,9 +165,9 @@ Teknik Detay: ${type === "signup" ? "EmailValidation" : "PasswordReset"} kodu ba
               {email}
             </p>
           </div>
-        </CardHeader>
-        
-        <CardContent className="space-y-6">
+          </CardHeader>
+
+          <CardContent className="space-y-6">
           <div className="space-y-4">
             <div className="flex justify-center">
               <InputOTP
@@ -220,8 +222,9 @@ Teknik Detay: ${type === "signup" ? "EmailValidation" : "PasswordReset"} kodu ba
               ← Go back
             </button>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>
+      </div>
+    </ThemeBackground>
   )
 }

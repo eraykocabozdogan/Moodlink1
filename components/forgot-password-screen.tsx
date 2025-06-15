@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { ThemeBackground } from "@/components/ui/theme-background"
 import { Heart, KeyRound } from "lucide-react"
 import { VerificationScreen } from "./verification-screen"
 import apiClient from "@/lib/apiClient"
@@ -161,9 +162,10 @@ export function ForgotPasswordScreen({ onResetComplete, onBackToLogin }: ForgotP
 
   if (currentStep === "newPassword") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
-          <CardHeader className="text-center space-y-4 pb-8">
+      <ThemeBackground>
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <Card className="w-full max-w-md shadow-2xl border-0 bg-card/90 backdrop-blur-sm">
+            <CardHeader className="text-center space-y-4 pb-8">
             <div className="flex items-center justify-center space-x-2">
               <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
                 <Heart className="w-6 h-6 text-white" />
@@ -182,9 +184,9 @@ export function ForgotPasswordScreen({ onResetComplete, onBackToLogin }: ForgotP
                 Create a new password for your account.
               </p>
             </div>
-          </CardHeader>
-          
-          <CardContent className="space-y-4">
+            </CardHeader>
+
+            <CardContent className="space-y-4">
             <Input
               type="password"
               placeholder="New Password"
@@ -216,16 +218,18 @@ export function ForgotPasswordScreen({ onResetComplete, onBackToLogin }: ForgotP
                 ← Go back
               </button>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
+      </ThemeBackground>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
-        <CardHeader className="text-center space-y-4 pb-8">
+    <ThemeBackground>
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-2xl border-0 bg-card/90 backdrop-blur-sm">
+          <CardHeader className="text-center space-y-4 pb-8">
           <div className="flex items-center justify-center space-x-2">
             <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
               <Heart className="w-6 h-6 text-white" />
@@ -244,9 +248,9 @@ export function ForgotPasswordScreen({ onResetComplete, onBackToLogin }: ForgotP
               Enter your email address and we'll send you a password reset code.
             </p>
           </div>
-        </CardHeader>
-        
-        <CardContent className="space-y-4">
+          </CardHeader>
+
+          <CardContent className="space-y-4">
           <Input
             type="email"
             placeholder="Your email address"
@@ -270,8 +274,9 @@ export function ForgotPasswordScreen({ onResetComplete, onBackToLogin }: ForgotP
               ← Return to login
             </button>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>
+      </div>
+    </ThemeBackground>
   )
 }

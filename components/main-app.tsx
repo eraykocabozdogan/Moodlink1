@@ -15,6 +15,7 @@ import { ThemeSettingsPage } from "@/components/pages/theme-settings-page"
 import { MoodReportPage } from "@/components/pages/mood-report-page"
 import { ActivitiesPage } from "@/components/pages/activities-page"
 import { RightSidebar } from "@/components/right-sidebar"
+import { ThemeBackground } from "@/components/ui/theme-background"
 import { Menu } from "lucide-react"
 import { User } from "@/components/create-group-chat"
 import { useAuth } from "@/hooks/use-auth"
@@ -127,31 +128,33 @@ export function MainApp({ user, onLogout }: MainAppProps) {
   const showRightSidebar = ["home", "search"].includes(currentPage)
 
   return (
-    <div className="flex h-screen bg-background">
-      {/* Hamburger menu button - always visible */}
-      <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed top-4 left-4 z-50 p-3 bg-card rounded-full shadow-lg hover:shadow-xl transition-shadow border border-border"
-      >
-        <Menu className="w-6 h-6 text-foreground" />
-      </button>
+    <ThemeBackground>
+      <div className="flex h-screen">
+        {/* Hamburger menu button - always visible */}
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="fixed top-4 left-4 z-50 p-3 bg-card/90 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl transition-shadow border border-border"
+        >
+          <Menu className="w-6 h-6 text-foreground" />
+        </button>
 
-      {/* Sidebar */}
-      <Sidebar
-        currentPage={currentPage}
-        onPageChange={handlePageChange}
-        onLogout={handleLogout}
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
+        {/* Sidebar */}
+        <Sidebar
+          currentPage={currentPage}
+          onPageChange={handlePageChange}
+          onLogout={handleLogout}
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+        />
 
-      {/* Main content */}
-      <div className="flex-1 flex">
-        <main className={`flex-1 ${showRightSidebar ? "xl:mr-80" : ""}`}>{renderPage()}</main>
+        {/* Main content */}
+        <div className="flex-1 flex">
+          <main className={`flex-1 ${showRightSidebar ? "xl:mr-80" : ""}`}>{renderPage()}</main>
 
-        {/* Right sidebar */}
-        {showRightSidebar && <RightSidebar currentPage={currentPage} onUserClick={handleUserClick} />}
+          {/* Right sidebar */}
+          {showRightSidebar && <RightSidebar currentPage={currentPage} onUserClick={handleUserClick} />}
+        </div>
       </div>
-    </div>
+    </ThemeBackground>
   )
 }

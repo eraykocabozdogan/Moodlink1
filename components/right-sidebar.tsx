@@ -1,9 +1,48 @@
+import { useTheme } from "@/components/theme-provider"
+
 interface RightSidebarProps {
   currentPage: string
   onUserClick?: (user: any) => void
 }
 
 export function RightSidebar({ currentPage, onUserClick }: RightSidebarProps) {
+  const { theme } = useTheme()
+
+  // Theme-specific background configurations for sidebar
+  const getThemeBackground = (currentTheme: string) => {
+    const themeBackgrounds: Record<string, { image: string; overlay: string }> = {
+      night: {
+        image: "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=400&h=800&fit=crop&crop=center&auto=format&q=80",
+        overlay: "bg-gray-900/80"
+      },
+      white: {
+        image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=800&fit=crop&crop=center&auto=format&q=80",
+        overlay: "bg-white/85"
+      },
+      nature: {
+        image: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=800&fit=crop&crop=center&auto=format&q=80",
+        overlay: "bg-green-50/80"
+      },
+      sunset: {
+        image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=800&fit=crop&crop=center&auto=format&q=80",
+        overlay: "bg-orange-50/80"
+      },
+
+      nirvana: {
+        image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=800&fit=crop&crop=center&auto=format&q=80",
+        overlay: "bg-purple-50/80"
+      },
+      ocean: {
+        image: "https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=400&h=800&fit=crop&crop=center&auto=format&q=80",
+        overlay: "bg-cyan-50/80"
+      }
+    }
+
+    return themeBackgrounds[currentTheme] || themeBackgrounds.white
+  }
+
+  const themeBackground = getThemeBackground(theme)
+
   const suggestedUsers = [
     { 
       username: "Ahmet Yılmaz", 
@@ -46,7 +85,7 @@ export function RightSidebar({ currentPage, onUserClick }: RightSidebarProps) {
   const renderContent = () => {
     if (currentPage === "home") {
       return (
-        <div className="bg-card rounded-xl p-4 shadow-sm border border-border">
+        <div className="bg-card/90 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-border">
           <h3 className="font-bold text-lg mb-4 text-foreground">Suggested Users</h3>
           <div className="space-y-4">
             {suggestedUsers.map((user, index) => (
@@ -80,7 +119,7 @@ export function RightSidebar({ currentPage, onUserClick }: RightSidebarProps) {
 
     if (currentPage === "search") {
       return (
-        <div className="bg-card rounded-xl p-4 shadow-sm border border-border">
+        <div className="bg-card/90 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-border">
           <h3 className="font-bold text-lg mb-4 text-foreground">Popular Users</h3>
           <div className="space-y-4">
             {suggestedUsers.map((user, index) => (
@@ -116,8 +155,24 @@ export function RightSidebar({ currentPage, onUserClick }: RightSidebarProps) {
   }
 
   return (
-    <div className="hidden xl:block fixed right-0 top-0 w-80 h-full bg-background border-l border-border p-4 overflow-y-auto">
-      <div className="space-y-4 mt-4">{renderContent()}</div>
+    <div className="hidden xl:block fixed right-0 top-0 w-80 h-full border-l border-border overflow-y-auto">
+      {/* Background Layer */}
+      <div className="absolute inset-0">
+        {/* Background Image */}
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url(${themeBackground.image})`,
+          }}
+        />
+        {/* Overlay */}
+        <div className={`absolute inset-0 ${themeBackground.overlay} backdrop-blur-[1px]`} />
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 p-4">
+        <div className="space-y-4 mt-4">{renderContent()}</div>
+      </div>
     </div>
   )
 }
