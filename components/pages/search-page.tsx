@@ -146,18 +146,7 @@ export function SearchPage({ onUserClick }: SearchPageProps = {}) {
                         <div
                           key={user.id}
                           className="flex items-start space-x-4 p-3 hover:bg-muted/50 rounded-lg cursor-pointer transition-colors"
-                          onClick={() => onUserClick && onUserClick({
-                            username: user.userName || `${user.firstName} ${user.lastName}`.trim() || 'Unknown User',
-                            handle: user.userName || '',
-                            followers: "0", // We don't have follower count from search
-                            following: "0", // We don't have this data from search
-                            bio: user.bio || `MoodLink user`,
-                            moods: [
-                              { name: "Happy", percentage: "75%" },
-                              { name: "Energetic", percentage: "60%" },
-                            ],
-                            badges: ["🎯"],
-                          })}
+                          onClick={() => onUserClick && onUserClick(user.id)}
                         >
                           <div className="w-12 h-12 bg-gradient-to-r from-green-400 to-blue-400 rounded-full flex-shrink-0 flex items-center justify-center">
                             <User className="w-6 h-6 text-white" />

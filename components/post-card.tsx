@@ -26,6 +26,7 @@ interface PostCardProps {
       fullName?: string
     }
   }
+  currentUser?: any // Add currentUser prop
   onUserClick?: (user: any) => void
   onPostUpdate?: (postId: string, updates: { likesCount?: number; isLikedByCurrentUser?: boolean; commentsCount?: number }) => void
 }
@@ -50,7 +51,7 @@ const setStoredPostData = (postId: string, data: { liked?: boolean; likeCount?: 
   }
 }
 
-export function PostCard({ post, onUserClick, onPostUpdate }: PostCardProps) {
+export function PostCard({ post, currentUser: propCurrentUser, onUserClick, onPostUpdate }: PostCardProps) {
   // Initialize state with stored data if available
   const storedData = getStoredPostData(post.id)
   const [liked, setLiked] = useState(storedData?.liked ?? post.isLikedByCurrentUser)
@@ -60,7 +61,7 @@ export function PostCard({ post, onUserClick, onPostUpdate }: PostCardProps) {
   const [comment, setComment] = useState("")
   const [comments, setComments] = useState<any[]>([])
   const [commentsLoaded, setCommentsLoaded] = useState(false)
-  const [currentUser, setCurrentUser] = useState<any>(null)
+  const [currentUser, setCurrentUser] = useState<any>(propCurrentUser || null)
 
   // Update local state when post prop changes, but preserve stored data
   useEffect(() => {
@@ -78,18 +79,22 @@ export function PostCard({ post, onUserClick, onPostUpdate }: PostCardProps) {
     }
   }, [post.id, post.isLikedByCurrentUser, post.likesCount, post.commentsCount])
 
-  // Get current user on component mount
+  // Get current user on component mount (only if not provided as prop)
   useEffect(() => {
-    const getCurrentUser = async () => {
-      try {
-        const user = await apiClient.getUserFromAuth()
-        setCurrentUser(user)
-      } catch (error) {
-        console.error('Error getting current user:', error)
+    if (!propCurrentUser) {
+      const getCurrentUser = async () => {
+        try {
+          const user = await apiClient.getUserFromAuth()
+          setCurrentUser(user)
+        } catch (error) {
+          console.error('Error getting current user:', error)
+        }
       }
+      getCurrentUser()
+    } else {
+      setCurrentUser(propCurrentUser)
     }
-    getCurrentUser()
-  }, [])
+  }, [propCurrentUser])
 
   // Fetch comments when showComments becomes true
   useEffect(() => {

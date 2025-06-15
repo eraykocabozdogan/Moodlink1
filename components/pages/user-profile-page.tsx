@@ -231,23 +231,30 @@ export function UserProfilePage({ user: userProp, onBack, onMessage }: UserProfi
 
       console.log('Fetching posts for user ID:', user.id)
 
-      // Try getUserPosts first
+      // Use getUserPosts with pagination to get posts with createdDate
       let posts = []
       try {
-        const postsResponse = await apiClient.getUserPosts(user.id)
+        console.log(`🔄 Getting posts for user ${user.id.slice(0, 8)} with createdDate...`)
+        const postsResponse = await apiClient.getUserPosts(user.id, { PageIndex: 0, PageSize: 50 })
         console.log('getUserPosts API response:', postsResponse)
 
         // Check both possible response formats
         posts = postsResponse.posts || postsResponse.items || []
-        console.log('Posts from getUserPosts:', posts.length)
+        console.log(`✅ Got ${posts.length} posts from getUserPosts`)
 
-        // If getUserPosts returns empty but count > 0, there might be a pagination issue
-        if (posts.length === 0 && postsResponse.count > 0) {
-          console.log('getUserPosts pagination issue detected, falling back to getPosts filter')
-          throw new Error('getUserPosts pagination issue')
+        // Debug: Check if posts have createdDate
+        if (posts.length > 0) {
+          console.log('📅 Sample post from getUserPosts:', {
+            id: posts[0].id?.slice(0, 8),
+            createdDate: posts[0].createdDate,
+            hasCreatedDate: !!posts[0].createdDate,
+            fields: Object.keys(posts[0])
+          })
         }
+
       } catch (getUserPostsError) {
-        console.log('getUserPosts failed, trying fallback with getPosts filter:', getUserPostsError.message)
+        console.error('❌ getUserPosts failed:', getUserPostsError)
+        console.log('⚠️ Falling back to getPosts filter method...')
 
         // Fallback: Get all posts and filter by user ID
         try {
@@ -270,9 +277,9 @@ export function UserProfilePage({ user: userProp, onBack, onMessage }: UserProfi
 
           // Filter posts by current user ID
           posts = allPosts.filter((post: any) => post.userId === user.id)
-          console.log(`Filtered ${posts.length} user posts from ${allPosts.length} total posts`)
+          console.log(`📋 Filtered ${posts.length} user posts from ${allPosts.length} total posts`)
         } catch (fallbackError) {
-          console.error('Fallback method also failed:', fallbackError)
+          console.error('❌ Fallback method also failed:', fallbackError)
           throw fallbackError
         }
       }
@@ -281,18 +288,26 @@ export function UserProfilePage({ user: userProp, onBack, onMessage }: UserProfi
       console.log('Final posts length:', posts.length)
 
       // Transform posts to match PostCard interface
-      const transformedPosts = posts?.map((post: any) => ({
-        id: post.id,
-        username: post.userName || post.userFirstName || user.userName || 'User',
-        handle: `@${post.userName || user.userName || 'user'}`,
-        time: formatTimeAgo(post.createdDate),
-        content: post.contentText || '',
-        image: post.imageUrls?.[0] || (post.userProfileImageUrl ? post.userProfileImageUrl : undefined),
-        moodCompatibility: "90%", // TODO: Calculate from API
-        likesCount: post.likesCount || 0,
-        commentsCount: post.commentsCount || 0,
-        isLikedByCurrentUser: post.isLikedByCurrentUser || false,
-      })) || []
+      const transformedPosts = posts?.map((post: any) => {
+        // Use profile user info for all posts since they're all from this user
+        const displayName = user.firstName && user.lastName
+          ? `${user.firstName} ${user.lastName}`
+          : user.userName || 'User'
+        const handle = user.userName || 'user'
+
+        return {
+          id: post.id,
+          username: displayName,
+          handle: `@${handle}`,
+          time: post.createdDate ? formatTimeAgo(post.createdDate) : 'now',
+          content: post.contentText || '',
+          image: post.postImageFileId ? apiClient.getImageUrl(post.postImageFileId) : undefined,
+          moodCompatibility: "90%", // TODO: Calculate from API
+          likesCount: post.likesCount || 0,
+          commentsCount: post.commentsCount || 0,
+          isLikedByCurrentUser: post.isLikedByCurrentUser || false,
+        }
+      }) || []
 
       console.log('Transformed posts:', transformedPosts)
       setUserPosts(transformedPosts)
@@ -325,9 +340,27 @@ export function UserProfilePage({ user: userProp, onBack, onMessage }: UserProfi
 
   // Helper function to format time
   const formatTimeAgo = (dateString: string) => {
+    if (!dateString) {
+      console.warn('formatTimeAgo: dateString is empty or undefined')
+      return 'now'
+    }
+
     const date = new Date(dateString)
+
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      console.warn('formatTimeAgo: Invalid date string:', dateString)
+      return 'now'
+    }
+
     const now = new Date()
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+    // Handle negative differences (future dates)
+    if (diffInSeconds < 0) {
+      console.warn('formatTimeAgo: Date is in the future:', dateString)
+      return 'now'
+    }
 
     if (diffInSeconds < 60) return `${diffInSeconds}s`
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`
@@ -671,7 +704,7 @@ export function UserProfilePage({ user: userProp, onBack, onMessage }: UserProfi
           </div>
         ) : userPosts.length > 0 ? (
           userPosts.map((post) => (
-            <PostCard key={post.id} post={post} />
+            <PostCard key={post.id} post={post} currentUser={currentUser} />
           ))
         ) : (
           <div className="p-8 text-center text-muted-foreground">
