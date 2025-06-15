@@ -1121,6 +1121,8 @@ export interface UpdateUserFromAuthCommand {
   firstName?: string;
   lastName?: string;
   userName?: string;
+  password?: string; // Current password for password change
+  newPassword?: string; // New password for password change
   birthDate?: DateTime;
   phoneNumber?: string;
   profileImageFileId?: UUID;

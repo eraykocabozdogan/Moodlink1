@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Check, X } from "lucide-react"
+import apiClient from "@/lib/apiClient"
 
 interface OptionsPageProps {
   onLogout: () => void
@@ -15,6 +16,7 @@ interface OptionsPageProps {
 export function OptionsPage({ onLogout, onThemeSettings }: OptionsPageProps) {
   const [showPasswordChange, setShowPasswordChange] = useState(false)
   const [notifications, setNotifications] = useState(true)
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
 
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
@@ -22,7 +24,16 @@ export function OptionsPage({ onLogout, onThemeSettings }: OptionsPageProps) {
     confirmPassword: "",
   })
 
-  const handlePasswordChange = () => {
+  const handlePasswordChange = async () => {
+    // Validation
+    if (!passwordForm.currentPassword) {
+      alert("Please enter your current password!")
+      return
+    }
+    if (!passwordForm.newPassword) {
+      alert("Please enter a new password!")
+      return
+    }
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       alert("New passwords don't match!")
       return
@@ -32,14 +43,64 @@ export function OptionsPage({ onLogout, onThemeSettings }: OptionsPageProps) {
       return
     }
 
-    // Password change operation
-    alert("Your password has been successfully changed!")
-    setPasswordForm({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    })
-    setShowPasswordChange(false)
+    setIsChangingPassword(true)
+    try {
+      console.log('Attempting to change password...')
+      console.log('Request data:', {
+        password: '***hidden***',
+        newPassword: '***hidden***'
+      })
+
+      // Debug: Check token
+      const token = localStorage.getItem('authToken')
+      if (token) {
+        try {
+          const tokenPayload = JSON.parse(atob(token.split('.')[1]))
+          console.log('Token payload:', tokenPayload)
+          console.log('Token claims:', Object.keys(tokenPayload))
+        } catch (e) {
+          console.log('Could not decode token')
+        }
+      }
+
+      // Call backend API to change password
+      await apiClient.changePassword(passwordForm.currentPassword, passwordForm.newPassword)
+
+      alert("Your password has been successfully changed!")
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      })
+      setShowPasswordChange(false)
+    } catch (error: any) {
+      console.error('Failed to change password:', error)
+      console.error('Error response data:', error.response?.data)
+      console.error('Error status:', error.response?.status)
+      console.error('Error statusText:', error.response?.statusText)
+
+      let errorMessage = 'Failed to change password. Please try again.'
+
+      if (error.response?.status === 400) {
+        errorMessage = 'Invalid current password or new password format.'
+        if (error.response?.data?.message) {
+          errorMessage += ` Details: ${error.response.data.message}`
+        }
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Current password is incorrect.'
+      } else if (error.response?.status === 403) {
+        errorMessage = 'You do not have permission to change password.'
+      } else if (error.response?.status >= 500) {
+        errorMessage = 'Server error. Please try again later.'
+        if (error.response?.data?.message) {
+          errorMessage += ` Details: ${error.response.data.message}`
+        }
+      }
+
+      alert(errorMessage)
+    } finally {
+      setIsChangingPassword(false)
+    }
   }
 
   if (showPasswordChange) {
@@ -91,12 +152,17 @@ export function OptionsPage({ onLogout, onThemeSettings }: OptionsPageProps) {
               <div className="flex space-x-3">
                 <Button
                   onClick={handlePasswordChange}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                  disabled={isChangingPassword || !passwordForm.currentPassword || !passwordForm.newPassword || passwordForm.newPassword !== passwordForm.confirmPassword}
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white disabled:opacity-50"
                 >
                   <Check className="w-4 h-4 mr-2" />
-                  Change Password
+                  {isChangingPassword ? 'Changing...' : 'Change Password'}
                 </Button>
-                <Button variant="outline" onClick={() => setShowPasswordChange(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowPasswordChange(false)}
+                  disabled={isChangingPassword}
+                >
                   <X className="w-4 h-4 mr-2" />
                   Cancel
                 </Button>

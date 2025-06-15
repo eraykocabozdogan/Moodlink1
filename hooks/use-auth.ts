@@ -17,30 +17,21 @@ export function useAuth() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  console.log('useAuth hook called, current user:', user)
-
   useEffect(() => {
-    console.log('useAuth useEffect called')
     const fetchUser = async () => {
-      console.log('fetchUser function called')
       try {
         // Check if we have a token in localStorage
         const token = localStorage.getItem('authToken')
-        console.log('Token from localStorage:', token ? 'exists' : 'not found')
         if (!token) {
-          console.log('No token found, user not authenticated')
           setLoading(false)
           return
         }
 
         // Set the token in the API client
         apiClient.setAuthToken(token)
-        console.log('Token set in API client')
 
         // Fetch user data
-        console.log('Fetching user data...')
         const userData = await apiClient.getUserFromAuth()
-        console.log('User data fetched:', userData)
         setUser(userData)
       } catch (err: any) {
         console.error('Failed to fetch user:', err)

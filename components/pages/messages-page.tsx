@@ -32,7 +32,7 @@ export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
 
-  console.log('MessagesPage rendered, user:', user)
+
 
   // Sample user list for group creation
   const availableUsers: User[] = [
@@ -46,23 +46,17 @@ export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
 
   // Load user chats from backend
   useEffect(() => {
-    console.log('Messages useEffect called')
     const loadChats = async () => {
-      console.log('loadChats called, user:', user)
-
       if (!user) {
-        console.log('No user found, setting loading to false')
         setLoading(false)
         return
       }
 
       try {
-        console.log('Loading user chats...')
         const response = await apiClient.getUserChats({
           PageIndex: 0,
           PageSize: 50
         })
-        console.log('getUserChats response:', response)
         const backendChats: ChatInfo[] = (response.chats || []).map((chat: any) => {
           console.log('Processing chat:', chat)
           return {

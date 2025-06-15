@@ -8,6 +8,7 @@ import { PostCard } from "@/components/post-card"
 import useEmblaCarousel from 'embla-carousel-react' // Added embla-carousel-react
 import { ImagePlus } from 'lucide-react' // Added ImagePlus icon
 import apiClient from "@/lib/apiClient"
+import { useAuth } from "@/hooks/use-auth" // Import useAuth hook
 
 // Helper function to generate consistent hash from string
 function hashCode(str: string): number {
@@ -51,6 +52,9 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false })
 
+  // Get user from useAuth hook
+  const { user } = useAuth()
+
   // useCallback hooks for emblaApi
   const scrollPrev = useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev()
@@ -60,20 +64,20 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
     if (emblaApi) emblaApi.scrollNext()
   }, [emblaApi])
 
-  // Fetch posts and user data from API
+  // Fetch posts from API (user data comes from useAuth hook)
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
       setError(null)
-      console.log('Fetching data from API...')
 
       try {
-        // Fetch user data first
-        const userResponse = await apiClient.getUserFromAuth()
-        console.log('User response:', userResponse)
+        // Use user data from useAuth hook instead of fetching again
+        if (!user) {
+          setLoading(false)
+          return
+        }
 
-        // Set current user
-        setCurrentUser(userResponse)
+        setCurrentUser(user)
 
         // Fetch all posts using pagination
         let allPosts: any[] = []
@@ -82,36 +86,20 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
         let hasMore = true
 
         while (hasMore) {
-          console.log(`Fetching page ${pageIndex + 1}...`)
-
           // Try both endpoints to see which one works
           let postsResponse
           try {
-            console.log('Trying getPosts endpoint...')
             postsResponse = await apiClient.getPosts({ PageIndex: pageIndex, PageSize: pageSize })
-            console.log('getPosts successful')
           } catch (getPostsError) {
-            console.log('getPosts failed, trying getFeedPosts...', getPostsError)
             try {
               postsResponse = await apiClient.getFeedPosts({ PageIndex: pageIndex, PageSize: pageSize })
-              console.log('getFeedPosts successful')
             } catch (getFeedPostsError) {
               console.error('Both endpoints failed:', { getPostsError, getFeedPostsError })
               throw getFeedPostsError
             }
           }
 
-          console.log('Posts response:', postsResponse)
-          console.log('Posts response type:', typeof postsResponse)
-          console.log('Posts response keys:', Object.keys(postsResponse || {}))
 
-          if (pageIndex === 0) {
-            console.log('Posts response stringified:', JSON.stringify(postsResponse, null, 2))
-            console.log('Posts items:', postsResponse.items)
-            console.log('Posts items length:', postsResponse.items?.length)
-            console.log('Posts posts:', postsResponse.posts)
-            console.log('Posts posts length:', postsResponse.posts?.length)
-          }
 
           // Check both possible response formats
           const posts = postsResponse.posts || postsResponse.items || []
@@ -130,7 +118,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
 
         // Transform API data to match our Post interface with real data
         const transformPost = async (apiPost: any, index: number) => {
-          const isCurrentUser = userResponse && apiPost.userId === userResponse.id
+          const isCurrentUser = user && apiPost.userId === user.id
 
           // Debug log to see what fields are available
           if (pageIndex === 0 && index === 0) {
@@ -186,7 +174,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
 
         // Transform remaining posts with mock data for performance
         const mockDataPosts = postsWithMockData.map((apiPost: any, index: number) => {
-          const isCurrentUser = userResponse && apiPost.userId === userResponse.id
+          const isCurrentUser = user && apiPost.userId === user.id
           const postIdHash = apiPost.id.split('-')[0]
           const hashNum = parseInt(postIdHash, 16) || 0
 
@@ -242,7 +230,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
     }
 
     fetchData()
-  }, [])
+  }, [user]) // Only run when user changes
 
   // Helper function to format time ago
   const formatTimeAgo = (dateString: string) => {

@@ -1191,6 +1191,14 @@ class ApiClient {
     });
   }
 
+  // Change password using updateUserFromAuth
+  async changePassword(currentPassword: string, newPassword: string): Promise<any> {
+    return this.updateUserFromAuth({
+      password: currentPassword,
+      newPassword: newPassword
+    });
+  }
+
   async getUserFollowers(userId: UUID): Promise<GetUserFollowersResponse> {
     return this.request<GetUserFollowersResponse>({
       method: 'GET',

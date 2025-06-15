@@ -69,25 +69,15 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
           PageIndex: 0,
           PageSize: 50
         })
-        const backendMessages: Message[] = response.messages.map((msg: ChatMessageDto) => {
-          const isSent = msg.senderUserId === user.id
-          console.log('Message mapping:', {
-            msgSenderUserId: msg.senderUserId,
-            currentUserId: user.id,
-            areEqual: msg.senderUserId === user.id,
-            isSent: isSent,
-            content: msg.content
-          })
-          return {
-            id: msg.id,
-            messageId: msg.id,
-            text: msg.content || '',
-            time: new Date(msg.sentDate).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
-            sent: isSent,
-            sender: msg.senderUserName,
-            senderUserId: msg.senderUserId
-          }
-        })
+        const backendMessages: Message[] = response.messages.map((msg: ChatMessageDto) => ({
+          id: msg.id,
+          messageId: msg.id,
+          text: msg.content || '',
+          time: new Date(msg.sentDate).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+          sent: msg.senderUserId === user.id,
+          sender: msg.senderUserName,
+          senderUserId: msg.senderUserId
+        }))
 
         // Mesajları tarih sırasına göre sırala (en eski en üstte, en yeni en altta)
         const sortedMessages = backendMessages.sort((a, b) => {
@@ -98,7 +88,6 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
           return timeA - timeB
         })
 
-        console.log('Processed and sorted messages:', sortedMessages)
         setMessages(sortedMessages)
       } catch (error) {
         console.error('Failed to load messages:', error)
@@ -143,26 +132,17 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
       senderUserId: user.id,
     }
 
-    console.log('Creating optimistic message:', {
-      userId: user.id,
-      sent: true,
-      content: messageText
-    })
+
 
     setMessages(prev => [...prev, optimisticMessage])
 
     try {
       // Send message to backend
-      const messageData = {
+      const response = await apiClient.sendMessage({
         chatId: chatDetails.chatId,
         senderUserId: user.id,
         content: messageText,
-      }
-      console.log('Sending message:', messageData)
-
-      // Geçici olarak farklı format deneyelim
-      const response = await apiClient.sendMessage(messageData)
-      console.log('Send message response:', response)
+      })
 
       // Replace optimistic message with real message
       setMessages(prev => prev.map(msg =>
@@ -181,13 +161,6 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
 
     } catch (error: any) {
       console.error('Failed to send message:', error)
-      console.error('Error details:', {
-        message: error?.message,
-        status: error?.response?.status,
-        statusText: error?.response?.statusText,
-        data: error?.response?.data
-      })
-      console.error('Full error response data:', JSON.stringify(error?.response?.data, null, 2))
       // Remove optimistic message on error
       setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id))
       // Restore message in input
