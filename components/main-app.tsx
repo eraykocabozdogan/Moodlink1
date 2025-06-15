@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Sidebar } from "@/components/sidebar"
 import { HomePage } from "@/components/pages/home-page"
 import { SearchPage } from "@/components/pages/search-page"
@@ -44,36 +44,19 @@ export function MainApp({ user, onLogout }: MainAppProps) {
   // Use auth hook for enhanced logout
   const { logout: authLogout } = useAuth()
 
-  // Load saved page from localStorage on mount
-  useEffect(() => {
-    const savedPage = localStorage.getItem('currentPage')
-    if (savedPage) {
-      setCurrentPage(savedPage)
-    }
-  }, [])
-
-  // Save current page to localStorage whenever it changes
-  const handlePageChange = (page: string) => {
-    setCurrentPage(page)
-    localStorage.setItem('currentPage', page)
-  }
-
   const handlePostClick = (postId: number) => {
     setSelectedPostId(postId)
-    handlePageChange("home")
+    setCurrentPage("home") 
   }
 
   const handleUserClick = (userInfo: any) => {
     setViewingUser(userInfo)
-    handlePageChange("userProfile")
+    setCurrentPage("userProfile")
   }
 
   // Enhanced logout function
   const handleLogout = () => {
     console.log('MainApp logout triggered')
-
-    // Clear current page from localStorage
-    localStorage.removeItem('currentPage')
 
     // Use auth hook logout (clears localStorage)
     authLogout()
@@ -92,7 +75,7 @@ export function MainApp({ user, onLogout }: MainAppProps) {
         return <NotificationsPage onPostClick={(postId) => {
           // Navigate to home page
           console.log('Notification clicked, navigating to home page for post:', postId)
-          handlePageChange("home")
+          setCurrentPage("home")
           // TODO: When backend fixes relatedEntityId, we can scroll to specific post
         }} />
       case "messages":
@@ -100,25 +83,25 @@ export function MainApp({ user, onLogout }: MainAppProps) {
           <MessagesPage
             onChatSelect={(chatInfo) => {
               setChatDetails(chatInfo)
-              handlePageChange("chat")
+              setCurrentPage("chat")
             }}
             onUserClick={handleUserClick}
           />
         )
       case "chat":
-        return <ChatPage chatDetails={chatDetails} onBack={() => handlePageChange("messages")} />
+        return <ChatPage chatDetails={chatDetails} onBack={() => setCurrentPage("messages")} />
       case "profile":
         return <ProfilePage />
       case "userProfile":
-        return <UserProfilePage user={viewingUser} onBack={() => handlePageChange("home")} />
+        return <UserProfilePage user={viewingUser} onBack={() => setCurrentPage("home")} />
       case "activities":
         return <ActivitiesPage />
       case "moodreport":
         return <MoodReportPage />
       case "options":
-        return <OptionsPage onLogout={handleLogout} onThemeSettings={() => handlePageChange("themeSettings")} />
+        return <OptionsPage onLogout={handleLogout} onThemeSettings={() => setCurrentPage("themeSettings")} />
       case "themeSettings":
-        return <ThemeSettingsPage onBack={() => handlePageChange("options")} />
+        return <ThemeSettingsPage onBack={() => setCurrentPage("options")} />
       default:
         return <HomePage />
     }
@@ -139,7 +122,7 @@ export function MainApp({ user, onLogout }: MainAppProps) {
       {/* Sidebar */}
       <Sidebar
         currentPage={currentPage}
-        onPageChange={handlePageChange}
+        onPageChange={setCurrentPage}
         onLogout={handleLogout}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}

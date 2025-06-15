@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Heart, MessageCircle, Share } from "lucide-react"
+import { Heart, MessageCircle, Share, Bookmark } from "lucide-react"
 import Image from "next/image"
 import apiClient from "@/lib/apiClient"
 
@@ -56,6 +56,7 @@ export function PostCard({ post, onUserClick, onPostUpdate }: PostCardProps) {
   const [liked, setLiked] = useState(storedData?.liked ?? post.isLikedByCurrentUser)
   const [likeCount, setLikeCount] = useState(storedData?.likeCount ?? post.likesCount)
   const [commentsCount, setCommentsCount] = useState(storedData?.commentsCount ?? post.commentsCount)
+  const [saved, setSaved] = useState(false)
   const [showComments, setShowComments] = useState(false)
   const [comment, setComment] = useState("")
   const [comments, setComments] = useState<any[]>([])
@@ -235,7 +236,9 @@ export function PostCard({ post, onUserClick, onPostUpdate }: PostCardProps) {
     }
   }
 
-
+  const handleSave = () => {
+    setSaved(!saved)
+  }
 
   const handleShare = () => {
     if (navigator.share) {
@@ -442,6 +445,16 @@ export function PostCard({ post, onUserClick, onPostUpdate }: PostCardProps) {
               >
                 <Share className="w-4 h-4" />
                 <span>Share</span>
+              </button>
+
+              <button
+                onClick={handleSave}
+                className={`flex items-center space-x-2 transition-colors ${
+                  saved ? "text-yellow-500" : "hover:text-yellow-500"
+                }`}
+              >
+                <Bookmark className={`w-4 h-4 ${saved ? "fill-current" : ""}`} />
+                <span>Save</span>
               </button>
             </div>
 

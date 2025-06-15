@@ -175,11 +175,6 @@ import {
   
   // Mail Log Types
   CreateMailLogCommand,
-
-  // Mood Report Types
-  MoodReportResponse,
-  BackendMoodReportResponse,
-  MoodReportPeriod,
 } from './types/api';
 
 // API Client Configuration
@@ -715,14 +710,6 @@ class ApiClient {
     return this.request<GetByIdEmotionScoreResponse>({
       method: 'GET',
       url: `/api/EmotionScores/${id}`,
-    });
-  }
-
-  async getMoodReport(userId: UUID, period: MoodReportPeriod): Promise<BackendMoodReportResponse> {
-    return this.request<BackendMoodReportResponse>({
-      method: 'GET',
-      url: `/api/EmotionScores/mood-report/${userId}`,
-      params: { period },
     });
   }
 

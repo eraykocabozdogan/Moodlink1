@@ -33,6 +33,14 @@ interface Post {
   likesCount: number;
   commentsCount: number;
   isLikedByCurrentUser: boolean;
+  userData?: {
+    id: string;
+    userName?: string;
+    firstName?: string;
+    lastName?: string;
+    fullName?: string;
+  };
+  createdDate?: string;
 }
 
 interface HomePageProps {
@@ -86,15 +94,19 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
         let hasMore = true
 
         while (hasMore) {
-          // Try both endpoints to see which one works
+          // Try getFeedPosts first (has createdDate), fallback to getPosts
           let postsResponse
           try {
-            postsResponse = await apiClient.getPosts({ PageIndex: pageIndex, PageSize: pageSize })
-          } catch (getPostsError) {
+            console.log('🔄 Trying getFeedPosts (with createdDate)...')
+            postsResponse = await apiClient.getFeedPosts({ PageIndex: pageIndex, PageSize: pageSize })
+            console.log('✅ getFeedPosts succeeded')
+          } catch (getFeedPostsError) {
             try {
-              postsResponse = await apiClient.getFeedPosts({ PageIndex: pageIndex, PageSize: pageSize })
-            } catch (getFeedPostsError) {
-              console.error('Both endpoints failed:', { getPostsError, getFeedPostsError })
+              console.log('⚠️ getFeedPosts failed, trying getPosts (no createdDate)...')
+              postsResponse = await apiClient.getPosts({ PageIndex: pageIndex, PageSize: pageSize })
+              console.log('✅ getPosts succeeded (but no createdDate)')
+            } catch (getPostsError) {
+              console.error('❌ Both endpoints failed:', { getFeedPostsError, getPostsError })
               throw getFeedPostsError
             }
           }
@@ -184,7 +196,22 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
             id: apiPost.id,
             username: username,
             handle: handle,
-            time: 'now', // TODO: Add createdDate to API response
+            time: (() => {
+              console.log(`🔍 Post ${apiPost.id?.slice(0, 8)} createdDate:`, apiPost.createdDate, typeof apiPost.createdDate)
+              if (apiPost.createdDate) {
+                try {
+                  const timeAgo = formatTimeAgo(apiPost.createdDate)
+                  console.log(`📅 Formatted time: ${apiPost.createdDate} → ${timeAgo}`)
+                  return timeAgo
+                } catch (error) {
+                  console.error(`❌ Date formatting error:`, error)
+                  return 'now'
+                }
+              } else {
+                console.log(`⚠️ No createdDate for post ${apiPost.id?.slice(0, 8)}`)
+                return 'now'
+              }
+            })(),
             content: apiPost.contentText || '',
             image: apiPost.postImageFileId ? apiClient.getImageUrl(apiPost.postImageFileId) : undefined,
             moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%`, // Mock mood compatibility for now
@@ -204,7 +231,9 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
               firstName: null,
               lastName: null,
               fullName: null
-            }
+            },
+            // Add createdDate for sorting
+            createdDate: apiPost.createdDate
           }
         }
 
@@ -213,11 +242,21 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
         // Transform ALL posts with real data (might be slower but correct)
         const transformedPosts = await Promise.all(allPosts.map(transformPost))
 
+        // Sort posts by creation date (newest first)
+        transformedPosts.sort((a, b) => {
+          if (!a.createdDate || !b.createdDate) return 0
+          return new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
+        })
+
+        console.log(`Sorted ${transformedPosts.length} posts by creation date (newest first)`)
 
 
-        // Set the same posts for both tabs for now
+
+        // Set For You posts
         setForYouPosts(transformedPosts)
-        setFollowingPosts(transformedPosts)
+
+        // Get posts from followed users with real createdDate
+        await getFollowingPosts()
 
       } catch (error: any) {
         console.error('Error fetching posts:', {
@@ -252,6 +291,103 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
 
     fetchData()
   }, [user]) // Only run when user changes
+
+  // Get posts from followed users with real createdDate
+  const getFollowingPosts = async () => {
+    if (!user?.id) {
+      console.log('No current user, showing empty following posts')
+      setFollowingPosts([])
+      return
+    }
+
+    try {
+      console.log('🔍 Getting posts from followed users with createdDate...')
+
+      // Get list of users that current user follows
+      const followsResponse = await apiClient.getFollows({ PageIndex: 0, PageSize: 1000 })
+      const followedUserIds = followsResponse.items?.map((follow: any) => follow.followedId) || []
+
+      console.log('📋 Followed user IDs:', followedUserIds)
+
+      if (followedUserIds.length === 0) {
+        console.log('No followed users, showing empty following posts')
+        setFollowingPosts([])
+        return
+      }
+
+      // Get posts from each followed user (these have createdDate!)
+      const allFollowingPosts: any[] = []
+
+      for (const userId of followedUserIds) {
+        try {
+          console.log(`🔄 Getting posts for followed user ${userId.slice(0, 8)}...`)
+          const userPostsResponse = await apiClient.getUserPosts(userId, { PageIndex: 0, PageSize: 50 })
+          const userPosts = userPostsResponse.items || []
+          allFollowingPosts.push(...userPosts)
+          console.log(`✅ Got ${userPosts.length} posts from user ${userId.slice(0, 8)}`)
+        } catch (error) {
+          console.log(`⚠️ Failed to get posts for user ${userId.slice(0, 8)}:`, error)
+        }
+      }
+
+      console.log(`📋 Total following posts collected: ${allFollowingPosts.length}`)
+
+      // Transform posts with real createdDate
+      const transformedFollowingPosts = await Promise.all(
+        allFollowingPosts.map(async (apiPost: any) => {
+          // Get user info
+          let userInfo = null
+          try {
+            userInfo = await apiClient.getUserById(apiPost.userId)
+          } catch (error) {
+            console.log(`Could not fetch user info for ${apiPost.userId}:`, error)
+          }
+
+          const username = userInfo?.userName || userInfo?.firstName || 'User'
+          const handle = userInfo?.userName ? `@${userInfo.userName}` : '@user'
+
+          return {
+            id: apiPost.id,
+            username: username,
+            handle: handle,
+            time: apiPost.createdDate ? formatTimeAgo(apiPost.createdDate) : 'now',
+            content: apiPost.contentText || '',
+            image: apiPost.postImageFileId ? apiClient.getImageUrl(apiPost.postImageFileId) : undefined,
+            moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%`,
+            likesCount: apiPost.likesCount || 0,
+            commentsCount: apiPost.commentsCount || 0,
+            isLikedByCurrentUser: apiPost.isLikedByCurrentUser || false,
+            userData: userInfo ? {
+              id: userInfo.id,
+              userName: userInfo.userName,
+              firstName: userInfo.firstName,
+              lastName: userInfo.lastName,
+              fullName: userInfo.userName || `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim()
+            } : {
+              id: apiPost.userId,
+              userName: undefined,
+              firstName: undefined,
+              lastName: undefined,
+              fullName: undefined
+            },
+            createdDate: apiPost.createdDate
+          }
+        })
+      )
+
+      // Sort by creation date (newest first)
+      transformedFollowingPosts.sort((a, b) => {
+        if (!a.createdDate || !b.createdDate) return 0
+        return new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
+      })
+
+      console.log(`✅ Following posts with real dates: ${transformedFollowingPosts.length}`)
+      setFollowingPosts(transformedFollowingPosts)
+    } catch (error) {
+      console.error('❌ Error getting following posts:', error)
+      setFollowingPosts([]) // Show empty on error
+    }
+  }
 
   // Helper function to format time ago
   const formatTimeAgo = (dateString: string) => {
@@ -302,13 +438,16 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
       while (hasMore) {
         console.log(`Fetching page ${pageIndex + 1}...`)
 
-        // Try both endpoints to see which one works
+        // Try getFeedPosts first (has createdDate), fallback to getPosts
         let postsResponse
         try {
-          postsResponse = await apiClient.getPosts({ PageIndex: pageIndex, PageSize: pageSize })
-        } catch (getPostsError) {
-          console.log('getPosts failed in refresh, trying getFeedPosts...')
+          console.log('🔄 Refresh: Trying getFeedPosts (with createdDate)...')
           postsResponse = await apiClient.getFeedPosts({ PageIndex: pageIndex, PageSize: pageSize })
+          console.log('✅ Refresh: getFeedPosts succeeded')
+        } catch (getFeedPostsError) {
+          console.log('⚠️ Refresh: getFeedPosts failed, trying getPosts (no createdDate)...')
+          postsResponse = await apiClient.getPosts({ PageIndex: pageIndex, PageSize: pageSize })
+          console.log('✅ Refresh: getPosts succeeded (but no createdDate)')
         }
 
         // Check both possible response formats
@@ -352,13 +491,14 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
           id: apiPost.id,
           username: isCurrentUser ? 'You' : (apiPost.userName || 'User'), // Show "You" for current user's posts
           handle: isCurrentUser ? '@you' : `@user_${apiPost.userId?.slice(-4) || 'unknown'}`, // Use @you for current user
-          time: 'now', // TODO: Add createdDate to API response
+          time: apiPost.createdDate ? formatTimeAgo(apiPost.createdDate) : 'now',
           content: apiPost.contentText || '',
           image: apiPost.postImageFileId ? apiClient.getImageUrl(apiPost.postImageFileId) : undefined,
           moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%`, // Mock mood compatibility for now
           likesCount: likesCount,
           commentsCount: commentsCount,
-          isLikedByCurrentUser: isLikedByCurrentUser
+          isLikedByCurrentUser: isLikedByCurrentUser,
+          createdDate: apiPost.createdDate
         }
       }
 
@@ -381,21 +521,32 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
           id: apiPost.id,
           username: isCurrentUser ? 'You' : (apiPost.userName || 'User'),
           handle: isCurrentUser ? '@you' : `@user_${apiPost.userId?.slice(-4) || 'unknown'}`,
-          time: 'now',
+          time: apiPost.createdDate ? formatTimeAgo(apiPost.createdDate) : 'now',
           content: apiPost.contentText || '',
           image: apiPost.postImageFileId ? apiClient.getImageUrl(apiPost.postImageFileId) : undefined,
           moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%`,
           likesCount: apiPost.likesCount || 0,
           commentsCount: apiPost.commentsCount || 0,
-          isLikedByCurrentUser: apiPost.isLikedByCurrentUser || false
+          isLikedByCurrentUser: apiPost.isLikedByCurrentUser || false,
+          createdDate: apiPost.createdDate
         }
       })
 
       const transformedPosts = [...realDataPosts, ...mockDataPosts]
 
-      // Set the same posts for both tabs for now
+      // Sort posts by creation date (newest first)
+      transformedPosts.sort((a, b) => {
+        if (!a.createdDate || !b.createdDate) return 0
+        return new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
+      })
+
+      console.log(`Refresh: Sorted ${transformedPosts.length} posts by creation date (newest first)`)
+
+      // Set For You posts
       setForYouPosts(transformedPosts)
-      setFollowingPosts(transformedPosts)
+
+      // Get posts from followed users with real createdDate
+      await getFollowingPosts()
 
       console.log('Posts refreshed successfully, count:', transformedPosts.length)
     } catch (error) {

@@ -50,12 +50,6 @@ export enum ValidationPurpose {
   TwoFactorAuth = 3
 }
 
-export enum MoodReportPeriod {
-  Daily = 1,
-  Weekly = 2,
-  Monthly = 3
-}
-
 // Core Interfaces
 export interface AiTestResponse {
   success: boolean;
@@ -1343,68 +1337,6 @@ export interface CreateMailLogCommand {
 export interface PaginationParams {
   PageIndex?: number;
   PageSize?: number;
-}
-
-// Mood Report Interfaces (Backend Format)
-export interface BackendMoodReportResponse {
-  userId: string;
-  period: number;
-  startDate: string;
-  endDate: string;
-  reportGeneratedAt: string;
-  summary: {
-    totalEntries: number;
-    averageMoodScore: number;
-    dominantEmotion: number;
-    trendAnalysis: string;
-  };
-  chartData: Array<{
-    label: string;
-    date: string;
-    emotionScores: Record<string, number>;
-  }>;
-  emotionBreakdown: Array<{
-    emotionType: number;
-    averageScore: number;
-    maxScore: number;
-    minScore: number;
-    frequency: number;
-    percentage: number;
-  }>;
-  insights: string[];
-}
-
-// Frontend Format (for compatibility)
-export interface MoodReportData {
-  label: string;
-  moods: {
-    happiness: number;
-    sadness: number;
-    energy: number;
-    stress: number;
-    anger?: number;
-    anxiety?: number;
-    peace?: number;
-    excitement?: number;
-    loneliness?: number;
-    humor?: number;
-  };
-}
-
-export interface MoodReportInsight {
-  title: string;
-  value: string;
-  description: string;
-}
-
-export interface MoodReportResponse {
-  success: boolean;
-  data: {
-    period: string;
-    reportData: MoodReportData[];
-    insights: MoodReportInsight[];
-    recommendations: string[];
-  };
 }
 
 // API Response Wrapper
