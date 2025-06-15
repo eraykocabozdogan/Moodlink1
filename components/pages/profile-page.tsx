@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { PostCard } from "@/components/post-card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ProfileImage } from "@/components/ui/profile-image"
 import { Check, X } from "lucide-react"
 import apiClient from "@/lib/apiClient"
 import {
@@ -149,7 +150,7 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
         handle: `@${post.userName || user.userName || 'user'}`,
         time: formatTimeAgo(post.createdDate),
         content: post.contentText || '',
-        image: post.imageUrls?.[0] || (post.userProfileImageUrl ? post.userProfileImageUrl : undefined),
+        image: post.postImageFileId || post.imageUrls?.[0] || undefined,
         moodCompatibility: "90%", // TODO: Calculate from API
         likesCount: post.likesCount || 0,
         commentsCount: post.commentsCount || 0,
@@ -401,16 +402,14 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
                       alt="Profile Picture Preview"
                       className="w-full h-full object-cover"
                     />
-                  ) : user.profileImageUrl ? (
-                    <img
-                      src={user.profileImageUrl as string}
-                      alt={user.username}
-                      className="w-full h-full object-cover"
-                    />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center text-primary-foreground">
-                      <span className="text-xs">Select Image</span>
-                    </div>
+                    <ProfileImage
+                      src={user.profileImageFileId || user.profileImageUrl}
+                      alt={user.userName || 'User'}
+                      size="md"
+                      fallbackText="Select Image"
+                      className=""
+                    />
                   )}
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 rounded-full flex items-center justify-center transition-opacity">
                     <span className="text-white text-sm opacity-0 group-hover:opacity-100">Change</span>
@@ -425,16 +424,14 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
                   className="hidden"
                 />
               </>
-            ) : user.profileImageUrl ? (
-              <img
-                src={user.profileImageUrl as string}
-                alt={user.username}
-                className="w-24 h-24 rounded-full object-cover mx-auto"
-              />
             ) : (
-              <div className="w-24 h-24 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full mx-auto flex items-center justify-center text-primary-foreground">
-                {/* Optional: Add an icon or initials if no image */}
-              </div>
+              <ProfileImage
+                src={user.profileImageFileId || user.profileImageUrl}
+                alt={user.userName || 'User'}
+                size="md"
+                fallbackText={user.firstName || user.userName || 'U'}
+                className="mx-auto"
+              />
             )}
           </div>
 

@@ -149,13 +149,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
             handle: isCurrentUser ? '@you' : `@user_${apiPost.userId?.slice(-4) || 'unknown'}`, // Use @you for current user
             time: 'now', // TODO: Add createdDate to API response
             content: apiPost.contentText || '',
-            image: apiPost.postImageFileId ?
-              (apiPost.postImageFileId.startsWith('http') ?
-                apiPost.postImageFileId :
-                apiPost.postImageFileId.startsWith('/api/files/') ?
-                  `https://moodlinkbackend.onrender.com${apiPost.postImageFileId}` :
-                  `https://moodlinkbackend.onrender.com/api/FileAttachments/download/${apiPost.postImageFileId}`) :
-              undefined,
+            image: apiPost.postImageFileId || undefined,
             moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%`, // Mock mood compatibility for now
             likesCount: likesCount,
             commentsCount: commentsCount,
@@ -333,13 +327,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
           handle: isCurrentUser ? '@you' : `@user_${apiPost.userId?.slice(-4) || 'unknown'}`, // Use @you for current user
           time: 'now', // TODO: Add createdDate to API response
           content: apiPost.contentText || '',
-          image: apiPost.postImageFileId ?
-            (apiPost.postImageFileId.startsWith('http') ?
-              apiPost.postImageFileId :
-              apiPost.postImageFileId.startsWith('/api/files/') ?
-                `https://moodlinkbackend.onrender.com${apiPost.postImageFileId}` :
-                `https://moodlinkbackend.onrender.com/api/FileAttachments/download/${apiPost.postImageFileId}`) :
-            undefined,
+          image: apiPost.postImageFileId || undefined,
           moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%`, // Mock mood compatibility for now
           likesCount: likesCount,
           commentsCount: commentsCount,
@@ -368,7 +356,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
           handle: isCurrentUser ? '@you' : `@user_${apiPost.userId?.slice(-4) || 'unknown'}`,
           time: 'now',
           content: apiPost.contentText || '',
-          image: apiPost.postImageFileId ? `/api/files/${apiPost.postImageFileId}` : undefined,
+          image: apiPost.postImageFileId || undefined,
           moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%`,
           likesCount: apiPost.likesCount || 0,
           commentsCount: apiPost.commentsCount || 0,

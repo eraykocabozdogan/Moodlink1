@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { Heart, MessageCircle, Share } from "lucide-react"
-import Image from "next/image"
 import apiClient from "@/lib/apiClient"
+import { PostImage } from "@/components/ui/post-image"
 
 interface PostCardProps {
   post: {
@@ -338,35 +338,11 @@ export function PostCard({ post, onUserClick, onPostUpdate }: PostCardProps) {
 
           {/* Image */}
           {post.image && (
-            <div className="mb-3 rounded-xl overflow-hidden">
-              <Image
-                src={
-                  post.image.startsWith('/api/files/')
-                    ? `https://moodlinkbackend.onrender.com/api/FileAttachments/download/${post.image.split('/').pop()}`
-                    : post.image || "/placeholder.svg"
-                }
-                alt="Post image"
-                width={400}
-                height={200}
-                className="w-full h-48 object-cover"
-                onError={(e) => {
-                  console.error('Image failed to load:', post.image)
-                  console.error('Attempted URL:', e.currentTarget.src)
-
-                  // Try alternative endpoints
-                  const fileId = post.image.split('/').pop()
-                  const alternatives = [
-                    `https://moodlinkbackend.onrender.com/uploads/${fileId}`,
-                    `https://moodlinkbackend.onrender.com/files/${fileId}`,
-                    `https://moodlinkbackend.onrender.com/api/FileAttachments/${fileId}`
-                  ]
-                  console.log('Alternative URLs to try:', alternatives)
-                }}
-                onLoad={() => {
-                  console.log('Image loaded successfully:', post.image)
-                }}
-              />
-            </div>
+            <PostImage
+              src={post.image}
+              alt="Post image"
+              className="mb-3"
+            />
           )}
 
           {/* Actions */}

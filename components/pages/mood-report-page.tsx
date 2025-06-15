@@ -419,66 +419,54 @@ export function MoodReportPage() {
                   <div className="flex flex-col items-center space-y-1">
                     <div
                       className="w-6 bg-gradient-to-t from-green-400 to-green-600 rounded-t"
-                      style={{ height: `${(item.moods.happiness / 10) * 120}px` }}
-                      title="Happiness"
+                      style={{ height: `${Math.max(3, (item.moods.happiness / 10) * 120)}px` }}
+                      title={`Happiness: ${item.moods.happiness.toFixed(1)}/10`}
                     ></div>
                     <div
                       className="w-6 bg-gradient-to-t from-blue-400 to-blue-600 rounded-t"
-                      style={{ height: `${(item.moods.sadness / 10) * 120}px` }}
-                      title="Sadness"
+                      style={{ height: `${Math.max(3, (item.moods.sadness / 10) * 120)}px` }}
+                      title={`Sadness: ${item.moods.sadness.toFixed(1)}/10`}
                     ></div>
-                    {item.moods.anger && (
-                      <div
-                        className="w-6 bg-gradient-to-t from-red-400 to-red-600 rounded-t"
-                        style={{ height: `${(item.moods.anger / 10) * 120}px` }}
-                        title="Anger"
-                      ></div>
-                    )}
-                    {item.moods.anxiety && (
-                      <div
-                        className="w-6 bg-gradient-to-t from-yellow-400 to-yellow-600 rounded-t"
-                        style={{ height: `${(item.moods.anxiety / 10) * 120}px` }}
-                        title="Anxiety"
-                      ></div>
-                    )}
+                    <div
+                      className="w-6 bg-gradient-to-t from-red-400 to-red-600 rounded-t"
+                      style={{ height: `${Math.max(3, (item.moods.anger / 10) * 120)}px` }}
+                      title={`Anger: ${item.moods.anger.toFixed(1)}/10`}
+                    ></div>
+                    <div
+                      className="w-6 bg-gradient-to-t from-yellow-400 to-yellow-600 rounded-t"
+                      style={{ height: `${Math.max(3, (item.moods.anxiety / 10) * 120)}px` }}
+                      title={`Anxiety: ${item.moods.anxiety.toFixed(1)}/10`}
+                    ></div>
                     <div
                       className="w-6 bg-gradient-to-t from-orange-400 to-orange-600 rounded-t"
-                      style={{ height: `${(item.moods.stress / 10) * 120}px` }}
-                      title="Stress"
+                      style={{ height: `${Math.max(3, (item.moods.stress / 10) * 120)}px` }}
+                      title={`Stress: ${item.moods.stress.toFixed(1)}/10`}
                     ></div>
-                    {item.moods.peace && (
-                      <div
-                        className="w-6 bg-gradient-to-t from-purple-400 to-purple-600 rounded-t"
-                        style={{ height: `${(item.moods.peace / 10) * 120}px` }}
-                        title="Peace"
-                      ></div>
-                    )}
+                    <div
+                      className="w-6 bg-gradient-to-t from-purple-400 to-purple-600 rounded-t"
+                      style={{ height: `${Math.max(3, (item.moods.peace / 10) * 120)}px` }}
+                      title={`Peace: ${item.moods.peace.toFixed(1)}/10`}
+                    ></div>
                     <div
                       className="w-6 bg-gradient-to-t from-cyan-400 to-cyan-600 rounded-t"
-                      style={{ height: `${(item.moods.energy / 10) * 120}px` }}
-                      title="Energy"
+                      style={{ height: `${Math.max(3, (item.moods.energy / 10) * 120)}px` }}
+                      title={`Energy: ${item.moods.energy.toFixed(1)}/10`}
                     ></div>
-                    {item.moods.excitement && (
-                      <div
-                        className="w-6 bg-gradient-to-t from-pink-400 to-pink-600 rounded-t"
-                        style={{ height: `${(item.moods.excitement / 10) * 120}px` }}
-                        title="Excitement"
-                      ></div>
-                    )}
-                    {item.moods.loneliness && (
-                      <div
-                        className="w-6 bg-gradient-to-t from-gray-400 to-gray-600 rounded-t"
-                        style={{ height: `${(item.moods.loneliness / 10) * 120}px` }}
-                        title="Loneliness"
-                      ></div>
-                    )}
-                    {item.moods.humor && (
-                      <div
-                        className="w-6 bg-gradient-to-t from-indigo-400 to-indigo-600 rounded-t"
-                        style={{ height: `${(item.moods.humor / 10) * 120}px` }}
-                        title="Humor"
-                      ></div>
-                    )}
+                    <div
+                      className="w-6 bg-gradient-to-t from-pink-400 to-pink-600 rounded-t"
+                      style={{ height: `${Math.max(3, (item.moods.excitement / 10) * 120)}px` }}
+                      title={`Excitement: ${item.moods.excitement.toFixed(1)}/10`}
+                    ></div>
+                    <div
+                      className="w-6 bg-gradient-to-t from-gray-400 to-gray-600 rounded-t"
+                      style={{ height: `${Math.max(3, (item.moods.loneliness / 10) * 120)}px` }}
+                      title={`Loneliness: ${item.moods.loneliness.toFixed(1)}/10`}
+                    ></div>
+                    <div
+                      className="w-6 bg-gradient-to-t from-indigo-400 to-indigo-600 rounded-t"
+                      style={{ height: `${Math.max(3, (item.moods.humor / 10) * 120)}px` }}
+                      title={`Humor: ${item.moods.humor.toFixed(1)}/10`}
+                    ></div>
                   </div>
                   <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
                 </div>
@@ -575,44 +563,32 @@ export function MoodReportPage() {
                   <p className="text-sm text-muted-foreground">
                     <strong>Sadness:</strong> {averageMoods.sadness.toFixed(1)}/10
                   </p>
-                  {averageMoods.anger > 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      <strong>Anger:</strong> {averageMoods.anger.toFixed(1)}/10
-                    </p>
-                  )}
-                  {averageMoods.anxiety > 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      <strong>Anxiety:</strong> {averageMoods.anxiety.toFixed(1)}/10
-                    </p>
-                  )}
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Anger:</strong> {averageMoods.anger.toFixed(1)}/10
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Anxiety:</strong> {averageMoods.anxiety.toFixed(1)}/10
+                  </p>
                   <p className="text-sm text-muted-foreground">
                     <strong>Stress:</strong> {averageMoods.stress.toFixed(1)}/10
                   </p>
                 </div>
                 <div>
-                  {averageMoods.peace > 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      <strong>Peace:</strong> {averageMoods.peace.toFixed(1)}/10
-                    </p>
-                  )}
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Peace:</strong> {averageMoods.peace.toFixed(1)}/10
+                  </p>
                   <p className="text-sm text-muted-foreground">
                     <strong>Energy:</strong> {averageMoods.energy.toFixed(1)}/10
                   </p>
-                  {averageMoods.excitement > 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      <strong>Excitement:</strong> {averageMoods.excitement.toFixed(1)}/10
-                    </p>
-                  )}
-                  {averageMoods.loneliness > 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      <strong>Loneliness:</strong> {averageMoods.loneliness.toFixed(1)}/10
-                    </p>
-                  )}
-                  {averageMoods.humor > 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      <strong>Humor:</strong> {averageMoods.humor.toFixed(1)}/10
-                    </p>
-                  )}
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Excitement:</strong> {averageMoods.excitement.toFixed(1)}/10
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Loneliness:</strong> {averageMoods.loneliness.toFixed(1)}/10
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Humor:</strong> {averageMoods.humor.toFixed(1)}/10
+                  </p>
                 </div>
               </div>
             </div>
