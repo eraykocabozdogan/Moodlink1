@@ -306,6 +306,14 @@ export function UserProfilePage({ user: userProp, onBack, onMessage }: UserProfi
           likesCount: post.likesCount || 0,
           commentsCount: post.commentsCount || 0,
           isLikedByCurrentUser: post.isLikedByCurrentUser || false,
+          // Add user data for proper display
+          userData: {
+            id: user.id,
+            userName: user.userName,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            fullName: displayName
+          }
         }
       }) || []
 

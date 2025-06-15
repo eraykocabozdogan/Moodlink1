@@ -193,7 +193,9 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
             try {
               console.log(`🔍 Fetching user info for ${apiPost.userId}`)
               userInfo = await apiClient.getUserById(apiPost.userId)
-              username = userInfo.userName || `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim() || 'User'
+              // Use firstName lastName for display, userName for handle
+              const fullName = `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim()
+              username = fullName || userInfo.userName || 'User'
               handle = userInfo.userName ? `@${userInfo.userName}` : handle
               console.log(`✅ Got user info: ${username} (${handle})`)
             } catch (userError) {

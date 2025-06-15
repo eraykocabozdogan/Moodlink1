@@ -145,18 +145,32 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
       console.log('Final posts length:', posts.length)
 
       // Transform posts to match PostCard interface
-      const transformedPosts = posts?.map((post: any) => ({
-        id: post.id,
-        username: post.userName || post.userFirstName || user.userName || 'User',
-        handle: `@${post.userName || user.userName || 'user'}`,
-        time: formatTimeAgo(post.createdDate),
-        content: post.contentText || '',
-        image: post.postImageFileId || post.imageUrls?.[0] || undefined,
-        moodCompatibility: "90%", // TODO: Calculate from API
-        likesCount: post.likesCount || 0,
-        commentsCount: post.commentsCount || 0,
-        isLikedByCurrentUser: post.isLikedByCurrentUser || false,
-      })) || []
+      const transformedPosts = posts?.map((post: any) => {
+        // Use firstName lastName for display name
+        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim()
+        const displayName = fullName || user.userName || 'User'
+
+        return {
+          id: post.id,
+          username: displayName,
+          handle: `@${user.userName || 'user'}`,
+          time: formatTimeAgo(post.createdDate),
+          content: post.contentText || '',
+          image: post.postImageFileId || post.imageUrls?.[0] || undefined,
+          moodCompatibility: "90%", // TODO: Calculate from API
+          likesCount: post.likesCount || 0,
+          commentsCount: post.commentsCount || 0,
+          isLikedByCurrentUser: post.isLikedByCurrentUser || false,
+          // Add user data for proper display
+          userData: {
+            id: user.id,
+            userName: user.userName,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            fullName: fullName || user.userName
+          }
+        }
+      }) || []
 
       console.log('Transformed posts:', transformedPosts)
       setUserPosts(transformedPosts)
