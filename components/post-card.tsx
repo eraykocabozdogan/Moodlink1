@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { Heart, MessageCircle, Share } from "lucide-react"
+import Image from "next/image"
 import apiClient from "@/lib/apiClient"
-import { PostImage } from "@/components/ui/post-image"
 
 interface PostCardProps {
   post: {
@@ -18,6 +18,13 @@ interface PostCardProps {
     likesCount: number
     commentsCount: number
     isLikedByCurrentUser: boolean
+    userData?: {
+      id: string
+      userName?: string
+      firstName?: string
+      lastName?: string
+      fullName?: string
+    }
   }
   onUserClick?: (user: any) => void
   onPostUpdate?: (postId: string, updates: { likesCount?: number; isLikedByCurrentUser?: boolean; commentsCount?: number }) => void
@@ -312,19 +319,53 @@ export function PostCard({ post, onUserClick, onPostUpdate }: PostCardProps) {
         <div className="flex-1 min-w-0">
           {/* Header */}
           <div className="flex items-center space-x-2 mb-2">
-            <span 
+            <span
               className="font-bold text-foreground cursor-pointer hover:underline"
-              onClick={() => onUserClick && onUserClick({              username: post.username,
-              handle: post.handle?.replace('@', '') || 'user',
-                followers: (Math.floor(Math.random() * 500) + 100).toString(),
-                following: (Math.floor(Math.random() * 200) + 50).toString(),
-                bio: `${post.username}'s profile. MoodLink user.`,
-                moods: [
-                  { name: "Energetic", percentage: Math.floor(Math.random() * 30 + 50) + "%" },
-                  { name: "Happy", percentage: Math.floor(Math.random() * 20 + 60) + "%" },
-                ],
-                badges: ["🏆", "🎯"],
-              })}
+              onClick={() => {
+                if (onUserClick) {
+                  if (post.userData?.id) {
+                    // Use real user data if available
+                    console.log('Using real user data for profile:', post.userData)
+                    onUserClick({
+                      id: post.userData.id,
+                      username: post.username,
+                      handle: post.handle?.replace('@', '') || 'user',
+                      userName: post.userData.userName,
+                      firstName: post.userData.firstName,
+                      lastName: post.userData.lastName,
+                      fullName: post.userData.fullName,
+                      followers: (Math.floor(Math.random() * 500) + 100).toString(),
+                      following: (Math.floor(Math.random() * 200) + 50).toString(),
+                      bio: `${post.username}'s profile. MoodLink user.`,
+                      moods: [
+                        { name: "Energetic", percentage: Math.floor(Math.random() * 30 + 50) + "%" },
+                        { name: "Happy", percentage: Math.floor(Math.random() * 20 + 60) + "%" },
+                      ],
+                      badges: ["🏆", "🎯"],
+                    })
+                  } else {
+                    // Fallback: Create mock profile with username
+                    console.log('No real user data, creating mock profile for:', post.username)
+                    onUserClick({
+                      id: `mock-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                      username: post.username,
+                      handle: post.handle?.replace('@', '') || 'user',
+                      userName: post.username,
+                      firstName: post.username,
+                      lastName: '',
+                      fullName: post.username,
+                      followers: (Math.floor(Math.random() * 500) + 100).toString(),
+                      following: (Math.floor(Math.random() * 200) + 50).toString(),
+                      bio: `${post.username}'s profile. MoodLink user.`,
+                      moods: [
+                        { name: "Energetic", percentage: Math.floor(Math.random() * 30 + 50) + "%" },
+                        { name: "Happy", percentage: Math.floor(Math.random() * 20 + 60) + "%" },
+                      ],
+                      badges: ["🏆", "🎯"],
+                    })
+                  }
+                }
+              }}
             >
               {post.username}
             </span>
@@ -338,11 +379,40 @@ export function PostCard({ post, onUserClick, onPostUpdate }: PostCardProps) {
 
           {/* Image */}
           {post.image && (
-            <PostImage
-              src={post.image}
-              alt="Post image"
-              className="mb-3"
-            />
+            <div className="mb-3 rounded-xl overflow-hidden">
+              <Image
+                src={
+                  post.image.startsWith('/api/files/')
+                    ? `https://moodlinkbackend.onrender.com/api/FileAttachments/download/${post.image.split('/').pop()}`
+                    : post.image || "/placeholder.svg"
+                }
+                alt="Post image"
+                width={400}
+                height={200}
+                className="w-full h-48 object-cover"
+                onError={(e) => {
+                  // Show placeholder instead of hiding
+                  const parent = e.currentTarget.parentElement
+                  if (parent) {
+                    parent.innerHTML = `
+                      <div class="w-full h-48 bg-muted rounded-lg flex items-center justify-center">
+                        <div class="text-center text-muted-foreground">
+                          <div class="text-4xl mb-2">📷</div>
+                          <p class="text-sm">Image not available</p>
+                        </div>
+                      </div>
+                    `
+                  }
+                  console.log('❌ Image failed to load:', post.image)
+                }}
+                onLoad={() => {
+                  console.log('✅ Image loaded successfully:', post.image)
+                }}
+                onLoadStart={() => {
+                  console.log('🔄 Image loading started:', post.image)
+                }}
+              />
+            </div>
           )}
 
           {/* Actions */}

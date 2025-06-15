@@ -49,6 +49,36 @@ export function UserProfilePage({ user: userProp, onBack }: UserProfilePageProps
     fetchCurrentUser()
   }, [])
 
+  // Check if current user is following the target user
+  const checkFollowStatus = async (targetUserId: UUID) => {
+    if (!currentUser?.id) {
+      console.log('No current user, setting follow status to false')
+      setIsFollowing(false)
+      return
+    }
+
+    try {
+      console.log('🔍 Checking follow status for:', { currentUserId: currentUser.id, targetUserId })
+
+      // Get all follows and check if current user follows target user
+      const followsResponse = await apiClient.getFollows({ PageIndex: 0, PageSize: 1000 })
+      const followRelation = followsResponse.items?.find(
+        (follow: any) => follow.followerId === currentUser.id && follow.followedId === targetUserId
+      )
+
+      const isFollowingUser = !!followRelation
+      console.log('✅ Follow status check result:', { isFollowingUser, followRelation })
+
+      setIsFollowing(isFollowingUser)
+      if (followRelation) {
+        setFollowId(followRelation.id)
+      }
+    } catch (error) {
+      console.error('❌ Error checking follow status:', error)
+      setIsFollowing(false) // Default to false on error
+    }
+  }
+
   // Fetch user data by ID or use provided user object
   useEffect(() => {
     const fetchUserData = async () => {
@@ -62,7 +92,8 @@ export function UserProfilePage({ user: userProp, onBack }: UserProfilePageProps
           console.log('Fetched user data:', userData)
 
           setUser(userData)
-          setIsFollowing(userData.isFollowedByCurrentUser || false)
+
+          // Don't check follow status here, wait for currentUser to load
         }
         // If userProp is an object, use it directly (for backward compatibility)
         else if (userProp && typeof userProp === 'object') {
@@ -70,7 +101,7 @@ export function UserProfilePage({ user: userProp, onBack }: UserProfilePageProps
 
           // Transform the user object to match API response format
           const transformedUser = {
-            id: userProp.id || `mock-${Date.now()}`, // Generate mock ID if not present
+            id: userProp.id, // Use real ID, don't generate mock
             firstName: userProp.firstName || '',
             lastName: userProp.lastName || '',
             userName: userProp.handle || userProp.username || 'user',
@@ -85,7 +116,9 @@ export function UserProfilePage({ user: userProp, onBack }: UserProfilePageProps
           }
 
           setUser(transformedUser)
-          setIsFollowing(false) // Default for mock data
+
+          // Don't check follow status here, wait for currentUser to load
+          setIsFollowing(false) // Default until currentUser loads
         }
       } catch (err: any) {
         console.error('Error fetching user data:', err)
@@ -100,10 +133,25 @@ export function UserProfilePage({ user: userProp, onBack }: UserProfilePageProps
     }
   }, [userProp])
 
+  // Check follow status when both currentUser and user are loaded
+  useEffect(() => {
+    if (currentUser?.id && user?.id && !user.id.startsWith('mock-')) {
+      console.log('🔄 Both currentUser and user loaded, checking follow status...')
+      checkFollowStatus(user.id)
+    }
+  }, [currentUser?.id, user?.id])
+
   // Fetch user posts
   const fetchUserPosts = async () => {
     if (!user?.id) {
       console.log('No user ID available for fetching posts')
+      return
+    }
+
+    // If it's a mock ID, show empty posts
+    if (user.id.startsWith('mock-')) {
+      console.log('Mock user detected, showing empty posts')
+      setUserPosts([])
       return
     }
 
@@ -237,23 +285,67 @@ export function UserProfilePage({ user: userProp, onBack }: UserProfilePageProps
           setUser({ ...user, followersCount: (user.followersCount || 1) - 1 })
         }
       } else {
-        // Follow
+        // Follow - optimistically update UI first
+        setIsFollowing(true)
+
         const followData: CreateFollowCommand = {
           followerId: currentUser.id,
           followedId: user.id,
         }
 
-        const followResponse = await apiClient.createFollow(followData)
-        console.log('Follow created:', followResponse)
+        console.log('🔄 Creating follow with data:', followData)
+        console.log('🔄 Current user:', currentUser)
+        console.log('🔄 Target user:', user)
+        console.log('🔄 Follow data types:', {
+          followerId: typeof followData.followerId,
+          followedId: typeof followData.followedId,
+          followerIdValue: followData.followerId,
+          followedIdValue: followData.followedId
+        })
 
-        setIsFollowing(true)
+        const followResponse = await apiClient.createFollow(followData)
+        console.log('✅ Follow created:', followResponse)
+
         setFollowId(followResponse.id)
         setUser({ ...user, followersCount: (user.followersCount || 0) + 1 })
       }
     } catch (err: any) {
-      console.error('Error toggling follow:', err)
-      // Revert the state on error
-      setIsFollowing(!isFollowing)
+      console.error('❌ Error toggling follow:', err)
+
+      // Show user-friendly error message
+      let errorMessage = 'Failed to follow user.'
+      let shouldSetFollowing = false
+
+      if (err.response?.status === 500) {
+        // Check if error message indicates duplicate follow
+        const errorData = err.response?.data
+        if (errorData && (
+          JSON.stringify(errorData).toLowerCase().includes('duplicate') ||
+          JSON.stringify(errorData).toLowerCase().includes('already') ||
+          JSON.stringify(errorData).toLowerCase().includes('exists') ||
+          JSON.stringify(errorData).toLowerCase().includes('constraint')
+        )) {
+          errorMessage = 'You are already following this user.'
+          shouldSetFollowing = true // Set as following since it already exists
+        } else {
+          errorMessage = 'Server error. Please try again later.'
+        }
+      } else if (err.response?.status === 400) {
+        errorMessage = 'Invalid request. Please try again.'
+      } else if (err.response?.status === 409) {
+        errorMessage = 'You are already following this user.'
+        shouldSetFollowing = true
+      }
+
+      alert(errorMessage)
+
+      // If it's a duplicate follow error, keep as following
+      if (shouldSetFollowing) {
+        setIsFollowing(true)
+      } else {
+        // Revert to original state on error
+        setIsFollowing(false) // Since we optimistically set to true, revert to false
+      }
     } finally {
       setFollowLoading(false)
     }
@@ -366,7 +458,7 @@ export function UserProfilePage({ user: userProp, onBack }: UserProfilePageProps
               />
             ) : (
               <div className="w-24 h-24 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full mx-auto flex items-center justify-center text-primary-foreground">
-                {user.username.substring(0, 2).toUpperCase()}
+                {(user.userName || user.firstName || user.lastName || 'U').substring(0, 2).toUpperCase()}
               </div>
             )}
           </div>

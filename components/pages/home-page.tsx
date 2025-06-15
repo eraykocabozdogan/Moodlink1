@@ -114,17 +114,54 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
           }
         }
 
-        console.log(`Fetched ${allPosts.length} posts total from ${pageIndex} pages`)
+        console.log(`🎯 Fetched ${allPosts.length} posts total from ${pageIndex} pages`)
+        console.log(`🎯 First few posts:`, allPosts.slice(0, 2))
 
         // Transform API data to match our Post interface with real data
         const transformPost = async (apiPost: any, index: number) => {
           const isCurrentUser = user && apiPost.userId === user.id
 
           // Debug log to see what fields are available
-          if (pageIndex === 0 && index === 0) {
-            console.log('Sample API Post object:', apiPost)
-            console.log('Available fields:', Object.keys(apiPost))
-            console.log('Fetching real likes and comments data from backend...')
+          if (index === 0) {
+            console.log('🔥 FIRST POST DEBUG 🔥')
+            console.log('📊 Sample API Post object:', apiPost)
+            console.log('📊 Available fields:', Object.keys(apiPost))
+            console.log('📊 User fields in post:', {
+              userId: apiPost?.userId,
+              userName: apiPost?.userName,
+              userFirstName: apiPost?.userFirstName,
+              userLastName: apiPost?.userLastName,
+              fullName: apiPost?.fullName
+            })
+            console.log('📊 CRITICAL: userId format check:', {
+              userId: apiPost?.userId,
+              isString: typeof apiPost?.userId === 'string',
+              isUUID: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(apiPost?.userId || ''),
+              length: apiPost?.userId?.length
+            })
+            console.log('🔥 END FIRST POST DEBUG 🔥')
+          }
+
+          // Fetch user data for this post
+          let userInfo = null
+          let username = 'User'
+          let handle = `@user_${apiPost.userId?.slice(-4) || 'unknown'}`
+
+          if (isCurrentUser) {
+            username = 'You'
+            handle = '@you'
+            userInfo = user
+          } else {
+            try {
+              console.log(`🔍 Fetching user info for ${apiPost.userId}`)
+              userInfo = await apiClient.getUserById(apiPost.userId)
+              username = userInfo.userName || `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim() || 'User'
+              handle = userInfo.userName ? `@${userInfo.userName}` : handle
+              console.log(`✅ Got user info: ${username} (${handle})`)
+            } catch (userError) {
+              console.log(`❌ Could not fetch user info for ${apiPost.userId}:`, userError)
+              // Keep default values
+            }
           }
 
           // Debug: Log post image info
@@ -145,48 +182,38 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
 
           return {
             id: apiPost.id,
-            username: isCurrentUser ? 'You' : (apiPost.userName || 'User'), // Show "You" for current user's posts
-            handle: isCurrentUser ? '@you' : `@user_${apiPost.userId?.slice(-4) || 'unknown'}`, // Use @you for current user
+            username: username,
+            handle: handle,
             time: 'now', // TODO: Add createdDate to API response
             content: apiPost.contentText || '',
-            image: apiPost.postImageFileId || undefined,
+            image: apiPost.postImageFileId ? apiClient.getImageUrl(apiPost.postImageFileId) : undefined,
             moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%`, // Mock mood compatibility for now
             likesCount: likesCount,
             commentsCount: commentsCount,
-            isLikedByCurrentUser: isLikedByCurrentUser
+            isLikedByCurrentUser: isLikedByCurrentUser,
+            // Add real user data for profile navigation
+            userData: userInfo ? {
+              id: userInfo.id,
+              userName: userInfo.userName,
+              firstName: userInfo.firstName,
+              lastName: userInfo.lastName,
+              fullName: userInfo.userName || `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim()
+            } : {
+              id: apiPost.userId,
+              userName: null,
+              firstName: null,
+              lastName: null,
+              fullName: null
+            }
           }
         }
 
-        console.log(`Transforming ${allPosts.length} posts with real data (first 10 posts only for performance)...`)
+        console.log(`Transforming ${allPosts.length} posts with real user data...`)
 
-        // For performance, only fetch real data for first 10 posts
-        const postsWithRealData = allPosts.slice(0, 10)
-        const postsWithMockData = allPosts.slice(10)
+        // Transform ALL posts with real data (might be slower but correct)
+        const transformedPosts = await Promise.all(allPosts.map(transformPost))
 
-        // Transform first 10 posts with real data
-        const realDataPosts = await Promise.all(postsWithRealData.map(transformPost))
 
-        // Transform remaining posts with mock data for performance
-        const mockDataPosts = postsWithMockData.map((apiPost: any, index: number) => {
-          const isCurrentUser = user && apiPost.userId === user.id
-          const postIdHash = apiPost.id.split('-')[0]
-          const hashNum = parseInt(postIdHash, 16) || 0
-
-          return {
-            id: apiPost.id,
-            username: isCurrentUser ? 'You' : (apiPost.userName || 'User'),
-            handle: isCurrentUser ? '@you' : `@user_${apiPost.userId?.slice(-4) || 'unknown'}`,
-            time: 'now',
-            content: apiPost.contentText || '',
-            image: apiPost.postImageFileId ? `/api/files/${apiPost.postImageFileId}` : undefined,
-            moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%`,
-            likesCount: apiPost.likesCount || 0,
-            commentsCount: apiPost.commentsCount || 0,
-            isLikedByCurrentUser: apiPost.isLikedByCurrentUser || false
-          }
-        })
-
-        const transformedPosts = [...realDataPosts, ...mockDataPosts]
 
         // Set the same posts for both tabs for now
         setForYouPosts(transformedPosts)
@@ -327,7 +354,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
           handle: isCurrentUser ? '@you' : `@user_${apiPost.userId?.slice(-4) || 'unknown'}`, // Use @you for current user
           time: 'now', // TODO: Add createdDate to API response
           content: apiPost.contentText || '',
-          image: apiPost.postImageFileId || undefined,
+          image: apiPost.postImageFileId ? apiClient.getImageUrl(apiPost.postImageFileId) : undefined,
           moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%`, // Mock mood compatibility for now
           likesCount: likesCount,
           commentsCount: commentsCount,
@@ -356,7 +383,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
           handle: isCurrentUser ? '@you' : `@user_${apiPost.userId?.slice(-4) || 'unknown'}`,
           time: 'now',
           content: apiPost.contentText || '',
-          image: apiPost.postImageFileId || undefined,
+          image: apiPost.postImageFileId ? apiClient.getImageUrl(apiPost.postImageFileId) : undefined,
           moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%`,
           likesCount: apiPost.likesCount || 0,
           commentsCount: apiPost.commentsCount || 0,
