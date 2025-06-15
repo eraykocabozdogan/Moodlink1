@@ -16,17 +16,17 @@ const themeBackgrounds = {
   },
   white: {
     gradient: "from-gray-50 via-white to-gray-100",
-    image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=1080&fit=crop&crop=center&auto=format&q=80",
+    image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1920&h=1080&fit=crop&crop=center&auto=format&q=80",
     overlay: "bg-white/70"
   },
   nature: {
     gradient: "from-green-100 via-emerald-50 to-teal-100",
-    image: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1920&h=1080&fit=crop&crop=center&auto=format&q=80",
+    image: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=1920&h=1080&fit=crop&crop=center&auto=format&q=80",
     overlay: "bg-green-50/60"
   },
   sunset: {
     gradient: "from-orange-100 via-amber-50 to-yellow-100",
-    image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=1080&fit=crop&crop=center&auto=format&q=80",
+    image: "https://images.unsplash.com/photo-1495616811223-4d98c6e9c869?w=1920&h=1080&fit=crop&crop=center&auto=format&q=80",
     overlay: "bg-orange-50/60"
   },
   nirvana: {
@@ -42,17 +42,16 @@ const themeBackgrounds = {
 }
 
 export function ThemeBackground({ children }: ThemeBackgroundProps) {
-  const { theme } = useTheme()
+  const { actualTheme } = useTheme()
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
 
   // Safely get theme with fallback
   const getThemeConfig = (themeName: string) => {
-    // Auto theme should not have its own background, it uses the selected theme's background
     return themeBackgrounds[themeName as keyof typeof themeBackgrounds] || themeBackgrounds.white
   }
 
-  const currentTheme = getThemeConfig(theme)
+  const currentTheme = getThemeConfig(actualTheme)
 
   useEffect(() => {
     // Reset states when theme changes
@@ -68,7 +67,7 @@ export function ThemeBackground({ children }: ThemeBackgroundProps) {
     } else {
       setImageError(true)
     }
-  }, [currentTheme?.image])
+  }, [currentTheme?.image, actualTheme])
 
   // Fallback if no theme is available
   if (!currentTheme) {

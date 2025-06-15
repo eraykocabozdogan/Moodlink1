@@ -9,25 +9,69 @@ interface ThemeSettingsPageProps {
 }
 
 export function ThemeSettingsPage({ onBack }: ThemeSettingsPageProps) {
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme, getAutoTheme } = useTheme()
   const [autoSelectedTheme, setAutoSelectedTheme] = useState<string>("")
+  const [autoCompatibility, setAutoCompatibility] = useState<string>("")
 
-  // Get the auto-selected theme from localStorage
+  // Map theme IDs to display names
+  const getThemeDisplayName = (themeId: string) => {
+    const themeNameMap: Record<string, string> = {
+      'white': 'Daylight',
+      'nature': 'Forest',
+      'ocean': 'Lake',
+      'night': 'Night',
+      'sunset': 'Sunset',
+      'nirvana': 'Nirvana'
+    }
+    return themeNameMap[themeId] || themeId
+  }
+
+  // Get the auto-selected theme from localStorage and trigger auto selection if needed
   useEffect(() => {
+    if (theme === "auto") {
+      // Trigger auto theme selection to get fresh data
+      getAutoTheme()
+    }
+
     const selectedTheme = localStorage.getItem('auto-selected-theme')
+    const compatibility = localStorage.getItem('auto-theme-compatibility')
+
     if (selectedTheme) {
       setAutoSelectedTheme(selectedTheme)
     }
-  }, [theme])
+    if (compatibility) {
+      setAutoCompatibility(compatibility)
+    }
+  }, [theme, getAutoTheme])
+
+  // Also listen for localStorage changes to update immediately
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const selectedTheme = localStorage.getItem('auto-selected-theme')
+      const compatibility = localStorage.getItem('auto-theme-compatibility')
+
+      if (selectedTheme) {
+        setAutoSelectedTheme(selectedTheme)
+      }
+      if (compatibility) {
+        setAutoCompatibility(compatibility)
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [])
 
   const themes = [
     {
       id: "auto" as const,
       name: "Auto",
-      percentage: autoSelectedTheme ? `→ ${autoSelectedTheme}` : "Smart",
+      percentage: autoSelectedTheme
+        ? `→ ${getThemeDisplayName(autoSelectedTheme)} (${autoCompatibility}%)`
+        : "Smart",
       colors: "from-purple-400 via-blue-400 to-green-400",
       description: autoSelectedTheme
-        ? `Currently using ${autoSelectedTheme} theme based on your mood data`
+        ? `Currently using ${getThemeDisplayName(autoSelectedTheme)} theme with ${autoCompatibility}% compatibility based on your mood data`
         : "Adapts based on your mood data",
       preview: "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=400&h=200&fit=crop&crop=center&auto=format&q=80"
     },
@@ -41,19 +85,19 @@ export function ThemeSettingsPage({ onBack }: ThemeSettingsPageProps) {
     },
     {
       id: "white" as const,
-      name: "White",
+      name: "Daylight",
       percentage: "Clean",
       colors: "from-gray-100 to-white border border-gray-300",
       description: "Clean and minimal",
-      preview: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=200&fit=crop&crop=center&auto=format&q=80"
+      preview: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&h=200&fit=crop&crop=center&auto=format&q=80"
     },
     {
       id: "nature" as const,
-      name: "Nature",
+      name: "Forest",
       percentage: "Harmony",
       colors: "from-green-300 to-emerald-400",
       description: "For balanced, peaceful moods",
-      preview: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=200&fit=crop&crop=center&auto=format&q=80"
+      preview: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=400&h=200&fit=crop&crop=center&auto=format&q=80"
     },
     {
       id: "sunset" as const,
@@ -61,7 +105,7 @@ export function ThemeSettingsPage({ onBack }: ThemeSettingsPageProps) {
       percentage: "Energy",
       colors: "from-orange-300 to-amber-400",
       description: "For energetic, happy moments",
-      preview: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=200&fit=crop&crop=center&auto=format&q=80"
+      preview: "https://images.unsplash.com/photo-1495616811223-4d98c6e9c869?w=400&h=200&fit=crop&crop=center&auto=format&q=80"
     },
 
     {
@@ -74,7 +118,7 @@ export function ThemeSettingsPage({ onBack }: ThemeSettingsPageProps) {
     },
     {
       id: "ocean" as const,
-      name: "Ocean",
+      name: "Lake",
       percentage: "Dynamic",
       colors: "from-cyan-300 to-blue-400",
       description: "For dynamic, flowing energy",

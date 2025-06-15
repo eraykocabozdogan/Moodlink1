@@ -16,12 +16,14 @@ type ThemeProviderState = {
   theme: Theme
   setTheme: (theme: Theme) => void
   getAutoTheme: () => Theme
+  actualTheme: Theme
 }
 
 const initialState: ThemeProviderState = {
   theme: "white",
   setTheme: () => null,
   getAutoTheme: () => "white",
+  actualTheme: "white",
 }
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
@@ -31,7 +33,18 @@ function selectThemeBasedOnMood(): Theme {
   try {
     // Get mood data from localStorage (from mood report)
     const moodDataStr = localStorage.getItem('recent-mood-data')
-    if (!moodDataStr) return "white" // Default fallback
+
+    // Available themes (excluding auto)
+    const availableThemes: Theme[] = ["night", "nature", "sunset", "white", "nirvana", "ocean"]
+
+    if (!moodDataStr) {
+      // If no mood data, select randomly with equal probability
+      const randomIndex = Math.floor(Math.random() * availableThemes.length)
+      const selectedTheme = availableThemes[randomIndex]
+      localStorage.setItem('auto-selected-theme', selectedTheme)
+      localStorage.setItem('auto-theme-compatibility', (60 + Math.floor(Math.random() * 25)).toString()) // 60-85% when no mood data
+      return selectedTheme
+    }
 
     const moodData = JSON.parse(moodDataStr)
 
@@ -56,26 +69,27 @@ function selectThemeBasedOnMood(): Theme {
       })
     }
 
-    // Available themes (excluding auto)
-    const availableThemes: Theme[] = ["night", "nature", "sunset", "white", "nirvana", "ocean"]
-
-    // Calculate theme scores based on mood data
+    // Calculate theme scores based on mood data with equal base chances
+    const baseScore = 5 // Equal base score for all themes
     const themeScores: Record<string, number> = {
-      night: (avgMoods.sadness * 0.3) + (avgMoods.loneliness * 0.3) + (avgMoods.peace * 0.2) + (10 - avgMoods.energy) * 0.2,
-      nature: (avgMoods.happiness * 0.25) + (avgMoods.peace * 0.35) + (10 - avgMoods.stress) * 0.25 + (avgMoods.humor * 0.15),
-      sunset: (avgMoods.happiness * 0.3) + (avgMoods.energy * 0.3) + (avgMoods.excitement * 0.25) + (avgMoods.humor * 0.15),
-      white: (10 - avgMoods.anger) * 0.3 + (10 - avgMoods.anxiety) * 0.3 + (avgMoods.peace * 0.2) + (5) * 0.2, // Base score for neutrality
-      nirvana: (avgMoods.peace * 0.4) + (10 - avgMoods.stress) * 0.3 + (10 - avgMoods.anxiety) * 0.2 + (avgMoods.happiness * 0.1),
-      ocean: (avgMoods.energy * 0.3) + (avgMoods.excitement * 0.25) + (avgMoods.happiness * 0.25) + (10 - avgMoods.sadness) * 0.2
+      night: baseScore + (avgMoods.sadness * 0.2) + (avgMoods.loneliness * 0.2) + (avgMoods.peace * 0.1),
+      nature: baseScore + (avgMoods.happiness * 0.15) + (avgMoods.peace * 0.2) + ((10 - avgMoods.stress) * 0.15),
+      sunset: baseScore + (avgMoods.happiness * 0.2) + (avgMoods.energy * 0.2) + (avgMoods.excitement * 0.1),
+      white: baseScore + ((10 - avgMoods.anger) * 0.15) + ((10 - avgMoods.anxiety) * 0.15) + (avgMoods.peace * 0.1),
+      nirvana: baseScore + (avgMoods.peace * 0.25) + ((10 - avgMoods.stress) * 0.15) + ((10 - avgMoods.anxiety) * 0.1),
+      ocean: baseScore + (avgMoods.energy * 0.2) + (avgMoods.excitement * 0.15) + (avgMoods.happiness * 0.15)
     }
 
-    // Add randomness to ensure all themes have a chance (15% random factor)
+    // Store original mood-based scores before adding randomness
+    const originalMoodScores = { ...themeScores }
+
+    // Add significant randomness to ensure all themes have equal chances
     Object.keys(themeScores).forEach(theme => {
-      const randomFactor = (Math.random() - 0.5) * 3 // -1.5 to +1.5
+      const randomFactor = Math.random() * 8 // 0 to 8 for high randomness
       themeScores[theme] += randomFactor
     })
 
-    // Find theme with highest score
+    // Find theme with highest score (after randomness)
     let selectedTheme: Theme = "white"
     let highestScore = -1
 
@@ -86,14 +100,34 @@ function selectThemeBasedOnMood(): Theme {
       }
     })
 
-    // Store the selected theme for display
+    // Calculate compatibility based on the ACTUALLY SELECTED theme's mood alignment
+    const selectedThemeMoodScore = originalMoodScores[selectedTheme]
+    const maxPossibleMoodScore = baseScore + (10 * 0.5) // base + max mood contribution
+    const minPossibleMoodScore = baseScore // minimum is just the base score
+
+    // Normalize the selected theme's mood score to a percentage (60-95% range)
+    const moodContribution = Math.max(0, Math.min(1, (selectedThemeMoodScore - minPossibleMoodScore) / (maxPossibleMoodScore - minPossibleMoodScore)))
+
+    // Add some randomness to the percentage itself for more realistic variation (±5%)
+    const basePercentage = 60 + (moodContribution * 35) // 60-95% range
+    const randomVariation = (Math.random() - 0.5) * 10 // ±5% variation
+    const compatibilityPercentage = Math.round(Math.max(55, Math.min(95, basePercentage + randomVariation)))
+
+    // Store the selected theme and compatibility for display
     localStorage.setItem('auto-selected-theme', selectedTheme)
+    localStorage.setItem('auto-theme-compatibility', compatibilityPercentage.toString())
 
     return selectedTheme
 
   } catch (error) {
     console.error('Error selecting auto theme:', error)
-    return "white"
+    // Fallback to random selection
+    const availableThemes: Theme[] = ["night", "nature", "sunset", "white", "nirvana", "ocean"]
+    const randomIndex = Math.floor(Math.random() * availableThemes.length)
+    const selectedTheme = availableThemes[randomIndex]
+    localStorage.setItem('auto-selected-theme', selectedTheme)
+    localStorage.setItem('auto-theme-compatibility', (55 + Math.floor(Math.random() * 25)).toString()) // 55-80% on error
+    return selectedTheme
   }
 }
 
@@ -132,6 +166,7 @@ export function ThemeProvider({
       setTheme(newTheme)
     },
     getAutoTheme,
+    actualTheme,
   }
 
   useEffect(() => {
