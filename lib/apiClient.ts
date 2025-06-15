@@ -715,11 +715,28 @@ class ApiClient {
 
   // Follows API
   async createFollow(data: CreateFollowCommand): Promise<CreatedFollowResponse> {
-    return this.request<CreatedFollowResponse>({
-      method: 'POST',
-      url: '/api/Follows',
-      data,
-    });
+    try {
+      console.log('🔄 API Client: Creating follow with data:', data)
+      const response = await this.request<CreatedFollowResponse>({
+        method: 'POST',
+        url: '/api/Follows',
+        data,
+      });
+      console.log('✅ API Client: Follow created successfully:', response)
+      return response
+    } catch (error: any) {
+      console.error('❌ API Client: Follow creation failed:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message,
+        url: error.config?.url,
+        method: error.config?.method,
+        requestData: error.config?.data
+      })
+      console.error('❌ Backend Error Details:', JSON.stringify(error.response?.data, null, 2))
+      throw error
+    }
   }
 
   async deleteFollow(id: UUID): Promise<DeletedFollowResponse> {
@@ -925,6 +942,14 @@ class ApiClient {
       url: `/api/Posts/user/${userId}`,
       params,
     });
+  }
+
+  // Helper function to get full image URL
+  getImageUrl(fileId: string): string {
+    if (fileId.startsWith('http')) {
+      return fileId;
+    }
+    return `${this.baseURL}/api/FileAttachments/download/${fileId}`;
   }
 
   async getFeedPosts(params?: PaginationParams): Promise<GetFeedPostsResponse> {
