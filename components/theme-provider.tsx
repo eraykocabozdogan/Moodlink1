@@ -17,6 +17,7 @@ type ThemeProviderState = {
   setTheme: (theme: Theme) => void
   getAutoTheme: () => Theme
   actualTheme: Theme
+  refreshAutoTheme: () => void
 }
 
 const initialState: ThemeProviderState = {
@@ -24,6 +25,7 @@ const initialState: ThemeProviderState = {
   setTheme: () => null,
   getAutoTheme: () => "white",
   actualTheme: "white",
+  refreshAutoTheme: () => null,
 }
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
@@ -31,6 +33,15 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 // Mood-based theme selection algorithm with balanced distribution
 function selectThemeBasedOnMood(): Theme {
   try {
+    // Check if we already have a stable auto-selected theme
+    const existingAutoTheme = localStorage.getItem('auto-selected-theme')
+    const existingCompatibility = localStorage.getItem('auto-theme-compatibility')
+
+    // If we have both theme and compatibility, use the existing selection
+    if (existingAutoTheme && existingCompatibility) {
+      return existingAutoTheme as Theme
+    }
+
     // Get mood data from localStorage (from mood report)
     const moodDataStr = localStorage.getItem('recent-mood-data')
 
@@ -137,12 +148,48 @@ export function ThemeProvider({
   storageKey = "moodlink-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(defaultTheme)
-  const [actualTheme, setActualTheme] = useState<Theme>(defaultTheme)
+  // Initialize with proper theme from the start
+  const getInitialTheme = (): Theme => {
+    if (typeof window === 'undefined') return defaultTheme
+
+    const storedTheme = localStorage.getItem(storageKey) as Theme
+    if (!storedTheme) return defaultTheme
+
+    // If stored theme is auto, get the actual theme immediately
+    if (storedTheme === "auto") {
+      return selectThemeBasedOnMood()
+    }
+
+    return storedTheme
+  }
+
+  const getInitialSelectedTheme = (): Theme => {
+    if (typeof window === 'undefined') return defaultTheme
+    return (localStorage.getItem(storageKey) as Theme) || defaultTheme
+  }
+
+  const [theme, setTheme] = useState<Theme>(getInitialSelectedTheme)
+  const [actualTheme, setActualTheme] = useState<Theme>(getInitialTheme)
 
   // Get auto theme based on mood data
   const getAutoTheme = (): Theme => {
     return selectThemeBasedOnMood()
+  }
+
+  // Refresh auto theme selection (clears cache and selects new theme)
+  const refreshAutoTheme = (): void => {
+    localStorage.removeItem('auto-selected-theme')
+    localStorage.removeItem('auto-theme-compatibility')
+    if (theme === "auto") {
+      const newAutoTheme = selectThemeBasedOnMood()
+      setActualTheme(newAutoTheme)
+      const root = window.document.documentElement
+      root.classList.remove(
+        "theme-auto", "theme-night", "theme-nature", "theme-sunset",
+        "theme-white", "theme-nirvana", "theme-ocean"
+      )
+      root.classList.add(`theme-${newAutoTheme}`)
+    }
   }
 
   useEffect(() => {
@@ -167,14 +214,10 @@ export function ThemeProvider({
     },
     getAutoTheme,
     actualTheme,
+    refreshAutoTheme,
   }
 
-  useEffect(() => {
-    const storedTheme = localStorage.getItem(storageKey) as Theme
-    if (storedTheme) {
-      setTheme(storedTheme)
-    }
-  }, [storageKey])
+
 
   return (
     <ThemeProviderContext.Provider {...props} value={value}>

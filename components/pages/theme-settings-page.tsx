@@ -29,8 +29,11 @@ export function ThemeSettingsPage({ onBack }: ThemeSettingsPageProps) {
   // Get the auto-selected theme from localStorage and trigger auto selection if needed
   useEffect(() => {
     if (theme === "auto") {
-      // Trigger auto theme selection to get fresh data
-      getAutoTheme()
+      // Only trigger auto theme selection if no theme is already selected
+      const existingTheme = localStorage.getItem('auto-selected-theme')
+      if (!existingTheme) {
+        getAutoTheme()
+      }
     }
 
     const selectedTheme = localStorage.getItem('auto-selected-theme')
