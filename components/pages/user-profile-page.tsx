@@ -16,9 +16,10 @@ import {
 interface UserProfilePageProps {
   user: any // User object or user ID
   onBack: () => void
+  onMessage?: (user: any) => void // Callback for message button
 }
 
-export function UserProfilePage({ user: userProp, onBack }: UserProfilePageProps) {
+export function UserProfilePage({ user: userProp, onBack, onMessage }: UserProfilePageProps) {
   // Loading and error states
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -27,6 +28,7 @@ export function UserProfilePage({ user: userProp, onBack }: UserProfilePageProps
 
   // UI states
   const [followLoading, setFollowLoading] = useState(false)
+  const [messageLoading, setMessageLoading] = useState(false)
 
   // Data states
   const [user, setUser] = useState<any>(null)
@@ -48,6 +50,36 @@ export function UserProfilePage({ user: userProp, onBack }: UserProfilePageProps
 
     fetchCurrentUser()
   }, [])
+
+  // Fetch real followers count for a user
+  const fetchFollowersCount = async (userId: UUID): Promise<number> => {
+    try {
+      console.log(`🔍 Fetching followers count for user ${userId.slice(0, 8)}...`)
+      const followsResponse = await apiClient.getFollows({ PageIndex: 0, PageSize: 1000 })
+      const followers = followsResponse.items?.filter((follow: any) => follow.followedId === userId) || []
+      const count = followers.length
+      console.log(`✅ User ${userId.slice(0, 8)} has ${count} followers`)
+      return count
+    } catch (error) {
+      console.error(`❌ Error fetching followers count for ${userId}:`, error)
+      return 0
+    }
+  }
+
+  // Fetch real following count for a user
+  const fetchFollowingCount = async (userId: UUID): Promise<number> => {
+    try {
+      console.log(`🔍 Fetching following count for user ${userId.slice(0, 8)}...`)
+      const followsResponse = await apiClient.getFollows({ PageIndex: 0, PageSize: 1000 })
+      const following = followsResponse.items?.filter((follow: any) => follow.followerId === userId) || []
+      const count = following.length
+      console.log(`✅ User ${userId.slice(0, 8)} is following ${count} users`)
+      return count
+    } catch (error) {
+      console.error(`❌ Error fetching following count for ${userId}:`, error)
+      return 0
+    }
+  }
 
   // Check if current user is following the target user
   const checkFollowStatus = async (targetUserId: UUID) => {
@@ -91,13 +123,51 @@ export function UserProfilePage({ user: userProp, onBack }: UserProfilePageProps
           const userData = await apiClient.getUserById(userProp as UUID)
           console.log('Fetched user data:', userData)
 
-          setUser(userData)
+          // Fetch real followers and following counts
+          const [followersCount, followingCount] = await Promise.all([
+            fetchFollowersCount(userProp as UUID),
+            fetchFollowingCount(userProp as UUID)
+          ])
+
+          // Enhance user data with real counts
+          const enhancedUserData = {
+            ...userData,
+            followersCount,
+            followingCount
+          }
+
+          console.log('Enhanced user data with real counts:', enhancedUserData)
+          setUser(enhancedUserData)
 
           // Don't check follow status here, wait for currentUser to load
         }
         // If userProp is an object, use it directly (for backward compatibility)
         else if (userProp && typeof userProp === 'object') {
           console.log('Using provided user object:', userProp)
+
+          // For user objects, try to get real counts if we have a real ID
+          let followersCount = 0
+          let followingCount = 0
+
+          if (userProp.id && !userProp.id.startsWith('mock-')) {
+            // Real user - fetch real counts
+            try {
+              [followersCount, followingCount] = await Promise.all([
+                fetchFollowersCount(userProp.id),
+                fetchFollowingCount(userProp.id)
+              ])
+              console.log(`Real counts for user object: ${followersCount} followers, ${followingCount} following`)
+            } catch (error) {
+              console.log('Failed to fetch real counts for user object, using defaults')
+              followersCount = 0
+              followingCount = 0
+            }
+          } else {
+            // Mock user - use provided values or defaults
+            followersCount = parseInt(userProp.followers?.replace(/[^\d]/g, '') || '0')
+            followingCount = parseInt(userProp.following?.replace(/[^\d]/g, '') || '0')
+            console.log(`Mock counts for user object: ${followersCount} followers, ${followingCount} following`)
+          }
 
           // Transform the user object to match API response format
           const transformedUser = {
@@ -108,8 +178,8 @@ export function UserProfilePage({ user: userProp, onBack }: UserProfilePageProps
             email: userProp.email || '',
             bio: userProp.bio || '',
             profileImageUrl: userProp.profileImageUrl || null,
-            followersCount: parseInt(userProp.followers?.replace(/[^\d]/g, '') || '0'),
-            followingCount: parseInt(userProp.following?.replace(/[^\d]/g, '') || '0'),
+            followersCount,
+            followingCount,
             postsCount: userProp.postsCount || 0,
             isFollowedByCurrentUser: false, // Default for mock data
             createdDate: userProp.createdDate || new Date().toISOString(),
@@ -265,6 +335,38 @@ export function UserProfilePage({ user: userProp, onBack }: UserProfilePageProps
     return `${Math.floor(diffInSeconds / 86400)}d`
   }
 
+  const handleMessage = async () => {
+    if (!currentUser || !user || messageLoading) return
+
+    try {
+      setMessageLoading(true)
+
+      if (onMessage) {
+        // Use the callback if provided
+        onMessage(user)
+      } else {
+        // Fallback: Create direct message
+        console.log('Creating direct message with user:', user)
+
+        const response = await apiClient.sendDirectMessage({
+          senderUserId: currentUser.id,
+          receiverUserId: user.id,
+          content: "" // Empty content - just create the chat
+        })
+
+        console.log('Direct message created:', response)
+
+        // You could navigate to the chat here or show a success message
+        alert('Chat created! You can now send messages.')
+      }
+    } catch (error) {
+      console.error('Error creating message:', error)
+      alert('Failed to create chat. Please try again.')
+    } finally {
+      setMessageLoading(false)
+    }
+  }
+
   const handleFollowToggle = async () => {
     if (!currentUser || !user || followLoading) return
 
@@ -282,7 +384,11 @@ export function UserProfilePage({ user: userProp, onBack }: UserProfilePageProps
         if (followRelation) {
           await apiClient.deleteFollow(followRelation.id)
           setIsFollowing(false)
-          setUser({ ...user, followersCount: (user.followersCount || 1) - 1 })
+
+          // Fetch real updated followers count
+          const updatedFollowersCount = await fetchFollowersCount(user.id)
+          setUser({ ...user, followersCount: updatedFollowersCount })
+          console.log(`✅ Unfollowed user, updated followers count: ${updatedFollowersCount}`)
         }
       } else {
         // Follow - optimistically update UI first
@@ -307,7 +413,11 @@ export function UserProfilePage({ user: userProp, onBack }: UserProfilePageProps
         console.log('✅ Follow created:', followResponse)
 
         setFollowId(followResponse.id)
-        setUser({ ...user, followersCount: (user.followersCount || 0) + 1 })
+
+        // Fetch real updated followers count
+        const updatedFollowersCount = await fetchFollowersCount(user.id)
+        setUser({ ...user, followersCount: updatedFollowersCount })
+        console.log(`✅ Followed user, updated followers count: ${updatedFollowersCount}`)
       }
     } catch (err: any) {
       console.error('❌ Error toggling follow:', err)
@@ -504,10 +614,12 @@ export function UserProfilePage({ user: userProp, onBack }: UserProfilePageProps
               {followLoading ? "Loading..." : (isFollowing ? "Following" : "Follow")}
             </Button>
             <Button
+              onClick={handleMessage}
+              disabled={messageLoading || !currentUser}
               variant="outline"
               className="border-border text-foreground hover:bg-muted"
             >
-              Message
+              {messageLoading ? "Creating..." : "Message"}
             </Button>
           </div>
         </div>

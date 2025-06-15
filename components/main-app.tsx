@@ -54,6 +54,36 @@ export function MainApp({ user, onLogout }: MainAppProps) {
     setCurrentPage("userProfile")
   }
 
+  const handleMessage = async (user: any) => {
+    console.log('Message button clicked for user:', user)
+
+    try {
+      // Create chat details for the target user
+      const chatInfo = {
+        chatId: `direct-${user.id}`, // Temporary ID for direct chat
+        otherUserId: user.id,
+        otherUserName: user.userName || user.firstName || 'User',
+        otherUserHandle: `@${user.userName || 'user'}`,
+        otherUserAvatar: user.profileImageUrl || null,
+        lastMessage: '', // Will be populated when messages are loaded
+        lastMessageTime: new Date().toISOString(),
+        unreadCount: 0,
+        isDirectMessage: true // Flag to indicate this is a direct message
+      }
+
+      console.log('Setting up direct chat with:', chatInfo)
+
+      // Set chat details and navigate to chat page
+      setChatDetails(chatInfo)
+      handlePageChange("chat")
+
+    } catch (error) {
+      console.error('Error setting up chat:', error)
+      // Fallback: navigate to messages page
+      handlePageChange("messages")
+    }
+  }
+
   // Enhanced logout function
   const handleLogout = () => {
     console.log('MainApp logout triggered')
@@ -93,7 +123,11 @@ export function MainApp({ user, onLogout }: MainAppProps) {
       case "profile":
         return <ProfilePage />
       case "userProfile":
+<<<<<<< Updated upstream
         return <UserProfilePage user={viewingUser} onBack={() => setCurrentPage("home")} />
+=======
+        return <UserProfilePage user={viewingUser} onBack={() => handlePageChange("home")} onMessage={handleMessage} />
+>>>>>>> Stashed changes
       case "activities":
         return <ActivitiesPage />
       case "moodreport":

@@ -20,6 +20,12 @@ interface ChatInfo {
   members?: User[]
   lastMessage: string
   time: string
+  // Direct message properties
+  otherUserId?: UUID
+  otherUserName?: string
+  otherUserHandle?: string
+  otherUserAvatar?: string
+  isDirectMessage?: boolean
 }
 
 interface ChatPageProps {
@@ -61,34 +67,50 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
   // Load messages from backend when chat details change
   useEffect(() => {
     const loadMessages = async () => {
-      if (!chatDetails?.chatId || !user) return
+      if (!chatDetails || !user) return
 
       setLoading(true)
       try {
-        const response = await apiClient.getChatMessages(chatDetails.chatId, {
-          PageIndex: 0,
-          PageSize: 50
-        })
-        const backendMessages: Message[] = response.messages.map((msg: ChatMessageDto) => ({
-          id: msg.id,
-          messageId: msg.id,
-          text: msg.content || '',
-          time: new Date(msg.sentDate).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
-          sent: msg.senderUserId === user.id,
-          sender: msg.senderUserName,
-          senderUserId: msg.senderUserId
-        }))
+        // Handle direct messages
+        if (chatDetails.isDirectMessage && chatDetails.otherUserId) {
+          console.log('Loading direct messages with user:', chatDetails.otherUserId)
 
-        // Mesajları tarih sırasına göre sırala (en eski en üstte, en yeni en altta)
-        const sortedMessages = backendMessages.sort((a, b) => {
-          const msgA = response.messages.find(m => m.id === a.id)
-          const msgB = response.messages.find(m => m.id === b.id)
-          const timeA = new Date(msgA?.sentDate || 0).getTime()
-          const timeB = new Date(msgB?.sentDate || 0).getTime()
-          return timeA - timeB
-        })
+          // For direct messages, we need to find or create a chat
+          // For now, we'll start with empty messages and let the user send the first message
+          setMessages([])
 
-        setMessages(sortedMessages)
+          // You could implement logic here to:
+          // 1. Check if a chat already exists between these users
+          // 2. Load existing messages if chat exists
+          // 3. Create a new chat when first message is sent
+
+        } else if (chatDetails.chatId) {
+          // Handle existing chats
+          const response = await apiClient.getChatMessages(chatDetails.chatId, {
+            PageIndex: 0,
+            PageSize: 50
+          })
+          const backendMessages: Message[] = response.messages.map((msg: ChatMessageDto) => ({
+            id: msg.id,
+            messageId: msg.id,
+            text: msg.content || '',
+            time: new Date(msg.sentDate).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+            sent: msg.senderUserId === user.id,
+            sender: msg.senderUserName,
+            senderUserId: msg.senderUserId
+          }))
+
+          // Mesajları tarih sırasına göre sırala (en eski en üstte, en yeni en altta)
+          const sortedMessages = backendMessages.sort((a, b) => {
+            const msgA = response.messages.find(m => m.id === a.id)
+            const msgB = response.messages.find(m => m.id === b.id)
+            const timeA = new Date(msgA?.sentDate || 0).getTime()
+            const timeB = new Date(msgB?.sentDate || 0).getTime()
+            return timeA - timeB
+          })
+
+          setMessages(sortedMessages)
+        }
       } catch (error) {
         console.error('Failed to load messages:', error)
         // Fallback to mock data for development
@@ -104,6 +126,9 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
               sender: "System"
             }
           ])
+        } else {
+          // Empty state for new direct messages
+          setMessages([])
         }
       } finally {
         setLoading(false)
@@ -111,10 +136,13 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
     }
 
     loadMessages()
-  }, [chatDetails?.chatId, user])
+  }, [chatDetails?.chatId, chatDetails?.otherUserId, user])
 
   const handleSend = async () => {
-    if (!message.trim() || !user || !chatDetails?.chatId || sendingMessage) return
+    if (!message.trim() || !user || sendingMessage) return
+
+    // For direct messages, we need either chatId or otherUserId
+    if (!chatDetails?.chatId && !chatDetails?.isDirectMessage) return
 
     setSendingMessage(true)
     const messageText = message
@@ -132,17 +160,30 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
       senderUserId: user.id,
     }
 
-
-
     setMessages(prev => [...prev, optimisticMessage])
 
     try {
-      // Send message to backend
-      const response = await apiClient.sendMessage({
-        chatId: chatDetails.chatId,
-        senderUserId: user.id,
-        content: messageText,
-      })
+      let response
+
+      if (chatDetails.isDirectMessage && chatDetails.otherUserId) {
+        // Send direct message
+        console.log('Sending direct message to:', chatDetails.otherUserId)
+        response = await apiClient.sendDirectMessage({
+          senderUserId: user.id,
+          receiverUserId: chatDetails.otherUserId,
+          content: messageText,
+        })
+        console.log('Direct message sent:', response)
+      } else if (chatDetails.chatId) {
+        // Send regular chat message
+        response = await apiClient.sendMessage({
+          chatId: chatDetails.chatId,
+          senderUserId: user.id,
+          content: messageText,
+        })
+      } else {
+        throw new Error('No valid chat target')
+      }
 
       // Replace optimistic message with real message
       setMessages(prev => prev.map(msg =>
@@ -193,8 +234,18 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
             <button onClick={onBack} className="p-2 hover:bg-muted rounded-full transition-colors mr-2">
               <ArrowLeft className="w-5 h-5 text-foreground" />
             </button>
-            {chatDetails?.type === "user" ? (
-              <div className="w-10 h-10 bg-gradient-to-r from-green-400 to-blue-400 rounded-full"></div>
+            {chatDetails?.type === "user" || chatDetails?.isDirectMessage ? (
+              chatDetails.otherUserAvatar ? (
+                <img
+                  src={chatDetails.otherUserAvatar}
+                  alt={chatDetails.otherUserName || chatDetails.title}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 bg-gradient-to-r from-green-400 to-blue-400 rounded-full flex items-center justify-center text-white font-medium">
+                  {(chatDetails.otherUserName || chatDetails.title || 'U').substring(0, 2).toUpperCase()}
+                </div>
+              )
             ) : (
               <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
                 <Users className="w-5 h-5 text-white" />
