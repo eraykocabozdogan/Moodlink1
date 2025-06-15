@@ -372,7 +372,10 @@ export function PostCard({ post, currentUser: propCurrentUser, onUserClick, onPo
                 }
               }}
             >
-              {post.username}
+              {/* Display full name if available, otherwise username */}
+              {post.userData?.firstName && post.userData?.lastName
+                ? `${post.userData.firstName} ${post.userData.lastName}`
+                : post.username}
             </span>
             {post.handle && <span className="text-muted-foreground text-sm">{post.handle}</span>}
             <span className="text-muted-foreground text-sm">·</span>
