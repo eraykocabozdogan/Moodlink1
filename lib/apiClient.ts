@@ -999,6 +999,15 @@ class ApiClient {
     });
   }
 
+  // Mood-Based Recommendation API
+  async getMoodBasedUserRecommendations(params?: PaginationParams): Promise<any> {
+    return this.request<any>({
+      method: 'GET',
+      url: '/api/MoodBasedRecommendation/users',
+      params,
+    });
+  }
+
   // User Badges API
   async createUserBadge(data: CreateUserBadgeCommand): Promise<CreatedUserBadgeResponse> {
     return this.request<CreatedUserBadgeResponse>({

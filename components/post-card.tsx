@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { createPortal } from "react-dom"
 import { Heart, MessageCircle, Share } from "lucide-react"
 import Image from "next/image"
 import { ProfileImage } from "@/components/ui/profile-image"
@@ -15,6 +16,7 @@ interface PostCardProps {
     content: string
     image?: string
     moodCompatibility: string
+    matchedMood?: string // Add matched mood name
     community?: string
     likesCount: number
     commentsCount: number
@@ -66,6 +68,12 @@ export function PostCard({ post, currentUser: propCurrentUser, onUserClick, onPo
   const [comments, setComments] = useState<any[]>([])
   const [commentsLoaded, setCommentsLoaded] = useState(false)
   const [currentUser, setCurrentUser] = useState<any>(propCurrentUser || null)
+  const [showImageModal, setShowImageModal] = useState(false)
+
+  // Debug: Log modal state changes
+  useEffect(() => {
+    console.log('🔄 Modal state changed:', showImageModal, 'for post:', post.id)
+  }, [showImageModal, post.id])
 
   // Helper function to format time ago
   const formatTimeAgo = (dateString: string) => {
@@ -436,7 +444,15 @@ export function PostCard({ post, currentUser: propCurrentUser, onUserClick, onPo
 
           {/* Image */}
           {post.image && (
-            <div className="mb-3 rounded-xl overflow-hidden">
+            <div
+              className="mb-3 rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                console.log('🖼️ Image clicked, opening modal for:', post.image)
+                setShowImageModal(true)
+              }}
+            >
               <Image
                 src={
                   post.image.startsWith('/api/files/')
@@ -446,16 +462,16 @@ export function PostCard({ post, currentUser: propCurrentUser, onUserClick, onPo
                 alt="Post image"
                 width={400}
                 height={200}
-                className="w-full h-48 object-cover"
+                className="w-full h-48 object-cover hover:scale-105 transition-transform duration-200"
                 onError={(e) => {
                   // Show placeholder instead of hiding
                   const parent = e.currentTarget.parentElement
                   if (parent) {
                     parent.innerHTML = `
-                      <div class="w-full h-48 bg-muted rounded-lg flex items-center justify-center">
+                      <div class="w-full h-48 bg-muted rounded-lg flex items-center justify-center cursor-pointer" onclick="console.log('Placeholder clicked'); this.parentElement.parentElement.click();">
                         <div class="text-center text-muted-foreground">
                           <div class="text-4xl mb-2">📷</div>
-                          <p class="text-sm">Image not available</p>
+                          <p class="text-sm">Click to view image</p>
                         </div>
                       </div>
                     `
@@ -502,8 +518,19 @@ export function PostCard({ post, currentUser: propCurrentUser, onUserClick, onPo
               </button>
             </div>
 
-            <div className="bg-accent px-3 py-1 rounded-full">
-              <span className="text-accent-foreground font-medium">{post.moodCompatibility} Mood Compatibility</span>
+            <div className="flex items-center space-x-2">
+              {post.matchedMood && (
+                <div className="bg-primary px-3 py-1 rounded-full">
+                  <span className="text-primary-foreground font-medium text-sm">
+                    {post.matchedMood}
+                  </span>
+                </div>
+              )}
+              <div className="bg-accent px-3 py-1 rounded-full">
+                <span className="text-accent-foreground font-medium text-sm">
+                  {post.moodCompatibility} Mood Compatibility
+                </span>
+              </div>
             </div>
           </div>
 
@@ -581,6 +608,64 @@ export function PostCard({ post, currentUser: propCurrentUser, onUserClick, onPo
           )}
         </div>
       </div>
+
+      {/* Image Modal - Rendered via Portal */}
+      {showImageModal && post.image && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            console.log('🔴 Modal overlay clicked, closing modal')
+            setShowImageModal(false)
+          }}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+        >
+          <div
+            className="relative max-w-[90vw] max-h-[90vh] bg-white rounded-lg shadow-2xl"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              console.log('🔵 Modal content clicked, staying open')
+            }}
+          >
+            <button
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                console.log('❌ Close button clicked')
+                setShowImageModal(false)
+              }}
+              className="absolute -top-2 -right-2 text-white bg-red-500 hover:bg-red-600 rounded-full p-2 transition-colors z-10 shadow-lg"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <img
+              src={
+                post.image.startsWith('/api/files/')
+                  ? `https://moodlinkbackend.onrender.com/api/FileAttachments/download/${post.image.split('/').pop()}`
+                  : post.image || "/placeholder.svg"
+              }
+              alt="Post image - Full size"
+              className="max-w-full max-h-full object-contain rounded-lg"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                console.log('🖼️ Image in modal clicked')
+              }}
+              onError={(e) => {
+                console.error('❌ Modal image failed to load:', post.image)
+              }}
+              onLoad={() => {
+                console.log('✅ Modal image loaded successfully:', post.image)
+              }}
+            />
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   )
 }

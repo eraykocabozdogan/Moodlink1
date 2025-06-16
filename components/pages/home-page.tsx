@@ -31,6 +31,7 @@ interface Post {
   content: string;
   image?: string;
   moodCompatibility: string;
+  matchedMood?: string;
   likesCount: number;
   commentsCount: number;
   isLikedByCurrentUser: boolean;
@@ -56,6 +57,17 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
 
   // Get user from useAuth hook
   const { user } = useAuth()
+
+  // Available moods for matching
+  const availableMoods = [
+    "Happy", "Energetic", "Calm", "Focused", "Creative", "Relaxed",
+    "Motivated", "Peaceful", "Excited", "Thoughtful", "Confident", "Grateful"
+  ]
+
+  // Function to get random mood
+  const getRandomMood = () => {
+    return availableMoods[Math.floor(Math.random() * availableMoods.length)]
+  }
 
   // useCallback hooks for emblaApi
   const scrollPrev = useCallback(() => {
@@ -166,6 +178,10 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
           let commentsCount = apiPost.commentsCount || 0
           let isLikedByCurrentUser = apiPost.isLikedByCurrentUser || false
 
+          // Generate mood compatibility and matched mood
+          const matchedMood = getRandomMood()
+          const compatibilityPercentage = Math.floor(Math.random() * 30 + 70)
+
           return {
             id: apiPost.id,
             username: username,
@@ -173,7 +189,8 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
             time: apiPost.createdDate ? formatTimeAgo(apiPost.createdDate) : 'now',
             content: apiPost.contentText || '',
             image: apiPost.postImageFileId ? apiClient.getImageUrl(apiPost.postImageFileId) : undefined,
-            moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%`, // Mock mood compatibility for now
+            moodCompatibility: `${compatibilityPercentage}%`,
+            matchedMood: matchedMood,
             likesCount: likesCount,
             commentsCount: commentsCount,
             isLikedByCurrentUser: isLikedByCurrentUser,
@@ -377,6 +394,10 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
         let commentsCount = apiPost.commentsCount || 0
         let isLikedByCurrentUser = apiPost.isLikedByCurrentUser || false
 
+        // Generate mood compatibility and matched mood
+        const matchedMood = getRandomMood()
+        const compatibilityPercentage = Math.floor(Math.random() * 30 + 70)
+
         return {
           id: apiPost.id,
           username: username,
@@ -384,7 +405,8 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
           time: apiPost.createdDate ? formatTimeAgo(apiPost.createdDate) : 'now',
           content: apiPost.contentText || '',
           image: apiPost.postImageFileId ? apiClient.getImageUrl(apiPost.postImageFileId) : undefined,
-          moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%`, // Mock mood compatibility for now
+          moodCompatibility: `${compatibilityPercentage}%`,
+          matchedMood: matchedMood,
           likesCount: likesCount,
           commentsCount: commentsCount,
           isLikedByCurrentUser: isLikedByCurrentUser,

@@ -1,4 +1,8 @@
+import { useState, useEffect } from "react"
 import { useTheme } from "@/components/theme-provider"
+import { ProfileImage } from "@/components/ui/profile-image"
+import { useAuth } from "@/hooks/use-auth"
+import apiClient from "@/lib/apiClient"
 
 interface RightSidebarProps {
   currentPage: string
@@ -7,6 +11,79 @@ interface RightSidebarProps {
 
 export function RightSidebar({ currentPage, onUserClick }: RightSidebarProps) {
   const { theme } = useTheme()
+  const { user } = useAuth()
+  const [suggestedUsers, setSuggestedUsers] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [userMoodProfile, setUserMoodProfile] = useState<any[]>([])
+
+  // Emotion type mapping
+  const emotionTypeMap: { [key: number]: string } = {
+    1: "Mutluluk",
+    2: "Üzüntü",
+    3: "Öfke",
+    4: "Korku",
+    5: "Şaşkınlık",
+    6: "İğrenme",
+    7: "Heyecan",
+    8: "Enerji",
+    9: "Endişe",
+    10: "Hayal Kırıklığı"
+  }
+
+  // Fetch mood-based user recommendations
+  useEffect(() => {
+    const fetchSuggestedUsers = async () => {
+      if (!user) return
+
+      setLoading(true)
+      try {
+        const response = await apiClient.getMoodBasedUserRecommendations({
+          PageIndex: 0,
+          PageSize: 5
+        })
+
+        if (response.success) {
+          setUserMoodProfile(response.userMoodProfile || [])
+
+          // Transform compatible users to match our UI format
+          const transformedUsers = (response.compatibleUsers || []).map((compatibleUser: any) => {
+            // Get top 2 emotions for display
+            const topEmotions = compatibleUser.emotionScores
+              ?.sort((a: any, b: any) => b.score - a.score)
+              ?.slice(0, 2)
+              ?.map((emotion: any) => ({
+                name: emotionTypeMap[emotion.emotionType] || 'Unknown',
+                percentage: `${emotion.score}%`
+              })) || []
+
+            return {
+              id: compatibleUser.userId,
+              username: `${compatibleUser.firstName} ${compatibleUser.lastName}`.trim(),
+              handle: compatibleUser.firstName?.toLowerCase() || 'user',
+              bio: compatibleUser.compatibilityReason || 'MoodLink user',
+              followers: Math.floor(Math.random() * 3000 + 500).toString(), // Mock data
+              following: Math.floor(Math.random() * 1000 + 100).toString(), // Mock data
+              moods: topEmotions,
+              badges: [compatibleUser.dominantEmotion === 'mutluluk' ? '😊' : '🎯', '✨'],
+              moodCompatibility: `${Math.round(compatibleUser.moodCompatibility)}%`,
+              compatibilityCategory: compatibleUser.compatibilityCategory,
+              dominantEmotion: compatibleUser.dominantEmotion
+            }
+          })
+
+          setSuggestedUsers(transformedUsers)
+        }
+      } catch (error) {
+        console.error('Error fetching suggested users:', error)
+        // Fallback to empty array on error
+        setSuggestedUsers([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchSuggestedUsers()
+  }, [user])
 
   // Theme-specific background configurations for sidebar
   const getThemeBackground = (currentTheme: string) => {
@@ -43,10 +120,11 @@ export function RightSidebar({ currentPage, onUserClick }: RightSidebarProps) {
 
   const themeBackground = getThemeBackground(theme)
 
-  const suggestedUsers = [
-    { 
-      username: "Ahmet Yılmaz", 
-      handle: "ahmet_yilmaz", 
+  // Mock fallback data (will be replaced by API data)
+  const fallbackUsers = [
+    {
+      username: "Ahmet Yılmaz",
+      handle: "ahmet_yilmaz",
       bio: "Athlete and photographer",
       followers: "2.5K",
       following: "450",
@@ -56,9 +134,9 @@ export function RightSidebar({ currentPage, onUserClick }: RightSidebarProps) {
       ],
       badges: ["🏆", "📸"]
     },
-    { 
-      username: "Ayşe Kaya", 
-      handle: "ayse_kaya", 
+    {
+      username: "Ayşe Kaya",
+      handle: "ayse_kaya",
       bio: "Writer and nature lover",
       followers: "1.8K",
       following: "302",
@@ -67,48 +145,60 @@ export function RightSidebar({ currentPage, onUserClick }: RightSidebarProps) {
         { name: "Inspired", percentage: "74%" },
       ],
       badges: ["✍️", "🌿"]
-    },
-    {
-      username: "Mehmet Demir",
-      handle: "mehmet_demir",
-      bio: "Musician and traveler",
-      followers: "3.1K",
-      following: "420",
-      moods: [
-        { name: "Creative", percentage: "85%" },
-        { name: "Cheerful", percentage: "79%" },
-      ],
-      badges: ["🎵", "✈️"]
     }
   ]
+
+  // Use API data if available, otherwise fallback
+  const displayUsers = suggestedUsers.length > 0 ? suggestedUsers : fallbackUsers
 
   const renderContent = () => {
     if (currentPage === "home") {
       return (
         <div className="bg-card/90 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-border">
-          <h3 className="font-bold text-lg mb-4 text-foreground">Suggested Users</h3>
+          <h3 className="font-bold text-lg mb-4 text-foreground">
+            {loading ? "Loading..." : "Suggested Users"}
+          </h3>
           <div className="space-y-4">
-            {suggestedUsers.map((user, index) => (
+            {displayUsers.map((user, index) => (
               <div
-                key={index}
+                key={user.id || index}
                 className="flex items-start space-x-3 p-3 hover:bg-muted/50 rounded-lg cursor-pointer transition-colors"
                 onClick={() => onUserClick && onUserClick(user)}
               >
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex-shrink-0"></div>
+                <ProfileImage
+                  src={null} // Will be added when user profile pictures are available in API
+                  alt={user.username}
+                  size="sm"
+                  fallbackText={user.username}
+                  className="w-12 h-12 flex-shrink-0"
+                />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline space-x-2">
                     <h4 className="font-medium text-foreground truncate">{user.username}</h4>
                     <span className="text-sm text-muted-foreground">@{user.handle}</span>
                   </div>
                   <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{user.bio}</p>
-                  <div className="flex items-center space-x-4 mt-2">
-                    <span className="text-xs text-muted-foreground">
-                      <strong className="text-foreground">{user.followers}</strong> Followers
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      <strong className="text-foreground">{user.following}</strong> Following
-                    </span>
-                  </div>
+                  {user.moodCompatibility && (
+                    <div className="flex items-center space-x-2 mt-2">
+                      <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-full">
+                        {user.moodCompatibility} Compatible
+                      </span>
+                      {user.moods?.slice(0, 1).map((mood: any, moodIndex: number) => (
+                        <span key={moodIndex} className="text-xs bg-accent text-accent-foreground px-2 py-1 rounded-full">
+                          {mood.name} {mood.percentage}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {!user.moodCompatibility && user.moods && (
+                    <div className="flex items-center space-x-2 mt-2">
+                      {user.moods.map((mood: any, moodIndex: number) => (
+                        <span key={moodIndex} className="text-xs bg-accent text-accent-foreground px-2 py-1 rounded-full">
+                          {mood.name} {mood.percentage}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -120,15 +210,23 @@ export function RightSidebar({ currentPage, onUserClick }: RightSidebarProps) {
     if (currentPage === "search") {
       return (
         <div className="bg-card/90 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-border">
-          <h3 className="font-bold text-lg mb-4 text-foreground">Popular Users</h3>
+          <h3 className="font-bold text-lg mb-4 text-foreground">
+            {loading ? "Loading..." : "Popular Users"}
+          </h3>
           <div className="space-y-4">
-            {suggestedUsers.map((user, index) => (
+            {displayUsers.map((user, index) => (
               <div
-                key={index}
+                key={user.id || index}
                 className="flex items-start space-x-3 p-3 hover:bg-muted/50 rounded-lg cursor-pointer transition-colors"
                 onClick={() => onUserClick && onUserClick(user)}
               >
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex-shrink-0"></div>
+                <ProfileImage
+                  src={null} // Will be added when user profile pictures are available in API
+                  alt={user.username}
+                  size="sm"
+                  fallbackText={user.username}
+                  className="w-12 h-12 flex-shrink-0"
+                />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline space-x-2">
                     <h4 className="font-medium text-foreground truncate">{user.username}</h4>
