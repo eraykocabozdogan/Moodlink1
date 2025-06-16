@@ -48,9 +48,7 @@ export function NotificationsPage({ onPostClick, onNavigate }: NotificationsPage
           return array.findIndex(n => `${n.type}-${n.content}` === key) === index
         })
 
-        const totalDuplicatesRemoved = rawNotifications.length - uniqueNotifications.length
-        console.log(`Removed ${totalDuplicatesRemoved} duplicate notifications (${uniqueByIdNotifications.length - uniqueNotifications.length} by content)`)
-        console.log(`Processing ${uniqueNotifications.length} unique notifications`)
+
 
         // Sort notifications by creation date (newest first)
         uniqueNotifications.sort((a, b) => {
@@ -67,9 +65,8 @@ export function NotificationsPage({ onPostClick, onNavigate }: NotificationsPage
             PageSize: 100 // Get more posts to increase match chances
           })
           userPosts = postsResponse.items || []
-          console.log('Loaded user posts for notification enhancement:', userPosts.length)
         } catch (postsError) {
-          console.warn('Could not load user posts for notification enhancement:', postsError)
+          // Could not load user posts for notification enhancement
         }
 
         // Enhance notifications with post content
@@ -101,7 +98,6 @@ export function NotificationsPage({ onPostClick, onNavigate }: NotificationsPage
 
         setNotifications(enhancedNotifications)
       } catch (error: any) {
-        console.error('Failed to load notifications:', error)
         setError('Failed to load notifications')
       } finally {
         setLoading(false)
@@ -112,30 +108,19 @@ export function NotificationsPage({ onPostClick, onNavigate }: NotificationsPage
   }, [user])
 
   const handleNotificationClick = async (notification: EnhancedNotification) => {
-    console.log('Notification clicked:', notification)
-
     // Mark notification as read if it's unread
     if (!notification.isRead) {
       try {
-        console.log(`🔄 Marking notification ${notification.id.slice(0, 8)} as read...`)
         await apiClient.markNotificationAsRead(notification)
 
         // Update local state to reflect the change
         setNotifications(prev =>
           prev.map(n => n.id === notification.id ? { ...n, isRead: true } : n)
         )
-
-        console.log(`✅ Notification ${notification.id.slice(0, 8)} marked as read`)
       } catch (error) {
-        console.error('❌ Failed to mark notification as read:', error)
         // Don't show error to user, just log it
       }
-    } else {
-      console.log('Notification already read, no action needed')
     }
-
-    // Don't navigate anywhere, just mark as read
-    console.log('Notification marked as read, staying on notifications page')
   }
 
   // Helper function to format notification text
@@ -205,15 +190,15 @@ export function NotificationsPage({ onPostClick, onNavigate }: NotificationsPage
             <div
               key={notification.id}
               className={`border-b border-border p-4 hover:bg-muted cursor-pointer transition-colors ${
-                !notification.isRead ? 'bg-blue-50 dark:bg-blue-950/20' : ''
+                !notification.isRead ? 'bg-accent/30 border-l-4 border-l-primary' : ''
               }`}
               onClick={() => handleNotificationClick(notification)}
             >
               <div className="flex space-x-3">
                 <div className={`w-8 h-8 rounded-full flex-shrink-0 ${
                   !notification.isRead
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-500'
-                    : 'bg-gradient-to-r from-gray-400 to-gray-500'
+                    ? 'bg-gradient-to-r from-primary/80 to-accent-foreground/80'
+                    : 'bg-gradient-to-r from-muted-foreground/60 to-muted-foreground/40'
                 }`}></div>
                 <div className="flex-1">
                   <p className={`font-medium ${
@@ -224,7 +209,7 @@ export function NotificationsPage({ onPostClick, onNavigate }: NotificationsPage
 
                   {/* Show post preview if available */}
                   {notification.postPreview && (
-                    <div className="mt-2 p-2 bg-muted/50 rounded-lg border-l-2 border-blue-500">
+                    <div className="mt-2 p-2 bg-muted/50 rounded-lg border-l-2 border-primary">
                       <p className="text-sm text-muted-foreground italic">
                         "{notification.postPreview}"
                       </p>
@@ -236,7 +221,7 @@ export function NotificationsPage({ onPostClick, onNavigate }: NotificationsPage
                       {formatTime(notification.createdDate)}
                     </span>
                     {!notification.isRead && (
-                      <span className="ml-2 inline-block w-2 h-2 bg-blue-500 rounded-full"></span>
+                      <span className="ml-2 inline-block w-2 h-2 bg-primary rounded-full"></span>
                     )}
                   </div>
                 </div>

@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Users, Plus, MessageCircle } from "lucide-react"
-import { CreateGroupChat, User } from "@/components/create-group-chat"
+import { MessageCircle, Users } from "lucide-react"
 import { NewChatModal } from "@/components/new-chat-modal"
 import { useAuth } from "@/hooks/use-auth"
 import apiClient from "@/lib/apiClient"
@@ -15,7 +14,7 @@ interface ChatInfo {
   type: "user" | "group"
   title: string
   handle?: string
-  members?: User[]
+  members?: any[]  // Group members (simplified since we removed group functionality)
   lastMessage: string
   time: string
 }
@@ -26,7 +25,6 @@ interface MessagesPageProps {
 }
 
 export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
-  const [showCreateGroupChat, setShowCreateGroupChat] = useState(false)
   const [showNewChat, setShowNewChat] = useState(false)
   const [conversations, setConversations] = useState<ChatInfo[]>([])
   const [loading, setLoading] = useState(true)
@@ -34,15 +32,7 @@ export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
 
 
 
-  // Sample user list for group creation
-  const availableUsers: User[] = [
-    { id: 1, username: "Doğan", handle: "@dgns" },
-    { id: 2, username: "Eray", handle: "@erayy" },
-    { id: 3, username: "Ahmet", handle: "@ahmt" },
-    { id: 4, username: "Mehmet", handle: "@mhmt" },
-    { id: 5, username: "Zeynep", handle: "@zynp" },
-    { id: 6, username: "Ayşe", handle: "@ayse" },
-  ]
+
 
   // Load user chats from backend
   useEffect(() => {
@@ -58,7 +48,6 @@ export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
           PageSize: 50
         })
         const backendChats: ChatInfo[] = (response.chats || []).map((chat: any) => {
-          console.log('Processing chat:', chat)
           return {
             id: chat.id,
             chatId: chat.id,
@@ -74,7 +63,6 @@ export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
         })
         setConversations(backendChats)
       } catch (error) {
-        console.error('Failed to load chats:', error)
         // Fallback to mock data for development
         setConversations([
           {
@@ -116,14 +104,7 @@ export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
             New Chat
           </Button>
           <h1 className="text-xl font-bold text-foreground">Direct Messages</h1>
-          <Button
-            onClick={() => setShowCreateGroupChat(true)}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-            size="sm"
-          >
-            <Users className="w-4 h-4 mr-2" />
-            Create Group
-          </Button>
+          <div></div> {/* Empty div to maintain layout balance */}
         </div>
       </div>
 
@@ -207,28 +188,7 @@ export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
         />
       )}
 
-      {/* Group Chat Creation Modal */}
-      {showCreateGroupChat && (
-        <CreateGroupChat
-          onClose={() => setShowCreateGroupChat(false)}
-          availableUsers={availableUsers}
-          onCreateGroup={(groupName, members) => {
-            const newGroup: ChatInfo = {
-              id: Date.now(),
-              type: "group",
-              title: groupName,
-              members: members,
-              lastMessage: "Group created",
-              time: new Date().toLocaleTimeString("en-US", {
-                hour: "2-digit",
-                minute: "2-digit",
-              }),
-            };
-            setConversations([newGroup, ...conversations]);
-            setShowCreateGroupChat(false);
-          }}
-        />
-      )}
+
     </div>
   )
 }

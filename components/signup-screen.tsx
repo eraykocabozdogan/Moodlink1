@@ -40,15 +40,6 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
     }
 
     setIsLoading(true)
-    console.log('=== SIGNUP ATTEMPT ===')
-    console.log('First Name:', firstName)
-    console.log('Last Name:', lastName)
-    console.log('Username:', userName)
-    console.log('Email:', email)
-    console.log('Birth Date:', birthDate)
-    console.log('Password Length:', password.length)
-    console.log('API Base URL:', process.env.NEXT_PUBLIC_API_BASE_URL || 'https://moodlinkbackend.onrender.com')
-    console.log('Current Port:', window.location.port)
 
     try {
       const registerData: EnhancedUserForRegisterDto = {
@@ -83,7 +74,6 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
           console.log('Email validation code will expire at:', emailValidationResponse.expireDate)
         }
       } catch (emailError: any) {
-        console.error('Failed to send email validation code:', emailError)
         // Email gönderimi başarısız olsa bile doğrulama ekranını göster
         // Kullanıcı "Resend Code" butonunu kullanabilir
         alert('Kayıt başarılı! Ancak email doğrulama kodu gönderilemedi. Doğrulama ekranında "Resend Code" butonunu kullanabilirsiniz.')
@@ -92,21 +82,6 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
       // Doğrulama ekranını göster
       setShowVerification(true)
     } catch (error: any) {
-      console.error('=== SIGNUP ERROR ===')
-      console.error('Error Message:', error.message)
-      console.error('Status Code:', error.response?.status)
-      console.error('Status Text:', error.response?.statusText)
-      console.error('Response Data:', JSON.stringify(error.response?.data, null, 2))
-      console.error('Request URL:', error.config?.url)
-      console.error('Request Method:', error.config?.method)
-      if (error.config?.data) {
-        try {
-          const requestData = JSON.parse(error.config.data)
-          console.error('Request Data:', JSON.stringify(requestData, null, 2))
-        } catch {
-          console.error('Request Data (raw):', error.config.data)
-        }
-      }
 
       let errorMessage = 'Kayıt olurken bir hata oluştu.'
 
@@ -283,9 +258,9 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
           >
             Sign Up with Google
           </Button>
-          <div className="text-center text-sm text-gray-600">
+          <div className="text-center text-sm text-muted-foreground">
             Already have an account?{" "}
-            <button onClick={onSwitchToLogin} className="text-purple-600 hover:underline">
+            <button onClick={onSwitchToLogin} className="text-primary hover:underline">
               Login
             </button>
           </div>

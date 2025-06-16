@@ -43,18 +43,12 @@ export function ForgotPasswordScreen({ onResetComplete, onBackToLogin }: ForgotP
     console.log('Email:', email)
 
     try {
-      console.log('Sending password reset code to:', email)
       const response = await apiClient.sendPasswordResetCode({ email: email })
-      console.log('Password reset code sent successfully:', response)
 
       // Email gönderim başarılı, doğrulama ekranına geç
       setCurrentStep("verification")
       alert('Şifre sıfırlama kodu email adresinize gönderildi.')
     } catch (error: any) {
-      console.error('=== PASSWORD RESET ERROR ===')
-      console.error('Error Message:', error.message)
-      console.error('Status Code:', error.response?.status)
-      console.error('Response Data:', JSON.stringify(error.response?.data, null, 2))
 
       let errorMessage = 'Şifre sıfırlama kodu gönderilemedi.'
 
@@ -120,17 +114,11 @@ export function ForgotPasswordScreen({ onResetComplete, onBackToLogin }: ForgotP
         newPassword: newPassword
       }
 
-      console.log('Sending reset password request to API...')
       const response = await apiClient.resetPassword(resetData)
-      console.log('Reset password API Response:', response)
 
       alert('Şifreniz başarıyla güncellendi!')
       onResetComplete()
     } catch (error: any) {
-      console.error('=== PASSWORD RESET ERROR ===')
-      console.error('Error Message:', error.message)
-      console.error('Status Code:', error.response?.status)
-      console.error('Response Data:', JSON.stringify(error.response?.data, null, 2))
 
       let errorMessage = 'Şifre güncellenirken bir hata oluştu.'
 
@@ -211,9 +199,9 @@ export function ForgotPasswordScreen({ onResetComplete, onBackToLogin }: ForgotP
               {isLoading ? 'Güncelleniyor...' : 'Update Password'}
             </Button>
             <div className="text-center">
-              <button 
+              <button
                 onClick={() => setCurrentStep("verification")}
-                className="text-sm text-gray-500 hover:text-purple-600 hover:underline"
+                className="text-sm text-muted-foreground hover:text-primary hover:underline"
               >
                 ← Go back
               </button>
@@ -267,9 +255,9 @@ export function ForgotPasswordScreen({ onResetComplete, onBackToLogin }: ForgotP
             {isLoading ? 'Gönderiliyor...' : 'Send Verification Code'}
           </Button>
           <div className="text-center">
-            <button 
+            <button
               onClick={onBackToLogin}
-              className="text-sm text-gray-500 hover:text-purple-600 hover:underline"
+              className="text-sm text-muted-foreground hover:text-primary hover:underline"
             >
               ← Return to login
             </button>

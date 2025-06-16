@@ -84,22 +84,17 @@ export function ProfileImage({
       return
     }
 
-    console.error('Profile image failed to load:', currentSrc)
-
     const imageUrls = generateImageUrls(src)
     const nextIndex = alternativeIndex + 1
     if (nextIndex < imageUrls.length) {
-      console.log(`Trying alternative URL ${nextIndex}:`, imageUrls[nextIndex])
       setCurrentSrc(imageUrls[nextIndex])
       setAlternativeIndex(nextIndex)
     } else {
-      console.error('All profile image URLs failed')
       setHasError(true)
     }
   }
 
   const handleLoad = () => {
-    console.log('Profile image loaded successfully:', currentSrc)
     setHasError(false)
   }
 

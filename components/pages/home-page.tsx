@@ -87,42 +87,25 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
         let hasMore = true
 
         // Get all users first, then get their posts with createdDate
-        console.log('🔄 Getting all users to fetch their posts with createdDate...')
-
         try {
           // Get all users
           const usersResponse = await apiClient.getUsers({ PageIndex: 0, PageSize: 100 })
           const users = usersResponse.items || []
-          console.log(`📋 Found ${users.length} users`)
 
           // Get posts from each user (these have createdDate!)
           for (const user of users) {
             try {
-              console.log(`🔄 Getting posts for user ${user.userName || user.id.slice(0, 8)}...`)
               const userPostsResponse = await apiClient.getUserPosts(user.id, { PageIndex: 0, PageSize: 20 })
               const userPosts = userPostsResponse.items || []
               allPosts.push(...userPosts)
-              console.log(`✅ Got ${userPosts.length} posts from user ${user.userName || user.id.slice(0, 8)}`)
-
-              // Debug: Check if createdDate exists in these posts
-              if (userPosts.length > 0) {
-                console.log(`📅 Sample post from ${user.userName}:`, {
-                  id: userPosts[0].id?.slice(0, 8),
-                  createdDate: userPosts[0].createdDate,
-                  hasCreatedDate: !!userPosts[0].createdDate,
-                  fields: Object.keys(userPosts[0])
-                })
-              }
             } catch (error) {
-              console.log(`⚠️ Failed to get posts for user ${user.id.slice(0, 8)}:`, error)
+              // Failed to get posts for this user, continue with others
             }
           }
 
-          console.log(`📋 Total posts collected: ${allPosts.length}`)
           hasMore = false // We got all posts from all users
 
         } catch (error) {
-          console.error('❌ Failed to get users, falling back to old method:', error)
 
           // Fallback to old method
           while (hasMore) {
@@ -152,33 +135,9 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
           }
         }
 
-        console.log(`🎯 Fetched ${allPosts.length} posts total from ${pageIndex} pages`)
-        console.log(`🎯 First few posts:`, allPosts.slice(0, 2))
-
         // Transform API data to match our Post interface with real data
         const transformPost = async (apiPost: any, index: number) => {
           const isCurrentUser = user && apiPost.userId === user.id
-
-          // Debug log to see what fields are available
-          if (index === 0) {
-            console.log('🔥 FIRST POST DEBUG 🔥')
-            console.log('📊 Sample API Post object:', apiPost)
-            console.log('📊 Available fields:', Object.keys(apiPost))
-            console.log('📊 User fields in post:', {
-              userId: apiPost?.userId,
-              userName: apiPost?.userName,
-              userFirstName: apiPost?.userFirstName,
-              userLastName: apiPost?.userLastName,
-              fullName: apiPost?.fullName
-            })
-            console.log('📊 CRITICAL: userId format check:', {
-              userId: apiPost?.userId,
-              isString: typeof apiPost?.userId === 'string',
-              isUUID: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(apiPost?.userId || ''),
-              length: apiPost?.userId?.length
-            })
-            console.log('🔥 END FIRST POST DEBUG 🔥')
-          }
 
           // Fetch user data for this post
           let userInfo = null
@@ -191,34 +150,20 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
             userInfo = user
           } else {
             try {
-              console.log(`🔍 Fetching user info for ${apiPost.userId}`)
               userInfo = await apiClient.getUserById(apiPost.userId)
               // Use firstName lastName for display, userName for handle
               const fullName = `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim()
               username = fullName || userInfo.userName || 'User'
               handle = userInfo.userName ? `@${userInfo.userName}` : handle
-              console.log(`✅ Got user info: ${username} (${handle})`)
             } catch (userError) {
-              console.log(`❌ Could not fetch user info for ${apiPost.userId}:`, userError)
               // Keep default values
             }
-          }
-
-          // Debug: Log post image info
-          if (apiPost.postImageFileId) {
-            console.log(`Post ${apiPost.id.slice(0, 8)} image info:`, {
-              postImageFileId: apiPost.postImageFileId,
-              isURL: apiPost.postImageFileId.startsWith('http'),
-              isRelative: apiPost.postImageFileId.startsWith('/'),
-            })
           }
 
           // Use real data from API response
           let likesCount = apiPost.likesCount || 0
           let commentsCount = apiPost.commentsCount || 0
           let isLikedByCurrentUser = apiPost.isLikedByCurrentUser || false
-
-          console.log(`Post ${apiPost.id.slice(0, 8)}: ${likesCount} likes, ${commentsCount} comments, liked: ${isLikedByCurrentUser}`)
 
           return {
             id: apiPost.id,
@@ -252,8 +197,6 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
           }
         }
 
-        console.log(`Transforming ${allPosts.length} posts with real user data...`)
-
         // Transform ALL posts with real data (might be slower but correct)
         const transformedPosts = await Promise.all(allPosts.map(transformPost))
 
@@ -262,8 +205,6 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
           if (!a.createdDate || !b.createdDate) return 0
           return new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
         })
-
-        console.log(`Sorted ${transformedPosts.length} posts by creation date (newest first)`)
 
         // Set the same posts for both tabs for now
         setForYouPosts(transformedPosts)
@@ -343,21 +284,17 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
   // Function to fetch all posts from API with pagination
   const fetchAllPosts = async () => {
     try {
-      console.log('Fetching all posts from API...')
       let allPosts: any[] = []
       let pageIndex = 0
       const pageSize = 20
       let hasMore = true
 
       while (hasMore) {
-        console.log(`Fetching page ${pageIndex + 1}...`)
-
         // Try both endpoints to see which one works
         let postsResponse
         try {
           postsResponse = await apiClient.getPosts({ PageIndex: pageIndex, PageSize: pageSize })
         } catch (getPostsError) {
-          console.log('getPosts failed in refresh, trying getFeedPosts...')
           postsResponse = await apiClient.getFeedPosts({ PageIndex: pageIndex, PageSize: pageSize })
         }
 
@@ -374,10 +311,8 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
         }
       }
 
-      console.log(`Fetched ${allPosts.length} posts total from ${pageIndex} pages`)
       return allPosts
     } catch (error) {
-      console.error('Error fetching all posts:', error)
       return []
     }
   }
@@ -396,7 +331,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
         let commentsCount = apiPost.commentsCount || 0
         let isLikedByCurrentUser = apiPost.isLikedByCurrentUser || false
 
-        console.log(`Refresh - Post ${apiPost.id.slice(0, 8)}: ${likesCount} likes, ${commentsCount} comments, liked: ${isLikedByCurrentUser}`)
+
 
         return {
           id: apiPost.id,
@@ -429,7 +364,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
         }
       }
 
-      console.log(`Refreshing ${allPosts.length} posts with real data (first 10 posts only for performance)...`)
+
 
       // For performance, only fetch real data for first 10 posts
       const postsWithRealData = allPosts.slice(0, 10)
@@ -483,38 +418,26 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
         return new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
       })
 
-      console.log(`Refresh: Sorted ${transformedPosts.length} posts by creation date (newest first)`)
-
       // Set the same posts for both tabs for now
       setForYouPosts(transformedPosts)
       setFollowingPosts(transformedPosts)
 
-      console.log('Posts refreshed successfully, count:', transformedPosts.length)
     } catch (error) {
-      console.error('Error refreshing posts:', error)
+      // Error refreshing posts
     }
   }
 
   const handlePostSubmit = async () => {
     if (postContent.trim() || selectedImage) { // Allow post if there\'s content or an image
       try {
-        console.log('Creating new post:', { content: postContent, hasImage: !!selectedImage })
-
         let postImageFileId: string | undefined = undefined
 
         // Upload image if selected
         if (selectedImage) {
           try {
-            console.log('Starting image upload process...')
-
             // Convert base64 to File object
             const response = await fetch(selectedImage)
             const blob = await response.blob()
-
-            console.log('Blob details:', {
-              size: blob.size,
-              type: blob.type
-            })
 
             // Determine file type from blob or default to jpeg
             const fileType = blob.type || 'image/jpeg'
@@ -523,19 +446,6 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
             const file = new File([blob], fileName, {
               type: fileType,
               lastModified: Date.now()
-            })
-
-            console.log('File object created:', {
-              name: file.name,
-              size: file.size,
-              type: file.type,
-              lastModified: file.lastModified
-            })
-
-            console.log('File created:', {
-              name: file.name,
-              size: file.size,
-              type: file.type
             })
 
             // Create FormData for file upload
@@ -550,53 +460,17 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
             if (file && file.size > 0) {
               // Try both uppercase and lowercase field names
               formData.append('File', file, file.name)
-              console.log('File appended to FormData successfully')
-
-              // Debug: Log all FormData entries
-              console.log('All FormData entries:')
-              for (const [key, value] of formData.entries()) {
-                console.log(`  ${key}:`, value instanceof File ? `File(${value.name}, ${value.size} bytes, ${value.type})` : value)
-              }
             } else {
-              console.error('Invalid file object:', file)
               alert('Invalid file. Please try again.')
               return
             }
 
-            console.log('FormData created with:', {
-              StorageType: '1',
-              OwnerId: currentUser?.id || "00000000-0000-0000-0000-000000000000",
-              OwnerType: '1',
-              FileType: '1',
-              File: file.name
-            })
-
-            console.log('Uploading image...')
             const uploadResponse = await apiClient.uploadFile(formData)
-            console.log('Image uploaded successfully:', uploadResponse)
-            console.log('Upload response type:', typeof uploadResponse)
-            console.log('Upload response keys:', Object.keys(uploadResponse || {}))
-            console.log('Upload response JSON:', JSON.stringify(uploadResponse, null, 2))
 
             if (uploadResponse?.id) {
               postImageFileId = uploadResponse.id
-              console.log('Image file ID set:', postImageFileId)
-              console.log('File ID:', uploadResponse.id)
-            } else {
-              console.warn('No ID returned from upload response:', uploadResponse)
-              console.log('Checking for other possible ID fields...')
-              console.log('uploadResponse.fileId:', uploadResponse?.fileId)
-              console.log('uploadResponse.attachmentId:', uploadResponse?.attachmentId)
-              console.log('uploadResponse.data?.id:', uploadResponse?.data?.id)
             }
           } catch (uploadError: any) {
-            console.error('Error uploading image:', uploadError)
-            console.log('Upload error message:', uploadError?.message)
-            console.log('Upload error status:', uploadError?.response?.status)
-            console.log('Upload error statusText:', uploadError?.response?.statusText)
-            console.log('Upload error data:', uploadError?.response?.data)
-            console.log('Upload error response:', uploadError?.response)
-            console.log('Upload error config:', uploadError?.config)
 
             let errorMessage = 'Unknown error'
             if (uploadError?.response?.status) {
@@ -614,22 +488,13 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
         }
 
         // Create post via API
-        console.log('=== CREATE POST DEBUG ===')
-        console.log('Current user object:', currentUser)
-        console.log('Current user ID:', currentUser?.id)
-        console.log('Current user ID type:', typeof currentUser?.id)
-
         const createPostData = {
           userId: currentUser?.id || "00000000-0000-0000-0000-000000000000",
           contentText: postContent,
           postImageFileId: postImageFileId
         }
 
-        console.log('Create post data:', createPostData)
         const response = await apiClient.createPost(createPostData)
-        console.log('Post created successfully:', response)
-        console.log('Created post userId:', response?.userId)
-        console.log('Post response JSON:', JSON.stringify(response, null, 2))
 
         // Clear form immediately for better UX
         setPostContent("")

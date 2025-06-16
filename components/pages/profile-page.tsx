@@ -58,13 +58,6 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
         setError(null)
 
         const userData = await apiClient.getUserFromAuth()
-        console.log('Fetched user data:', userData)
-        console.log('Profile picture fields in user data:', {
-          profilePictureFileId: userData.profilePictureFileId,
-          profileImageFileId: userData.profileImageFileId,
-          profilePictureUrl: userData.profilePictureUrl,
-          profileImageUrl: userData.profileImageUrl
-        })
 
         setUser(userData)
         setEditForm({
@@ -74,7 +67,6 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
           bio: userData.bio || "",
         })
       } catch (err: any) {
-        console.error('Error fetching user data:', err)
         setError('Error loading user data')
       } finally {
         setLoading(false)
@@ -87,7 +79,6 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
   // Fetch user posts
   const fetchUserPosts = async () => {
     if (!user?.id) {
-      console.log('No user ID available for fetching posts')
       return
     }
 
@@ -95,29 +86,20 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
       setPostsLoading(true)
       setPostsError(null)
 
-      console.log('=== PROFILE PAGE USER POSTS DEBUG ===')
-      console.log('Current user object:', user)
-      console.log('User ID for posts fetch:', user.id)
-      console.log('User ID type:', typeof user.id)
+
 
       // Try getUserPosts first
       let posts = []
       try {
         const postsResponse = await apiClient.getUserPosts(user.id)
-        console.log('getUserPosts API response:', postsResponse)
-        console.log('getUserPosts response stringified:', JSON.stringify(postsResponse, null, 2))
-
         // Check both possible response formats
         posts = postsResponse.posts || postsResponse.items || []
-        console.log('Posts from getUserPosts:', posts.length)
 
         // If getUserPosts returns empty but count > 0, there might be a pagination issue
         if (posts.length === 0 && postsResponse.count > 0) {
-          console.log('getUserPosts pagination issue detected, falling back to getPosts filter')
           throw new Error('getUserPosts pagination issue')
         }
       } catch (getUserPostsError) {
-        console.log('getUserPosts failed, trying fallback with getPosts filter:', getUserPostsError.message)
 
         // Fallback: Get all posts and filter by user ID
         try {
@@ -140,15 +122,12 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
 
           // Filter posts by current user ID
           posts = allPosts.filter((post: any) => post.userId === user.id)
-          console.log(`Filtered ${posts.length} user posts from ${allPosts.length} total posts`)
         } catch (fallbackError) {
-          console.error('Fallback method also failed:', fallbackError)
           throw fallbackError
         }
       }
 
-      console.log('Final posts array:', posts)
-      console.log('Final posts length:', posts.length)
+
 
       // Transform posts to match PostCard interface
       const transformedPosts = posts?.map((post: any) => {
@@ -181,11 +160,8 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
         }
       }) || []
 
-      console.log('Transformed posts:', transformedPosts)
       setUserPosts(transformedPosts)
     } catch (err: any) {
-      console.error('Error fetching user posts:', err)
-      console.error('Error details:', err.response?.data || err.message)
       setPostsError('Error loading posts')
     } finally {
       setPostsLoading(false)
@@ -199,7 +175,6 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
   // Listen for global posts update events
   useEffect(() => {
     const handlePostsUpdated = () => {
-      console.log('Posts updated event received, refreshing user posts...')
       fetchUserPosts()
     }
 
@@ -239,12 +214,6 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
 
       // Upload new profile image if selected
       if (selectedProfileImageFile) {
-        console.log('Uploading profile image...')
-        console.log('File details:', {
-          name: selectedProfileImageFile.name,
-          size: selectedProfileImageFile.size,
-          type: selectedProfileImageFile.type
-        })
 
         const formData = new FormData()
         formData.append('File', selectedProfileImageFile)
@@ -253,18 +222,10 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
         formData.append('OwnerType', '2') // OwnerType = 2 for profile pictures
         formData.append('FileType', '1') // FileType = 1 for images
 
-        console.log('Upload parameters:', {
-          StorageType: '1',
-          OwnerId: user.id,
-          OwnerType: '2',
-          FileType: '1'
-        })
-
         const uploadResponse: FileAttachmentResponse = await apiClient.uploadFile(formData)
-        console.log('Profile image uploaded successfully:', uploadResponse)
         profileImageFileId = uploadResponse.id
 
-        console.log('New profileImageFileId:', profileImageFileId)
+
       }
 
       // Update user profile
@@ -280,15 +241,13 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
         profilePictureFileId: profileImageFileId,
       }
 
-      console.log('Updating user profile:', updateData)
+
 
       let updatedUser;
       try {
         // Try the main endpoint first
         updatedUser = await apiClient.updateUser(updateData)
-        console.log('Profile updated via /api/Users:', updatedUser)
       } catch (mainError) {
-        console.log('Main endpoint failed, trying FromAuth endpoint:', mainError)
 
         // Fallback to FromAuth endpoint
         const fromAuthData = {
@@ -300,7 +259,6 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
         }
 
         updatedUser = await apiClient.updateUserFromAuth(fromAuthData)
-        console.log('Profile updated via /api/Users/FromAuth:', updatedUser)
       }
 
       // Update local state
@@ -320,8 +278,6 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
       fetchUserPosts()
 
     } catch (err: any) {
-      console.error('Error saving profile:', err)
-      console.error('Error details:', err.response?.data || err.message)
 
       let errorMessage = 'Error saving profile'
       if (err.response?.data?.message) {

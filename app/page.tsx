@@ -43,9 +43,9 @@ export default function Home() {
           if (error.isNetworkError || error.isCorsError || error.code === 'ERR_NETWORK' ||
               error.message === 'Network Error' || error.message === 'Request timeout' ||
               error.message.includes('CORS') || error.message.includes('access control')) {
-            console.log('Network/CORS error detected, clearing token and redirecting to login')
+            // Network/CORS error detected, clearing token and redirecting to login
           } else {
-            console.log('Token validation failed, clearing token')
+            // Token validation failed, clearing token
           }
 
           // Clear invalid token and redirect to login
@@ -73,8 +73,6 @@ export default function Home() {
   }
 
   const handleLogout = () => {
-    console.log('Logging out user...')
-
     // Clear ALL user-related data from localStorage
     localStorage.removeItem('authToken')
     localStorage.removeItem('token') // Legacy token key
@@ -98,8 +96,6 @@ export default function Home() {
     // Reset app state
     setUser(null)
     setCurrentScreen("login")
-
-    console.log('Logout completed - all user data cleared')
   }
 
   const handleForgotPassword = () => {

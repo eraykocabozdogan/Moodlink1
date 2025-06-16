@@ -93,7 +93,6 @@ export function MainApp({ user, onLogout }: MainAppProps) {
       handlePageChange("chat")
 
     } catch (error) {
-      console.error('Error setting up chat:', error)
       // Fallback: navigate to messages page
       handlePageChange("messages")
     }
@@ -101,8 +100,6 @@ export function MainApp({ user, onLogout }: MainAppProps) {
 
   // Enhanced logout function
   const handleLogout = () => {
-    console.log('MainApp logout triggered')
-
     // Clear current page from localStorage
     localStorage.removeItem('currentPage')
 
@@ -123,12 +120,10 @@ export function MainApp({ user, onLogout }: MainAppProps) {
         return <NotificationsPage
           onPostClick={(postId) => {
             // Navigate to home page
-            console.log('Notification clicked, navigating to home page for post:', postId)
             handlePageChange("home")
             // TODO: When backend fixes relatedEntityId, we can scroll to specific post
           }}
           onNavigate={(page, data) => {
-            console.log('Notification navigation:', page, data)
             handlePageChange(page)
           }}
         />

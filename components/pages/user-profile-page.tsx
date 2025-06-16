@@ -353,7 +353,6 @@ export function UserProfilePage({ user: userProp, onBack, onMessage }: UserProfi
   // Helper function to format time
   const formatTimeAgo = (dateString: string) => {
     if (!dateString) {
-      console.warn('formatTimeAgo: dateString is empty or undefined')
       return 'now'
     }
 
@@ -361,7 +360,6 @@ export function UserProfilePage({ user: userProp, onBack, onMessage }: UserProfi
 
     // Check if date is valid
     if (isNaN(date.getTime())) {
-      console.warn('formatTimeAgo: Invalid date string:', dateString)
       return 'now'
     }
 
@@ -370,7 +368,6 @@ export function UserProfilePage({ user: userProp, onBack, onMessage }: UserProfi
 
     // Handle negative differences (future dates)
     if (diffInSeconds < 0) {
-      console.warn('formatTimeAgo: Date is in the future:', dateString)
       return 'now'
     }
 

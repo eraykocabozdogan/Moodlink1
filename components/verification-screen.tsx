@@ -70,14 +70,6 @@ export function VerificationScreen({
         // Verification successful, call the onVerify callback
         onVerify(code)
       } catch (error: any) {
-        console.error('=== VERIFICATION ERROR ===')
-        console.error('Error Message:', error.message)
-        console.error('Status Code:', error.response?.status)
-        console.error('Status Text:', error.response?.statusText)
-        console.error('Response Data:', JSON.stringify(error.response?.data, null, 2))
-        console.error('Request Email:', email.trim())
-        console.error('Request Code:', code.trim())
-        console.error('Request Validation Type:', type === "signup" ? ValidationPurpose.PasswordReset : ValidationPurpose.EmailValidation, '(TEMP FIX: signup=2, password-reset=1)')
 
         let errorMessage = 'Doğrulama kodu geçersiz.'
 
@@ -157,11 +149,11 @@ Teknik Detay: ${type === "signup" ? "EmailValidation" : "PasswordReset"} kodu ba
             <div className="w-16 h-16 bg-gradient-to-r from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto">
               <Mail className="w-8 h-8 text-purple-600" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-800">{getTitle()}</h2>
-            <p className="text-sm text-gray-600 leading-relaxed">
+            <h2 className="text-xl font-semibold text-foreground">{getTitle()}</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
               {getDescription()}
             </p>
-            <p className="text-sm text-purple-600 font-medium">
+            <p className="text-sm text-primary font-medium">
               {email}
             </p>
           </div>
@@ -197,14 +189,14 @@ Teknik Detay: ${type === "signup" ? "EmailValidation" : "PasswordReset"} kodu ba
           </div>
 
           <div className="text-center space-y-3">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               Didn't receive the code?
             </p>
             <Button
               onClick={handleResendCode}
               disabled={resendCooldown > 0}
               variant="outline"
-              className="h-10 border-gray-200 hover:bg-gray-50 text-purple-600 hover:text-purple-700"
+              className="h-10 border-border hover:bg-muted text-primary hover:text-primary"
             >
               {resendCooldown > 0
                 ? `Resend (${resendCooldown}s)`
@@ -215,9 +207,9 @@ Teknik Detay: ${type === "signup" ? "EmailValidation" : "PasswordReset"} kodu ba
           </div>
 
           <div className="text-center">
-            <button 
+            <button
               onClick={onGoBack}
-              className="text-sm text-gray-500 hover:text-purple-600 hover:underline"
+              className="text-sm text-muted-foreground hover:text-primary hover:underline"
             >
               ← Go back
             </button>

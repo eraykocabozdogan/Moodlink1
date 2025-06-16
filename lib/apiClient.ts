@@ -231,16 +231,13 @@ class ApiClient {
         // Handle different types of errors
         if (error.response?.status === 401) {
           // Handle unauthorized access
-          console.log('Unauthorized access, clearing token');
           this.clearAuthToken();
           // You can add redirect to login logic here
         } else if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
           // Handle network errors (including CORS)
-          console.error('Network error occurred:', error.message);
           error.isNetworkError = true;
         } else if (error.code === 'ERR_CORS' || error.message.includes('CORS')) {
           // Handle CORS errors specifically
-          console.error('CORS error occurred:', error.message);
           error.isCorsError = true;
         }
         return Promise.reject(error);
@@ -269,12 +266,10 @@ class ApiClient {
     } catch (error: any) {
       // Enhanced error handling
       if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
-        console.error('Network error - possibly CORS or server unavailable:', error.message);
         error.isNetworkError = true;
       }
 
       if (error.message?.includes('CORS') || error.message?.includes('access control')) {
-        console.error('CORS error detected:', error.message);
         error.isCorsError = true;
       }
 
@@ -1147,18 +1142,8 @@ class ApiClient {
         headers
       });
 
-      console.log('API Client: Upload successful:', response.data)
       return response.data
     } catch (error: any) {
-      console.error('API Client: Upload failed:', error)
-      console.log('Error message:', error?.message)
-      console.log('Error status:', error?.response?.status)
-      console.log('Error statusText:', error?.response?.statusText)
-      console.log('Error data JSON:', JSON.stringify(error?.response?.data, null, 2))
-      console.log('Error headers JSON:', JSON.stringify(error?.response?.headers, null, 2))
-      console.log('Request URL:', error?.config?.url)
-      console.log('Request method:', error?.config?.method)
-      console.log('Request headers JSON:', JSON.stringify(error?.config?.headers, null, 2))
       throw error
     }
   }

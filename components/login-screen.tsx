@@ -79,13 +79,6 @@ export function LoginScreen({ onLogin, onSwitchToSignup, onForgotPassword }: Log
         alert('Login failed: Could not retrieve token.')
       }
     } catch (error: any) {
-      console.error('=== LOGIN ERROR ===')
-      console.error('Error Message:', error.message)
-      console.error('Status Code:', error.response?.status)
-      console.error('Status Text:', error.response?.statusText)
-      console.error('Response Data:', JSON.stringify(error.response?.data, null, 2))
-      console.error('Request URL:', error.config?.url)
-      console.error('Request Method:', error.config?.method)
 
       let errorMessage = 'An error occurred during login.'
 
@@ -139,7 +132,6 @@ Technical Detail: PostgreSQL connection error`
                  error.message === 'Network Error' || error.message.includes('CORS') ||
                  error.message.includes('access control') || !error.response) {
         errorMessage = 'Network error. Please check your internet connection and try again.'
-        console.error('Network/CORS error detected during login')
       }
 
       alert(errorMessage)
@@ -177,7 +169,7 @@ Technical Detail: PostgreSQL connection error`
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             onKeyPress={handleKeyPress}
-            className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black placeholder:text-gray-300 bg-transparent"
+            className="h-12 border-border focus:border-primary focus:ring-primary text-foreground placeholder:text-muted-foreground bg-transparent"
           />
           <Input
             type="password"
@@ -185,7 +177,7 @@ Technical Detail: PostgreSQL connection error`
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             onKeyPress={handleKeyPress}
-            className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-black placeholder:text-gray-300 bg-transparent"
+            className="h-12 border-border focus:border-primary focus:ring-primary text-foreground placeholder:text-muted-foreground bg-transparent"
           />
           <Button
             onClick={handleLogin}
@@ -201,15 +193,15 @@ Technical Detail: PostgreSQL connection error`
           >
             Login with Google
           </Button>
-          <div className="text-center text-sm text-black space-x-2">
+          <div className="text-center text-sm text-foreground space-x-2">
             <button
               onClick={onForgotPassword}
-              className="hover:underline hover:text-gray-700"
+              className="hover:underline hover:text-primary"
             >
               Forgot Password?
             </button>
             <span>|</span>
-            <button onClick={onSwitchToSignup} className="hover:underline hover:text-gray-700">
+            <button onClick={onSwitchToSignup} className="hover:underline hover:text-primary">
               Create New Account
             </button>
           </div>
