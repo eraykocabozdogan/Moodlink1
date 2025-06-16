@@ -231,13 +231,16 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
             likesCount: likesCount,
             commentsCount: commentsCount,
             isLikedByCurrentUser: isLikedByCurrentUser,
+            userProfileImageUrl: apiPost.userProfileImageUrl,
             // Add real user data for profile navigation
             userData: userInfo ? {
               id: userInfo.id,
               userName: userInfo.userName,
               firstName: userInfo.firstName,
               lastName: userInfo.lastName,
-              fullName: userInfo.userName || `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim()
+              fullName: userInfo.userName || `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim(),
+              profilePictureFileId: userInfo.profilePictureFileId,
+              profileImageUrl: userInfo.profileImageUrl
             } : {
               id: apiPost.userId,
               userName: null,
@@ -406,7 +409,23 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
           likesCount: likesCount,
           commentsCount: commentsCount,
           isLikedByCurrentUser: isLikedByCurrentUser,
-          createdDate: apiPost.createdDate
+          userProfileImageUrl: apiPost.userProfileImageUrl,
+          createdDate: apiPost.createdDate,
+          userData: isCurrentUser ? {
+            id: currentUser?.id,
+            userName: currentUser?.userName,
+            firstName: currentUser?.firstName,
+            lastName: currentUser?.lastName,
+            fullName: currentUser?.userName || `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim(),
+            profilePictureFileId: currentUser?.profilePictureFileId,
+            profileImageUrl: currentUser?.profileImageUrl
+          } : {
+            id: apiPost.userId,
+            userName: apiPost.userName,
+            firstName: apiPost.userFirstName,
+            lastName: apiPost.userLastName,
+            fullName: apiPost.userName || `${apiPost.userFirstName || ''} ${apiPost.userLastName || ''}`.trim()
+          }
         }
       }
 
@@ -436,7 +455,23 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
           likesCount: apiPost.likesCount || 0,
           commentsCount: apiPost.commentsCount || 0,
           isLikedByCurrentUser: apiPost.isLikedByCurrentUser || false,
-          createdDate: apiPost.createdDate
+          userProfileImageUrl: apiPost.userProfileImageUrl,
+          createdDate: apiPost.createdDate,
+          userData: isCurrentUser ? {
+            id: currentUser?.id,
+            userName: currentUser?.userName,
+            firstName: currentUser?.firstName,
+            lastName: currentUser?.lastName,
+            fullName: currentUser?.userName || `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim(),
+            profilePictureFileId: currentUser?.profilePictureFileId,
+            profileImageUrl: currentUser?.profileImageUrl
+          } : {
+            id: apiPost.userId,
+            userName: apiPost.userName,
+            firstName: apiPost.userFirstName,
+            lastName: apiPost.userLastName,
+            fullName: apiPost.userName || `${apiPost.userFirstName || ''} ${apiPost.userLastName || ''}`.trim()
+          }
         }
       })
 

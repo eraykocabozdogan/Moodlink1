@@ -19,21 +19,22 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
   // State'leri ad ve soyad için ayırdık
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
+  const [userName, setUserName] = useState("")
   const [email, setEmail] = useState("")
   const [birthDate, setBirthDate] = useState("")
   const [password, setPassword] = useState("")
   const [showVerification, setShowVerification] = useState(false)
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && firstName && lastName && email && password) {
+    if (e.key === 'Enter' && firstName && lastName && userName && email && password) {
       handleSignup()
     }
   }
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSignup = async () => {
-    // Validasyonu ad ve soyad için güncelledik
-    if (!firstName || !lastName || !email || !password) {
+    // Validasyonu ad, soyad ve username için güncelledik
+    if (!firstName || !lastName || !userName || !email || !password) {
       alert('Lütfen tüm zorunlu alanları doldurun.')
       return
     }
@@ -42,6 +43,7 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
     console.log('=== SIGNUP ATTEMPT ===')
     console.log('First Name:', firstName)
     console.log('Last Name:', lastName)
+    console.log('Username:', userName)
     console.log('Email:', email)
     console.log('Birth Date:', birthDate)
     console.log('Password Length:', password.length)
@@ -54,7 +56,7 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
         lastName: lastName,
         email: email,
         password: password,
-        userName: email, // Kullanıcı adı olarak email kullanılıyor
+        userName: userName, // Artık gerçek username kullanılıyor
         birthDate: birthDate ? new Date(birthDate).toISOString() : undefined,
         phoneNumber: undefined // Opsiyonel alan
       }
@@ -166,7 +168,7 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
     console.log("Verification code:", code)
     // Doğrulama sonrası otomatik login yerine login ekranına yönlendirmek daha doğru bir akış olabilir.
     // Şimdilik mevcut akışı koruyoruz.
-    onSignup({ username: `${firstName} ${lastName}`, email, id: 1 })
+    onSignup({ username: userName, email, id: 1 })
   }
 
   const handleResendCode = async () => {
@@ -235,6 +237,14 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
               className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
             />
           </div>
+          <Input
+            type="text"
+            placeholder="Username"
+            value={userName}
+            onChange={(e) => setUserName(e.target.value)}
+            onKeyPress={handleKeyPress}
+            className="h-12 border-gray-200 focus:border-purple-400 focus:ring-purple-400"
+          />
           <Input
             type="email"
             placeholder="Email"

@@ -25,8 +25,17 @@ export function ProfileImage({
 
   // Generate all possible URLs for the image
   const generateImageUrls = (imageSrc: string): string[] => {
+    if (!imageSrc || imageSrc.trim() === '') {
+      return []
+    }
+
     const fileId = imageSrc.split('/').pop() || imageSrc
-    
+
+    // Don't generate URLs for empty fileId
+    if (!fileId || fileId.trim() === '') {
+      return []
+    }
+
     return [
       // If it's already a full URL, use it
       imageSrc.startsWith('http') ? imageSrc : null,
@@ -53,24 +62,30 @@ export function ProfileImage({
   }
 
   useEffect(() => {
-    if (src) {
+    if (src && src.trim() !== '') {
       const imageUrls = generateImageUrls(src)
-      setCurrentSrc(imageUrls[0])
-      setHasError(false)
-      setAlternativeIndex(0)
+      if (imageUrls.length > 0 && imageUrls[0]) {
+        setCurrentSrc(imageUrls[0])
+        setHasError(false)
+        setAlternativeIndex(0)
+      } else {
+        setHasError(true)
+        setCurrentSrc('')
+      }
     } else {
       setHasError(true)
+      setCurrentSrc('')
     }
   }, [src])
 
   const handleError = () => {
-    if (!src) {
+    if (!src || src.trim() === '') {
       setHasError(true)
       return
     }
 
     console.error('Profile image failed to load:', currentSrc)
-    
+
     const imageUrls = generateImageUrls(src)
     const nextIndex = alternativeIndex + 1
     if (nextIndex < imageUrls.length) {
@@ -89,7 +104,7 @@ export function ProfileImage({
   }
 
   // Show fallback if no src or error
-  if (!src || hasError) {
+  if (!src || src.trim() === '' || hasError || !currentSrc || currentSrc.trim() === '') {
     return (
       <div className={`${getSizeClasses()} bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-primary-foreground ${className}`}>
         {fallbackText && (

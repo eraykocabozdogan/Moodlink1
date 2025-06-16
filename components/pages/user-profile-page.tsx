@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { PostCard } from "@/components/post-card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ProfileImage } from "@/components/ui/profile-image"
 import { ArrowLeft } from "lucide-react"
 import apiClient from "@/lib/apiClient"
 import {
@@ -306,13 +307,16 @@ export function UserProfilePage({ user: userProp, onBack, onMessage }: UserProfi
           likesCount: post.likesCount || 0,
           commentsCount: post.commentsCount || 0,
           isLikedByCurrentUser: post.isLikedByCurrentUser || false,
+          userProfileImageUrl: post.userProfileImageUrl,
           // Add user data for proper display
           userData: {
             id: user.id,
             userName: user.userName,
             firstName: user.firstName,
             lastName: user.lastName,
-            fullName: displayName
+            fullName: displayName,
+            profilePictureFileId: user.profilePictureFileId,
+            profileImageUrl: user.profileImageUrl
           }
         }
       }) || []
@@ -601,17 +605,13 @@ export function UserProfilePage({ user: userProp, onBack, onMessage }: UserProfi
         <div className="text-center space-y-4">
           {/* Profile Picture */}
           <div className="w-24 h-24 mx-auto">
-            {user.profileImageUrl ? (
-              <img
-                src={user.profileImageUrl}
-                alt={user.username}
-                className="w-24 h-24 rounded-full object-cover mx-auto"
-              />
-            ) : (
-              <div className="w-24 h-24 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full mx-auto flex items-center justify-center text-primary-foreground">
-                {(user.userName || user.firstName || user.lastName || 'U').substring(0, 2).toUpperCase()}
-              </div>
-            )}
+            <ProfileImage
+              src={user.profilePictureFileId || user.profileImageFileId || user.profilePictureUrl || user.profileImageUrl || null}
+              alt={user.userName || user.username || 'User'}
+              size="md"
+              fallbackText={user.firstName || user.userName || user.username || 'U'}
+              className="mx-auto"
+            />
           </div>
 
           <div>

@@ -1065,7 +1065,7 @@ export enum StorageType {
 }
 
 export enum OwnerType {
-  User = 0,
+  User = 2,
   Post = 1,
   Activity = 2,
   Chat = 3,
@@ -1119,7 +1119,7 @@ export interface UpdateUserCommand {
   userName?: string;
   birthDate?: DateTime;
   phoneNumber?: string;
-  profileImageFileId?: UUID;
+  profilePictureFileId?: UUID;
   bio?: string;
 }
 
@@ -1131,7 +1131,7 @@ export interface UpdateUserFromAuthCommand {
   newPassword?: string; // New password for password change
   birthDate?: DateTime;
   phoneNumber?: string;
-  profileImageFileId?: UUID;
+  profilePictureFileId?: UUID;
   bio?: string;
 }
 

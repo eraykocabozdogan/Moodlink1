@@ -10,6 +10,9 @@ interface User {
   lastName?: string
   userName?: string
   email?: string
+  profilePictureFileId?: string
+  profileImageUrl?: string
+  bio?: string
 }
 
 export function useAuth() {

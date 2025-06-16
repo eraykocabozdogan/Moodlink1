@@ -59,6 +59,12 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
 
         const userData = await apiClient.getUserFromAuth()
         console.log('Fetched user data:', userData)
+        console.log('Profile picture fields in user data:', {
+          profilePictureFileId: userData.profilePictureFileId,
+          profileImageFileId: userData.profileImageFileId,
+          profilePictureUrl: userData.profilePictureUrl,
+          profileImageUrl: userData.profileImageUrl
+        })
 
         setUser(userData)
         setEditForm({
@@ -161,13 +167,16 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
           likesCount: post.likesCount || 0,
           commentsCount: post.commentsCount || 0,
           isLikedByCurrentUser: post.isLikedByCurrentUser || false,
+          userProfileImageUrl: post.userProfileImageUrl,
           // Add user data for proper display
           userData: {
             id: user.id,
             userName: user.userName,
             firstName: user.firstName,
             lastName: user.lastName,
-            fullName: fullName || user.userName
+            fullName: fullName || user.userName,
+            profilePictureFileId: user.profilePictureFileId,
+            profileImageUrl: user.profileImageUrl
           }
         }
       }) || []
@@ -226,21 +235,36 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
       setSaving(true)
       setError(null)
 
-      let profileImageFileId = user.profileImageFileId
+      let profileImageFileId = user.profilePictureFileId || user.profileImageFileId
 
       // Upload new profile image if selected
       if (selectedProfileImageFile) {
         console.log('Uploading profile image...')
+        console.log('File details:', {
+          name: selectedProfileImageFile.name,
+          size: selectedProfileImageFile.size,
+          type: selectedProfileImageFile.type
+        })
+
         const formData = new FormData()
         formData.append('File', selectedProfileImageFile)
-        formData.append('StorageType', StorageType.Cloud.toString())
+        formData.append('StorageType', '1') // StorageType = 1 for profile pictures
         formData.append('OwnerId', user.id)
-        formData.append('OwnerType', OwnerType.User.toString())
-        formData.append('FileType', FileType.Image.toString())
+        formData.append('OwnerType', '2') // OwnerType = 2 for profile pictures
+        formData.append('FileType', '1') // FileType = 1 for images
+
+        console.log('Upload parameters:', {
+          StorageType: '1',
+          OwnerId: user.id,
+          OwnerType: '2',
+          FileType: '1'
+        })
 
         const uploadResponse: FileAttachmentResponse = await apiClient.uploadFile(formData)
-        console.log('Profile image uploaded:', uploadResponse)
+        console.log('Profile image uploaded successfully:', uploadResponse)
         profileImageFileId = uploadResponse.id
+
+        console.log('New profileImageFileId:', profileImageFileId)
       }
 
       // Update user profile
@@ -253,7 +277,7 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
         password: "", // Empty for profile update
         dateOfBirth: user.dateOfBirth || user.birthDate,
         bio: editForm.bio,
-        profileImageFileId: profileImageFileId,
+        profilePictureFileId: profileImageFileId,
       }
 
       console.log('Updating user profile:', updateData)
@@ -272,7 +296,7 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
           lastName: editForm.lastName,
           userName: editForm.userName,
           bio: editForm.bio,
-          profileImageFileId: profileImageFileId,
+          profilePictureFileId: profileImageFileId,
         }
 
         updatedUser = await apiClient.updateUserFromAuth(fromAuthData)
@@ -283,6 +307,7 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
       setUser({
         ...user,
         ...updatedUser,
+        profilePictureFileId: profileImageFileId,
         profileImageUrl: selectedProfileImageFile ? profileImagePreview : user.profileImageUrl,
       })
 
@@ -453,7 +478,7 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
                     />
                   ) : (
                     <ProfileImage
-                      src={user.profileImageFileId || user.profileImageUrl}
+                      src={user.profilePictureFileId || user.profileImageFileId || user.profilePictureUrl || user.profileImageUrl || null}
                       alt={user.userName || 'User'}
                       size="md"
                       fallbackText="Select Image"
@@ -475,7 +500,7 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
               </>
             ) : (
               <ProfileImage
-                src={user.profileImageFileId || user.profileImageUrl}
+                src={user.profilePictureFileId || user.profileImageFileId || user.profilePictureUrl || user.profileImageUrl || null}
                 alt={user.userName || 'User'}
                 size="md"
                 fallbackText={user.firstName || user.userName || 'U'}

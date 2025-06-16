@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Heart, MessageCircle, Share } from "lucide-react"
 import Image from "next/image"
+import { ProfileImage } from "@/components/ui/profile-image"
 import apiClient from "@/lib/apiClient"
 
 interface PostCardProps {
@@ -18,12 +19,15 @@ interface PostCardProps {
     likesCount: number
     commentsCount: number
     isLikedByCurrentUser: boolean
+    userProfileImageUrl?: string
     userData?: {
       id: string
       userName?: string
       firstName?: string
       lastName?: string
       fullName?: string
+      profilePictureFileId?: string
+      profileImageUrl?: string
     }
   }
   currentUser?: any // Add currentUser prop
@@ -319,7 +323,16 @@ export function PostCard({ post, currentUser: propCurrentUser, onUserClick, onPo
     <div className="bg-card text-card-foreground border-b border-border p-4 hover:bg-muted/50 transition-colors">
       <div className="flex space-x-3">
         {/* Avatar */}
-        <div className="w-12 h-12 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full flex-shrink-0"></div>
+        <ProfileImage
+          src={post.userData?.profilePictureFileId ||
+               post.userProfileImageUrl ||
+               post.userData?.profileImageUrl ||
+               (currentUser?.id === post.userData?.id ? currentUser?.profilePictureFileId : null)}
+          alt={post.username}
+          size="sm"
+          fallbackText={post.username}
+          className="flex-shrink-0"
+        />
 
         <div className="flex-1 min-w-0">
           {/* Header */}
