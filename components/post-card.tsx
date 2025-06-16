@@ -67,6 +67,18 @@ export function PostCard({ post, currentUser: propCurrentUser, onUserClick, onPo
   const [commentsLoaded, setCommentsLoaded] = useState(false)
   const [currentUser, setCurrentUser] = useState<any>(propCurrentUser || null)
 
+  // Helper function to format time ago
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+    if (diffInSeconds < 60) return `${diffInSeconds}s`
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`
+    return `${Math.floor(diffInSeconds / 86400)}d`
+  }
+
   // Update local state when post prop changes, but preserve stored data
   useEffect(() => {
     const storedData = getStoredPostData(post.id)
@@ -113,13 +125,33 @@ export function PostCard({ post, currentUser: propCurrentUser, onUserClick, onPo
       const response = await apiClient.getPostComments(post.id)
       console.log('Comments response:', response)
 
-      // Transform comments to match our interface
-      const transformedComments = response.comments?.map((comment: any) => ({
-        id: comment.id,
-        username: comment.userName || 'User',
-        text: comment.content || '',
-        time: 'now' // TODO: Format createdDate
-      })) || []
+      // Transform comments with user data
+      const transformedComments = await Promise.all(
+        (response.comments || []).map(async (comment: any) => {
+          let userInfo = null
+          let username = comment.userName || 'User'
+
+          // Try to fetch user info for profile picture
+          if (comment.userId) {
+            try {
+              userInfo = await apiClient.getUserById(comment.userId)
+              const fullName = `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim()
+              username = fullName || userInfo.userName || 'User'
+            } catch (userError) {
+              // Keep default username
+            }
+          }
+
+          return {
+            id: comment.id,
+            username: username,
+            text: comment.content || '',
+            time: comment.createdDate ? formatTimeAgo(comment.createdDate) : 'now',
+            userId: comment.userId,
+            userInfo: userInfo
+          }
+        })
+      )
 
       setComments(transformedComments)
       setCommentsLoaded(true)
@@ -127,8 +159,8 @@ export function PostCard({ post, currentUser: propCurrentUser, onUserClick, onPo
       console.error('Error fetching comments:', error)
       // Keep default comments on error
       setComments([
-        { id: 1, username: "Ali", text: "Great post!", time: "2m" },
-        { id: 2, username: "Ayşe", text: "I agree!", time: "5m" },
+        { id: 1, username: "Ali", text: "Great post!", time: "2m", userId: null, userInfo: null },
+        { id: 2, username: "Ayşe", text: "I agree!", time: "5m", userId: null, userInfo: null },
       ])
       setCommentsLoaded(true)
     }
@@ -295,6 +327,8 @@ export function PostCard({ post, currentUser: propCurrentUser, onUserClick, onPo
         username: "You",
         text: comment,
         time: "now",
+        userId: currentUser.id,
+        userInfo: currentUser
       }
       console.log('Adding new comment to local state:', newComment)
 
@@ -498,14 +532,29 @@ export function PostCard({ post, currentUser: propCurrentUser, onUserClick, onPo
               {/* Comments List */}
               {comments.map((commentItem) => (
                 <div key={commentItem.id} className="flex space-x-2">
-                  <div className="w-6 h-6 bg-gradient-to-r from-green-400 to-blue-400 rounded-full flex-shrink-0"></div>
+                  <ProfileImage
+                    src={commentItem.userInfo?.profilePictureFileId ||
+                         commentItem.userInfo?.profileImageFileId ||
+                         commentItem.userInfo?.profilePictureUrl ||
+                         commentItem.userInfo?.profileImageUrl ||
+                         (commentItem.userId === currentUser?.id ? (currentUser?.profilePictureFileId || currentUser?.profileImageFileId || currentUser?.profilePictureUrl || currentUser?.profileImageUrl) : null)}
+                    alt={commentItem.username}
+                    size="sm"
+                    fallbackText={commentItem.username}
+                    className="w-6 h-6 flex-shrink-0"
+                  />
                   <div className="flex-1">
                     <div className="bg-muted p-2 rounded-lg">
-                      <span 
+                      <span
                         className="font-medium text-sm text-foreground cursor-pointer hover:underline"
                         onClick={() => onUserClick && onUserClick({
+                          id: commentItem.userInfo?.id || commentItem.userId || `mock-${Date.now()}`,
                           username: commentItem.username,
-                          handle: commentItem.username.toLowerCase().replace(' ', '_'),
+                          handle: commentItem.userInfo?.userName || commentItem.username.toLowerCase().replace(' ', '_'),
+                          userName: commentItem.userInfo?.userName,
+                          firstName: commentItem.userInfo?.firstName,
+                          lastName: commentItem.userInfo?.lastName,
+                          fullName: commentItem.userInfo ? `${commentItem.userInfo.firstName || ''} ${commentItem.userInfo.lastName || ''}`.trim() : commentItem.username,
                           followers: (Math.floor(Math.random() * 300) + 50).toString(),
                           following: (Math.floor(Math.random() * 100) + 20).toString(),
                           bio: `${commentItem.username}'s profile. MoodLink user.`,
@@ -514,6 +563,10 @@ export function PostCard({ post, currentUser: propCurrentUser, onUserClick, onPo
                             { name: "Curious", percentage: Math.floor(Math.random() * 20 + 60) + "%" },
                           ],
                           badges: ["🌟"],
+                          profilePictureFileId: commentItem.userInfo?.profilePictureFileId,
+                          profileImageFileId: commentItem.userInfo?.profileImageFileId,
+                          profilePictureUrl: commentItem.userInfo?.profilePictureUrl,
+                          profileImageUrl: commentItem.userInfo?.profileImageUrl,
                         })}
                       >
                         {commentItem.username}
