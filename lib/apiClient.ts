@@ -847,6 +847,15 @@ class ApiClient {
     });
   }
 
+  // Get direct messages between two users
+  async getDirectMessages(userId1: UUID, userId2: UUID, params?: PaginationParams): Promise<any> {
+    return this.request<any>({
+      method: 'GET',
+      url: `/api/Messages/direct/${userId1}/${userId2}`,
+      params,
+    });
+  }
+
   // Notifications API
   async createNotification(data: CreateNotificationCommand): Promise<CreatedNotificationResponse> {
     return this.request<CreatedNotificationResponse>({

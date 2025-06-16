@@ -55,6 +55,8 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
   const [showGroupInfo, setShowGroupInfo] = useState(false)
   const [loading, setLoading] = useState(false)
   const [sendingMessage, setSendingMessage] = useState(false)
+  const [lastMessageId, setLastMessageId] = useState<string | null>(null)
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null)
   const { user } = useAuth()
 
   // Initial messages
@@ -82,14 +84,47 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
         if (chatDetails.isDirectMessage && chatDetails.otherUserId) {
           console.log('Loading direct messages with user:', chatDetails.otherUserId)
 
-          // For direct messages, we need to find or create a chat
-          // For now, we'll start with empty messages and let the user send the first message
-          setMessages([])
+          try {
+            // Try to load existing direct messages
+            const directResponse = await apiClient.getDirectMessages(user.id, chatDetails.otherUserId, {
+              PageIndex: 0,
+              PageSize: 50
+            })
 
-          // You could implement logic here to:
-          // 1. Check if a chat already exists between these users
-          // 2. Load existing messages if chat exists
-          // 3. Create a new chat when first message is sent
+            if (directResponse && directResponse.messages) {
+              const directMessages: Message[] = directResponse.messages.map((msg: any) => ({
+                id: msg.id,
+                messageId: msg.id,
+                text: msg.content || '',
+                time: new Date(msg.sentDate).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+                sent: msg.senderUserId === user.id,
+                sender: msg.senderUserName,
+                senderUserId: msg.senderUserId
+              }))
+
+              // Sort messages by date
+              const sortedDirectMessages = directMessages.sort((a, b) => {
+                const msgA = directResponse.messages.find((m: any) => m.id === a.id)
+                const msgB = directResponse.messages.find((m: any) => m.id === b.id)
+                const timeA = new Date(msgA?.sentDate || 0).getTime()
+                const timeB = new Date(msgB?.sentDate || 0).getTime()
+                return timeA - timeB
+              })
+
+              setMessages(sortedDirectMessages)
+
+              // Set last message ID for polling
+              if (sortedDirectMessages.length > 0) {
+                const lastMsg = sortedDirectMessages[sortedDirectMessages.length - 1]
+                setLastMessageId(lastMsg.messageId?.toString() || lastMsg.id.toString())
+              }
+            } else {
+              setMessages([])
+            }
+          } catch (directError) {
+            console.log('No existing direct messages found, starting fresh')
+            setMessages([])
+          }
 
         } else if (chatDetails.chatId) {
           // Handle existing chats
@@ -117,6 +152,12 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
           })
 
           setMessages(sortedMessages)
+
+          // Set last message ID for polling
+          if (sortedMessages.length > 0) {
+            const lastMsg = sortedMessages[sortedMessages.length - 1]
+            setLastMessageId(lastMsg.messageId?.toString() || lastMsg.id.toString())
+          }
         }
       } catch (error) {
         console.error('Failed to load messages:', error)
@@ -144,6 +185,129 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
 
     loadMessages()
   }, [chatDetails?.chatId, chatDetails?.otherUserId, user])
+
+  // Real-time message polling
+  useEffect(() => {
+    if ((!chatDetails?.chatId && !chatDetails?.isDirectMessage) || !user) return
+
+    const pollForNewMessages = async () => {
+      try {
+        console.log('🔄 Polling for new messages...', {
+          chatId: chatDetails.chatId,
+          isDirectMessage: chatDetails.isDirectMessage,
+          otherUserId: chatDetails.otherUserId,
+          lastMessageId
+        })
+
+        let response
+
+        if (chatDetails.isDirectMessage && chatDetails.otherUserId) {
+          // Poll for direct messages
+          response = await apiClient.getDirectMessages(user.id, chatDetails.otherUserId, {
+            PageIndex: 0,
+            PageSize: 20 // Increase to catch more messages
+          })
+        } else if (chatDetails.chatId) {
+          // Poll for regular chat messages
+          response = await apiClient.getChatMessages(chatDetails.chatId, {
+            PageIndex: 0,
+            PageSize: 20 // Increase to catch more messages
+          })
+        } else {
+          console.log('❌ No valid chat target for polling')
+          return
+        }
+
+        console.log('📥 Polling response:', {
+          messageCount: response?.messages?.length || 0,
+          messages: response?.messages?.map((m: any) => ({ id: m.id, content: m.content?.substring(0, 20) })) || []
+        })
+
+        const newBackendMessages: Message[] = response.messages.map((msg: ChatMessageDto) => ({
+          id: msg.id,
+          messageId: msg.id,
+          text: msg.content || '',
+          time: new Date(msg.sentDate).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+          sent: msg.senderUserId === user.id,
+          sender: msg.senderUserName,
+          senderUserId: msg.senderUserId
+        }))
+
+        // Sort by date
+        const sortedNewMessages = newBackendMessages.sort((a, b) => {
+          const msgA = response.messages.find(m => m.id === a.id)
+          const msgB = response.messages.find(m => m.id === b.id)
+          const timeA = new Date(msgA?.sentDate || 0).getTime()
+          const timeB = new Date(msgB?.sentDate || 0).getTime()
+          return timeA - timeB
+        })
+
+        // Check if there are new messages
+        if (sortedNewMessages.length > 0) {
+          setMessages(prev => {
+            const currentMessageIds = new Set(prev.map(m => m.messageId?.toString() || m.id.toString()))
+            const newMessages = sortedNewMessages.filter(msg =>
+              !currentMessageIds.has(msg.messageId?.toString() || msg.id.toString())
+            )
+
+            if (newMessages.length > 0) {
+              console.log('📨 New messages received:', newMessages.length, 'New message IDs:', newMessages.map(m => m.id))
+
+              // Remove any temporary messages and add new ones
+              const nonTempMessages = prev.filter(m => !m.id.toString().startsWith('temp-'))
+              const allMessages = [...nonTempMessages, ...newMessages]
+
+              // Remove duplicates and sort
+              const uniqueMessages = allMessages.filter((msg, index, array) =>
+                array.findIndex(m => (m.messageId?.toString() || m.id.toString()) ===
+                                    (msg.messageId?.toString() || msg.id.toString())) === index
+              )
+
+              const sortedResult = uniqueMessages.sort((a, b) => {
+                const timeA = new Date(a.time).getTime() || 0
+                const timeB = new Date(b.time).getTime() || 0
+                return timeA - timeB
+              })
+
+              // Update last message ID
+              const latestMessage = sortedResult[sortedResult.length - 1]
+              if (latestMessage) {
+                const newLastMessageId = latestMessage.messageId?.toString() || latestMessage.id.toString()
+                console.log('🔄 Updating lastMessageId from', lastMessageId, 'to', newLastMessageId)
+                setLastMessageId(newLastMessageId)
+              }
+
+              return sortedResult
+            }
+
+            return prev
+          })
+        }
+      } catch (error) {
+        console.error('Failed to poll for new messages:', error)
+      }
+    }
+
+    // Start polling every 5 seconds
+    const interval = setInterval(pollForNewMessages, 5000)
+    setPollingInterval(interval)
+
+    // Cleanup on unmount or chat change
+    return () => {
+      if (interval) {
+        clearInterval(interval)
+      }
+    }
+  }, [chatDetails?.chatId, chatDetails?.isDirectMessage, chatDetails?.otherUserId, user, lastMessageId])
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval)
+      }
+    }
+  }, [])
 
   const handleSend = async () => {
     if (!message.trim() || !user || sendingMessage) return
@@ -206,6 +370,9 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
             }
           : msg
       ))
+
+      // Update last message ID
+      setLastMessageId(response.id.toString())
 
     } catch (error: any) {
       console.error('Failed to send message:', error)
