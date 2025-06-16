@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ArrowLeft, Send, Users, Info } from "lucide-react"
 import { User } from "@/components/create-group-chat"
+import { ProfileImage } from "@/components/ui/profile-image"
 import { useAuth } from "@/hooks/use-auth"
 import apiClient from "@/lib/apiClient"
 import { UUID, ChatMessageDto } from "@/lib/types/api"
@@ -26,6 +27,12 @@ interface ChatInfo {
   otherUserHandle?: string
   otherUserAvatar?: string
   isDirectMessage?: boolean
+  // Profile picture fields
+  profilePictureFileId?: string
+  profileImageFileId?: string
+  profilePictureUrl?: string
+  profileImageUrl?: string
+  userProfileImageUrl?: string
 }
 
 interface ChatPageProps {
@@ -235,17 +242,19 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
               <ArrowLeft className="w-5 h-5 text-foreground" />
             </button>
             {chatDetails?.type === "user" || chatDetails?.isDirectMessage ? (
-              chatDetails.otherUserAvatar ? (
-                <img
-                  src={chatDetails.otherUserAvatar}
-                  alt={chatDetails.otherUserName || chatDetails.title}
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-10 h-10 bg-gradient-to-r from-green-400 to-blue-400 rounded-full flex items-center justify-center text-white font-medium">
-                  {(chatDetails.otherUserName || chatDetails.title || 'U').substring(0, 2).toUpperCase()}
-                </div>
-              )
+              <ProfileImage
+                src={chatDetails.profilePictureFileId ||
+                     chatDetails.profileImageFileId ||
+                     chatDetails.profilePictureUrl ||
+                     chatDetails.profileImageUrl ||
+                     chatDetails.userProfileImageUrl ||
+                     chatDetails.otherUserAvatar ||
+                     null}
+                alt={chatDetails.otherUserName || chatDetails.title || 'User'}
+                size="sm"
+                fallbackText={chatDetails.otherUserName || chatDetails.title || 'U'}
+                className="w-10 h-10"
+              />
             ) : (
               <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
                 <Users className="w-5 h-5 text-white" />
@@ -290,8 +299,8 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
               <div key={msg.id} className={`flex ${msg.sent ? "justify-end" : "justify-start"}`}>
                 <div
                   className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
-                    msg.sent 
-                      ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white" 
+                    msg.sent
+                      ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white"
                       : "bg-muted text-foreground"
                   }`}
                 >
@@ -316,7 +325,17 @@ export function ChatPage({ chatDetails, onBack }: ChatPageProps) {
             <div className="space-y-3">
               {chatDetails.members?.map(member => (
                 <div key={member.id} className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-400 rounded-full"></div>
+                  <ProfileImage
+                    src={(member as any).profilePictureFileId ||
+                         (member as any).profileImageFileId ||
+                         (member as any).profilePictureUrl ||
+                         (member as any).profileImageUrl ||
+                         null}
+                    alt={member.username}
+                    size="sm"
+                    fallbackText={member.username}
+                    className="w-8 h-8"
+                  />
                   <div>
                     <p className="text-sm font-medium text-foreground">{member.username}</p>
                     <p className="text-xs text-muted-foreground">{member.handle}</p>

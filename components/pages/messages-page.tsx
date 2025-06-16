@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { MessageCircle, Users } from "lucide-react"
 import { NewChatModal } from "@/components/new-chat-modal"
+import { ProfileImage } from "@/components/ui/profile-image"
 import { useAuth } from "@/hooks/use-auth"
 import apiClient from "@/lib/apiClient"
 import { UUID } from "@/lib/types/api"
@@ -17,6 +18,12 @@ interface ChatInfo {
   members?: any[]  // Group members (simplified since we removed group functionality)
   lastMessage: string
   time: string
+  // Profile picture fields
+  profilePictureFileId?: string
+  profileImageFileId?: string
+  profilePictureUrl?: string
+  profileImageUrl?: string
+  userProfileImageUrl?: string
 }
 
 interface MessagesPageProps {
@@ -47,20 +54,46 @@ export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
           PageIndex: 0,
           PageSize: 50
         })
-        const backendChats: ChatInfo[] = (response.chats || []).map((chat: any) => {
-          return {
-            id: chat.id,
-            chatId: chat.id,
-            type: chat.type === "Group" ? "group" : "user",
-            title: chat.name || "Unknown Chat",
-            lastMessage: chat.lastMessage?.content || "No messages yet",
-            time: chat.lastMessage?.sentDate ? new Date(chat.lastMessage.sentDate).toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }) : "Now",
-            members: [] // We don't have participants in UserChatDto
-          }
-        })
+        // Enhance chats with user profile information
+        const backendChats: ChatInfo[] = await Promise.all(
+          (response.chats || []).map(async (chat: any) => {
+            const chatInfo: ChatInfo = {
+              id: chat.id,
+              chatId: chat.id,
+              type: chat.type === "Group" ? "group" : "user",
+              title: chat.name || "Unknown Chat",
+              lastMessage: chat.lastMessage?.content || "No messages yet",
+              time: chat.lastMessage?.sentDate ? new Date(chat.lastMessage.sentDate).toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+              }) : "Now",
+              members: [] // We don't have participants in UserChatDto
+            }
+
+            // For user chats, try to get the other user's profile info
+            if (chat.type !== "Group" && chat.participants && chat.participants.length > 0) {
+              // Find the other user (not the current user)
+              const otherParticipant = chat.participants.find((p: any) => p.userId !== user.id)
+              if (otherParticipant) {
+                try {
+                  const otherUser = await apiClient.getUserById(otherParticipant.userId)
+                  chatInfo.profilePictureFileId = otherUser.profilePictureFileId
+                  chatInfo.profileImageFileId = otherUser.profileImageFileId
+                  chatInfo.profilePictureUrl = otherUser.profilePictureUrl
+                  chatInfo.profileImageUrl = otherUser.profileImageUrl
+                  chatInfo.title = otherUser.firstName && otherUser.lastName
+                    ? `${otherUser.firstName} ${otherUser.lastName}`
+                    : otherUser.userName || chatInfo.title
+                  chatInfo.handle = otherUser.userName ? `@${otherUser.userName}` : undefined
+                } catch (error) {
+                  // Could not load other user info, keep default values
+                }
+              }
+            }
+
+            return chatInfo
+          })
+        )
         setConversations(backendChats)
       } catch (error) {
         // Fallback to mock data for development
@@ -72,6 +105,11 @@ export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
             handle: "@dgns",
             lastMessage: "Heyy!",
             time: "23:46",
+            profilePictureFileId: null,
+            profileImageFileId: null,
+            profilePictureUrl: null,
+            profileImageUrl: null,
+            userProfileImageUrl: null,
           },
           {
             id: 2,
@@ -80,6 +118,11 @@ export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
             handle: "@erayy",
             lastMessage: "Hey dude! Wanna see...",
             time: "Yesterday",
+            profilePictureFileId: null,
+            profileImageFileId: null,
+            profilePictureUrl: null,
+            profileImageUrl: null,
+            userProfileImageUrl: null,
           },
         ])
       } finally {
@@ -127,7 +170,18 @@ export function MessagesPage({ onChatSelect, onUserClick }: MessagesPageProps) {
           >
             <div className="flex space-x-3">
               {conversation.type === "user" ? (
-                <div className="w-12 h-12 bg-gradient-to-r from-green-400 to-blue-400 rounded-full flex-shrink-0"></div>
+                <ProfileImage
+                  src={conversation.profilePictureFileId ||
+                       conversation.profileImageFileId ||
+                       conversation.profilePictureUrl ||
+                       conversation.profileImageUrl ||
+                       conversation.userProfileImageUrl ||
+                       null}
+                  alt={conversation.title}
+                  size="sm"
+                  fallbackText={conversation.title}
+                  className="flex-shrink-0"
+                />
               ) : (
                 <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex-shrink-0 flex items-center justify-center">
                   <Users className="w-6 h-6 text-white" />

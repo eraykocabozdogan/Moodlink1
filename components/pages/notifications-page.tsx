@@ -2,12 +2,22 @@
 
 import { useState, useEffect } from "react"
 import { useAuth } from "@/hooks/use-auth"
+import { ProfileImage } from "@/components/ui/profile-image"
 import apiClient from "@/lib/apiClient"
 import { NotificationListItemDto, NotificationType } from "@/lib/types/api"
 
 interface EnhancedNotification extends NotificationListItemDto {
   postContent?: string
   postPreview?: string
+  // Profile picture fields
+  senderProfilePictureFileId?: string
+  senderProfileImageFileId?: string
+  senderProfilePictureUrl?: string
+  senderProfileImageUrl?: string
+  senderUserProfileImageUrl?: string
+  senderFirstName?: string
+  senderLastName?: string
+  senderUserName?: string
 }
 
 interface NotificationsPageProps {
@@ -69,32 +79,50 @@ export function NotificationsPage({ onPostClick, onNavigate }: NotificationsPage
           // Could not load user posts for notification enhancement
         }
 
-        // Enhance notifications with post content
-        const enhancedNotifications: EnhancedNotification[] = uniqueNotifications.map(notification => {
-          const enhanced: EnhancedNotification = { ...notification }
+        // Enhance notifications with post content and user info
+        const enhancedNotifications: EnhancedNotification[] = await Promise.all(
+          uniqueNotifications.map(async (notification) => {
+            const enhanced: EnhancedNotification = { ...notification }
 
-          // Check if this is a post-related notification
-          const isPostRelated = notification.type === 1 || notification.type === 2 ||
-                               notification.content?.includes('gönderinizi') ||
-                               notification.content?.includes('post')
-
-          if (isPostRelated && userPosts.length > 0) {
-            // Try to find the related post
-            // Since relatedEntityId is null, we'll use heuristics
-            // For now, we'll just take the most recent post as an example
-            const recentPost = userPosts[0] // Most recent post
-            if (recentPost) {
-              enhanced.postContent = recentPost.contentText || ''
-              enhanced.postPreview = recentPost.contentText
-                ? (recentPost.contentText.length > 50
-                   ? recentPost.contentText.substring(0, 50) + '...'
-                   : recentPost.contentText)
-                : 'Post content not available'
+            // Try to get sender user info if senderUserId exists
+            if (notification.senderUserId) {
+              try {
+                const senderUser = await apiClient.getUserById(notification.senderUserId)
+                enhanced.senderProfilePictureFileId = senderUser.profilePictureFileId
+                enhanced.senderProfileImageFileId = senderUser.profileImageFileId
+                enhanced.senderProfilePictureUrl = senderUser.profilePictureUrl
+                enhanced.senderProfileImageUrl = senderUser.profileImageUrl
+                enhanced.senderFirstName = senderUser.firstName
+                enhanced.senderLastName = senderUser.lastName
+                enhanced.senderUserName = senderUser.userName
+              } catch (error) {
+                // Could not load sender user info
+              }
             }
-          }
 
-          return enhanced
-        })
+            // Check if this is a post-related notification
+            const isPostRelated = notification.type === 1 || notification.type === 2 ||
+                                 notification.content?.includes('gönderinizi') ||
+                                 notification.content?.includes('post')
+
+            if (isPostRelated && userPosts.length > 0) {
+              // Try to find the related post
+              // Since relatedEntityId is null, we'll use heuristics
+              // For now, we'll just take the most recent post as an example
+              const recentPost = userPosts[0] // Most recent post
+              if (recentPost) {
+                enhanced.postContent = recentPost.contentText || ''
+                enhanced.postPreview = recentPost.contentText
+                  ? (recentPost.contentText.length > 50
+                     ? recentPost.contentText.substring(0, 50) + '...'
+                     : recentPost.contentText)
+                  : 'Post content not available'
+              }
+            }
+
+            return enhanced
+          })
+        )
 
         setNotifications(enhancedNotifications)
       } catch (error: any) {
@@ -195,11 +223,18 @@ export function NotificationsPage({ onPostClick, onNavigate }: NotificationsPage
               onClick={() => handleNotificationClick(notification)}
             >
               <div className="flex space-x-3">
-                <div className={`w-8 h-8 rounded-full flex-shrink-0 ${
-                  !notification.isRead
-                    ? 'bg-gradient-to-r from-primary/80 to-accent-foreground/80'
-                    : 'bg-gradient-to-r from-muted-foreground/60 to-muted-foreground/40'
-                }`}></div>
+                <ProfileImage
+                  src={notification.senderProfilePictureFileId ||
+                       notification.senderProfileImageFileId ||
+                       notification.senderProfilePictureUrl ||
+                       notification.senderProfileImageUrl ||
+                       notification.senderUserProfileImageUrl ||
+                       null}
+                  alt={notification.senderUserName || notification.senderFirstName || 'User'}
+                  size="sm"
+                  fallbackText={notification.senderFirstName || notification.senderUserName || 'N'}
+                  className="w-8 h-8 flex-shrink-0"
+                />
                 <div className="flex-1">
                   <p className={`font-medium ${
                     !notification.isRead ? 'text-foreground' : 'text-muted-foreground'

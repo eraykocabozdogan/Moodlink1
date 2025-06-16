@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react" // Added useEffect and 
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { PostCard } from "@/components/post-card"
+import { ProfileImage } from "@/components/ui/profile-image"
 import useEmblaCarousel from 'embla-carousel-react' // Added embla-carousel-react
 import { ImagePlus } from 'lucide-react' // Added ImagePlus icon
 import apiClient from "@/lib/apiClient"
@@ -185,13 +186,19 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
               lastName: userInfo.lastName,
               fullName: userInfo.userName || `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim(),
               profilePictureFileId: userInfo.profilePictureFileId,
+              profileImageFileId: userInfo.profileImageFileId,
+              profilePictureUrl: userInfo.profilePictureUrl,
               profileImageUrl: userInfo.profileImageUrl
             } : {
               id: apiPost.userId,
               userName: null,
               firstName: null,
               lastName: null,
-              fullName: null
+              fullName: null,
+              profilePictureFileId: null,
+              profileImageFileId: null,
+              profilePictureUrl: null,
+              profileImageUrl: null
             },
             createdDate: apiPost.createdDate
           }
@@ -281,33 +288,51 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
     }
   }, [activeTab, emblaApi])
 
-  // Function to fetch all posts from API with pagination
+  // Function to fetch all posts from API with proper createdDate
   const fetchAllPosts = async () => {
     try {
       let allPosts: any[] = []
-      let pageIndex = 0
-      const pageSize = 20
-      let hasMore = true
 
-      while (hasMore) {
-        // Try both endpoints to see which one works
-        let postsResponse
-        try {
-          postsResponse = await apiClient.getPosts({ PageIndex: pageIndex, PageSize: pageSize })
-        } catch (getPostsError) {
-          postsResponse = await apiClient.getFeedPosts({ PageIndex: pageIndex, PageSize: pageSize })
+      // Use the same method as initial load to get posts with proper createdDate
+      try {
+        // Get all users
+        const usersResponse = await apiClient.getUsers({ PageIndex: 0, PageSize: 100 })
+        const users = usersResponse.items || []
+
+        // Get posts from each user (these have createdDate!)
+        for (const user of users) {
+          try {
+            const userPostsResponse = await apiClient.getUserPosts(user.id, { PageIndex: 0, PageSize: 20 })
+            const userPosts = userPostsResponse.items || []
+            allPosts.push(...userPosts)
+          } catch (error) {
+            // Failed to get posts for this user, continue with others
+          }
         }
+      } catch (error) {
+        // Fallback to old method if user-based fetching fails
+        let pageIndex = 0
+        const pageSize = 20
+        let hasMore = true
 
-        // Check both possible response formats
-        const posts = postsResponse.posts || postsResponse.items || []
-        const hasMoreData = postsResponse.hasMore || postsResponse.hasNext || false
+        while (hasMore) {
+          let postsResponse
+          try {
+            postsResponse = await apiClient.getPosts({ PageIndex: pageIndex, PageSize: pageSize })
+          } catch (getPostsError) {
+            postsResponse = await apiClient.getFeedPosts({ PageIndex: pageIndex, PageSize: pageSize })
+          }
 
-        if (posts && posts.length > 0) {
-          allPosts = [...allPosts, ...posts]
-          hasMore = hasMoreData
-          pageIndex++
-        } else {
-          hasMore = false
+          const posts = postsResponse.posts || postsResponse.items || []
+          const hasMoreData = postsResponse.hasMore || postsResponse.hasNext || false
+
+          if (posts && posts.length > 0) {
+            allPosts = [...allPosts, ...posts]
+            hasMore = hasMoreData
+            pageIndex++
+          } else {
+            hasMore = false
+          }
         }
       }
 
@@ -322,21 +347,40 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
     try {
       const allPosts = await fetchAllPosts()
 
-      // Transform API data to match our Post interface with real data
+      // Use the same transform logic as initial load
       const transformPost = async (apiPost: any, index: number) => {
         const isCurrentUser = currentUser && apiPost.userId === currentUser.id
+
+        // Fetch user data for this post
+        let userInfo = null
+        let username = 'User'
+        let handle = `@user_${apiPost.userId?.slice(-4) || 'unknown'}`
+
+        if (isCurrentUser) {
+          username = 'You'
+          handle = '@you'
+          userInfo = currentUser
+        } else {
+          try {
+            userInfo = await apiClient.getUserById(apiPost.userId)
+            // Use firstName lastName for display, userName for handle
+            const fullName = `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim()
+            username = fullName || userInfo.userName || 'User'
+            handle = userInfo.userName ? `@${userInfo.userName}` : handle
+          } catch (userError) {
+            // Keep default values
+          }
+        }
 
         // Use real data from API response
         let likesCount = apiPost.likesCount || 0
         let commentsCount = apiPost.commentsCount || 0
         let isLikedByCurrentUser = apiPost.isLikedByCurrentUser || false
 
-
-
         return {
           id: apiPost.id,
-          username: isCurrentUser ? 'You' : (apiPost.userName || 'User'), // Show "You" for current user's posts
-          handle: isCurrentUser ? '@you' : `@user_${apiPost.userId?.slice(-4) || 'unknown'}`, // Use @you for current user
+          username: username,
+          handle: handle,
           time: apiPost.createdDate ? formatTimeAgo(apiPost.createdDate) : 'now',
           content: apiPost.contentText || '',
           image: apiPost.postImageFileId ? apiClient.getImageUrl(apiPost.postImageFileId) : undefined,
@@ -346,71 +390,33 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
           isLikedByCurrentUser: isLikedByCurrentUser,
           userProfileImageUrl: apiPost.userProfileImageUrl,
           createdDate: apiPost.createdDate,
-          userData: isCurrentUser ? {
-            id: currentUser?.id,
-            userName: currentUser?.userName,
-            firstName: currentUser?.firstName,
-            lastName: currentUser?.lastName,
-            fullName: currentUser?.userName || `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim(),
-            profilePictureFileId: currentUser?.profilePictureFileId,
-            profileImageUrl: currentUser?.profileImageUrl
+          // Add real user data for profile navigation
+          userData: userInfo ? {
+            id: userInfo.id,
+            userName: userInfo.userName,
+            firstName: userInfo.firstName,
+            lastName: userInfo.lastName,
+            fullName: userInfo.userName || `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim(),
+            profilePictureFileId: userInfo.profilePictureFileId,
+            profileImageFileId: userInfo.profileImageFileId,
+            profilePictureUrl: userInfo.profilePictureUrl,
+            profileImageUrl: userInfo.profileImageUrl
           } : {
             id: apiPost.userId,
-            userName: apiPost.userName,
-            firstName: apiPost.userFirstName,
-            lastName: apiPost.userLastName,
-            fullName: apiPost.userName || `${apiPost.userFirstName || ''} ${apiPost.userLastName || ''}`.trim()
-          }
+            userName: null,
+            firstName: null,
+            lastName: null,
+            fullName: null,
+            profilePictureFileId: null,
+            profileImageFileId: null,
+            profilePictureUrl: null,
+            profileImageUrl: null
+          },
         }
       }
 
-
-
-      // For performance, only fetch real data for first 10 posts
-      const postsWithRealData = allPosts.slice(0, 10)
-      const postsWithMockData = allPosts.slice(10)
-
-      // Transform first 10 posts with real data
-      const realDataPosts = await Promise.all(postsWithRealData.map(transformPost))
-
-      // Transform remaining posts with mock data for performance
-      const mockDataPosts = postsWithMockData.map((apiPost: any, index: number) => {
-        const isCurrentUser = currentUser && apiPost.userId === currentUser.id
-        const postIdHash = apiPost.id.split('-')[0]
-        const hashNum = parseInt(postIdHash, 16) || 0
-
-        return {
-          id: apiPost.id,
-          username: isCurrentUser ? 'You' : (apiPost.userName || 'User'),
-          handle: isCurrentUser ? '@you' : `@user_${apiPost.userId?.slice(-4) || 'unknown'}`,
-          time: apiPost.createdDate ? formatTimeAgo(apiPost.createdDate) : 'now',
-          content: apiPost.contentText || '',
-          image: apiPost.postImageFileId ? apiClient.getImageUrl(apiPost.postImageFileId) : undefined,
-          moodCompatibility: `${Math.floor(Math.random() * 30 + 70)}%`,
-          likesCount: apiPost.likesCount || 0,
-          commentsCount: apiPost.commentsCount || 0,
-          isLikedByCurrentUser: apiPost.isLikedByCurrentUser || false,
-          userProfileImageUrl: apiPost.userProfileImageUrl,
-          createdDate: apiPost.createdDate,
-          userData: isCurrentUser ? {
-            id: currentUser?.id,
-            userName: currentUser?.userName,
-            firstName: currentUser?.firstName,
-            lastName: currentUser?.lastName,
-            fullName: currentUser?.userName || `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim(),
-            profilePictureFileId: currentUser?.profilePictureFileId,
-            profileImageUrl: currentUser?.profileImageUrl
-          } : {
-            id: apiPost.userId,
-            userName: apiPost.userName,
-            firstName: apiPost.userFirstName,
-            lastName: apiPost.userLastName,
-            fullName: apiPost.userName || `${apiPost.userFirstName || ''} ${apiPost.userLastName || ''}`.trim()
-          }
-        }
-      })
-
-      const transformedPosts = [...realDataPosts, ...mockDataPosts]
+      // Transform ALL posts with real data (same as initial load)
+      const transformedPosts = await Promise.all(allPosts.map(transformPost))
 
       // Sort posts by creation date (newest first)
       transformedPosts.sort((a, b) => {
@@ -423,7 +429,7 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
       setFollowingPosts(transformedPosts)
 
     } catch (error) {
-      // Error refreshing posts
+      console.error('Error refreshing posts:', error)
     }
   }
 
@@ -563,7 +569,17 @@ export function HomePage({ onUserClick }: HomePageProps = {}) {
       {/* Create Post */}
       <div className="border-b border-border p-4 bg-card">
         <div className="flex space-x-3">
-          <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex-shrink-0"></div>
+          <ProfileImage
+            src={currentUser?.profilePictureFileId ||
+                 currentUser?.profileImageFileId ||
+                 currentUser?.profilePictureUrl ||
+                 currentUser?.profileImageUrl ||
+                 null}
+            alt={currentUser?.userName || 'You'}
+            size="sm"
+            fallbackText={currentUser?.firstName || currentUser?.userName || 'You'}
+            className="flex-shrink-0"
+          />
           <div className="flex-1">
             <Textarea
               placeholder="What's happening?"

@@ -83,7 +83,13 @@ export function MainApp({ user, onLogout }: MainAppProps) {
         lastMessage: '', // Will be populated when messages are loaded
         lastMessageTime: new Date().toISOString(),
         unreadCount: 0,
-        isDirectMessage: true // Flag to indicate this is a direct message
+        isDirectMessage: true, // Flag to indicate this is a direct message
+        // Profile picture fields
+        profilePictureFileId: user.profilePictureFileId,
+        profileImageFileId: user.profileImageFileId,
+        profilePictureUrl: user.profilePictureUrl,
+        profileImageUrl: user.profileImageUrl,
+        userProfileImageUrl: user.userProfileImageUrl
       }
 
       console.log('Setting up direct chat with:', chatInfo)

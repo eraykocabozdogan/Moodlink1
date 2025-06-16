@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { X, Search, MessageCircle, User } from "lucide-react"
+import { ProfileImage } from "@/components/ui/profile-image"
 import { useAuth } from "@/hooks/use-auth"
 import apiClient from "@/lib/apiClient"
 import { UUID, ChatType } from "@/lib/types/api"
@@ -16,6 +17,9 @@ interface UserSearchResult {
   lastName?: string
   bio?: string
   profilePictureUrl?: string
+  profilePictureFileId?: string
+  profileImageFileId?: string
+  profileImageUrl?: string
 }
 
 interface NewChatModalProps {
@@ -88,6 +92,12 @@ export function NewChatModal({ onClose, onChatCreated }: NewChatModalProps) {
           hour: "2-digit",
           minute: "2-digit",
         }),
+        // Profile picture fields
+        profilePictureFileId: targetUser.profilePictureFileId,
+        profileImageFileId: targetUser.profileImageFileId,
+        profilePictureUrl: targetUser.profilePictureUrl,
+        profileImageUrl: targetUser.profileImageUrl,
+        userProfileImageUrl: targetUser.profilePictureUrl,
       }
       console.log('Created chat info:', newChatInfo)
 
@@ -155,9 +165,17 @@ export function NewChatModal({ onClose, onChatCreated }: NewChatModalProps) {
                     onClick={() => handleCreateChat(user)}
                     className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted cursor-pointer transition-colors"
                   >
-                    <div className="w-10 h-10 bg-gradient-to-r from-green-400 to-blue-400 rounded-full flex-shrink-0 flex items-center justify-center">
-                      <User className="w-5 h-5 text-white" />
-                    </div>
+                    <ProfileImage
+                      src={user.profilePictureFileId ||
+                           user.profileImageFileId ||
+                           user.profilePictureUrl ||
+                           user.profileImageUrl ||
+                           null}
+                      alt={user.userName || `${user.firstName} ${user.lastName}`.trim() || 'User'}
+                      size="sm"
+                      fallbackText={user.firstName || user.userName || 'U'}
+                      className="w-10 h-10 flex-shrink-0"
+                    />
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-foreground">
                         {user.userName || `${user.firstName} ${user.lastName}`.trim() || 'Unknown User'}

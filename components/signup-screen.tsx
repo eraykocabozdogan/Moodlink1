@@ -158,9 +158,7 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
     }
   }
 
-  const handleGoogleSignup = () => {
-    onSignup({ username: "Google User", email: "user@gmail.com", id: 1 })
-  }
+
 
   if (showVerification) {
     return (
@@ -251,13 +249,7 @@ export function SignupScreen({ onSignup, onSwitchToLogin }: SignupScreenProps) {
           >
             {isLoading ? 'Kayıt oluşturuluyor...' : 'Sign Up'}
           </Button>
-          <Button
-            onClick={handleGoogleSignup}
-            variant="outline"
-            className="w-full h-12 border-gray-200 hover:bg-gray-50"
-          >
-            Sign Up with Google
-          </Button>
+
           <div className="text-center text-sm text-muted-foreground">
             Already have an account?{" "}
             <button onClick={onSwitchToLogin} className="text-primary hover:underline">

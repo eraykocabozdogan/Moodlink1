@@ -140,9 +140,7 @@ Technical Detail: PostgreSQL connection error`
     }
   }
 
-  const handleGoogleLogin = () => {
-    onLogin({ username: "Google User", id: 1 })
-  }
+
 
   return (
     <ThemeBackground>
@@ -186,13 +184,7 @@ Technical Detail: PostgreSQL connection error`
           >
             {isLoading ? 'Logging in...' : 'Login'}
           </Button>
-          <Button
-            onClick={handleGoogleLogin}
-            variant="outline"
-            className="w-full h-12 border-blue-500 text-blue-500 bg-transparent hover:bg-blue-500/10 hover:text-blue-600"
-          >
-            Login with Google
-          </Button>
+
           <div className="text-center text-sm text-foreground space-x-2">
             <button
               onClick={onForgotPassword}

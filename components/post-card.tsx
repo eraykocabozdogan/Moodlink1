@@ -325,9 +325,11 @@ export function PostCard({ post, currentUser: propCurrentUser, onUserClick, onPo
         {/* Avatar */}
         <ProfileImage
           src={post.userData?.profilePictureFileId ||
-               post.userProfileImageUrl ||
+               post.userData?.profileImageFileId ||
+               post.userData?.profilePictureUrl ||
                post.userData?.profileImageUrl ||
-               (currentUser?.id === post.userData?.id ? currentUser?.profilePictureFileId : null)}
+               post.userProfileImageUrl ||
+               (currentUser?.id === post.userData?.id ? (currentUser?.profilePictureFileId || currentUser?.profileImageFileId || currentUser?.profilePictureUrl || currentUser?.profileImageUrl) : null)}
           alt={post.username}
           size="sm"
           fallbackText={post.username}

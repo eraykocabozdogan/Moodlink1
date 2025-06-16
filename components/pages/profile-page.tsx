@@ -139,7 +139,7 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
           id: post.id,
           username: displayName,
           handle: `@${user.userName || 'user'}`,
-          time: formatTimeAgo(post.createdDate),
+          time: post.createdDate ? formatTimeAgo(post.createdDate) : 'now',
           content: post.contentText || '',
           image: post.postImageFileId || post.imageUrls?.[0] || undefined,
           moodCompatibility: "90%", // TODO: Calculate from API
@@ -187,9 +187,24 @@ export function ProfilePage({ user: initialUser }: ProfilePageProps) {
 
   // Helper function to format time
   const formatTimeAgo = (dateString: string) => {
+    if (!dateString) {
+      return 'now'
+    }
+
     const date = new Date(dateString)
+
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return 'now'
+    }
+
     const now = new Date()
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+    // Handle negative differences (future dates)
+    if (diffInSeconds < 0) {
+      return 'now'
+    }
 
     if (diffInSeconds < 60) return `${diffInSeconds}s`
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`
